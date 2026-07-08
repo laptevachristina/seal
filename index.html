@@ -69,8 +69,16 @@ em{font-style:italic}
 .photo.has-img{cursor:grab;touch-action:none}
 .photo.has-img .ph-label{display:none}
 .ph-pick{position:absolute;bottom:8px;right:8px;z-index:4;width:32px;height:32px;border-radius:999px;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:19px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0}
-.photo.has-img .ph-pick,.frame.has-img .ph-pick{display:flex}
+.photo.has-img .ph-pick{display:flex}
+.frame .ph-pick{display:flex}
 .mini .ph-pick{display:none!important}
+.mv-handle{position:absolute;top:-11px;left:-11px;width:23px;height:23px;border-radius:999px;background:var(--sage);display:none;cursor:move;z-index:8;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
+.mv-handle:before{content:'✥';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+[data-edit]:hover>.mv-handle,[data-edit]:focus>.mv-handle,[data-edit].moving>.mv-handle{display:block}
+.mv-del{position:absolute;top:-11px;left:16px;width:23px;height:23px;border-radius:999px;background:#c0655c;display:none;cursor:pointer;z-index:9;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
+.mv-del:before{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+[data-edit]:hover>.mv-del,[data-edit]:focus>.mv-del,[data-edit].moving>.mv-del{display:block}
+.mini .mv-handle,.mini .mv-del{display:none!important}
 
 /* free collage frames */
 .collage-canvas{position:absolute;inset:0;z-index:0}
@@ -95,8 +103,8 @@ em{font-style:italic}
 
 .grid4{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:13px;flex:1}
 
-[data-edit]{outline:none;-webkit-user-select:text;user-select:text;touch-action:manipulation}
-[data-edit]:empty:before{content:attr(data-ph);opacity:.32}
+[data-edit]{outline:none;position:relative;-webkit-user-select:text;user-select:text;touch-action:manipulation}
+[data-edit].ph-empty:before{content:attr(data-ph);opacity:.32;pointer-events:none}
 </style>
 
 <style>
@@ -195,6 +203,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <div class="fmtbar">
         <button data-cmd="italic"><em>Курсив</em></button>
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
+        <button id="addTextBtn">＋ Текст</button>
       </div>
     </div>
     <div id="sizeRow" style="display:none">
@@ -212,6 +221,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="cover">🖼 Обложка</button>
         <button data-t="quote">❝ Цитата</button>
         <button data-t="collage">▦ Коллаж</button>
+        <button data-t="splitB">▤ Фото сверху</button>
+        <button data-t="splitT">▤ Фото снизу</button>
+        <button data-t="splitL">▐ Фото справа</button>
+        <button data-t="splitR">▌ Фото слева</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -321,11 +334,39 @@ function tpl(type){
       '<div class="h mid" data-edit data-ph="Финал" style="margin-bottom:14px">запишись на разбор гардероба</div>'+
       '<div class="sub" data-edit data-ph="Подпись" style="margin-bottom:26px">напиши мне слово «стиль»</div>'+
       '<span class="pill" data-edit data-ph="Кнопка">написать&nbsp;&nbsp;<span class="arw">→</span></span>'+
+    '</div>',
+  splitB:
+    '<div class="photo" data-photo style="position:absolute;left:0;right:0;top:0;height:60%;border-radius:0"><div class="ph-label">нажми — фото сверху</div></div>'+
+    '<div class="pad" style="justify-content:flex-end;padding:38px 46px 44px">'+
+      '<div class="kicker" data-edit data-ph="надзаголовок">рубрика</div>'+
+      '<div class="h mid" data-edit data-ph="Заголовок" style="margin:6px 0 8px">заголовок снизу</div>'+
+      '<div class="sub" data-edit data-ph="подзаголовок">короткое пояснение под ним</div>'+
+    '</div>',
+  splitT:
+    '<div class="photo" data-photo style="position:absolute;left:0;right:0;bottom:0;height:60%;border-radius:0"><div class="ph-label">нажми — фото снизу</div></div>'+
+    '<div class="pad" style="justify-content:flex-start;padding:44px 46px">'+
+      '<div class="kicker" data-edit data-ph="надзаголовок">рубрика</div>'+
+      '<div class="h mid" data-edit data-ph="Заголовок" style="margin:6px 0 8px">заголовок сверху</div>'+
+      '<div class="sub" data-edit data-ph="подзаголовок">короткое пояснение</div>'+
+    '</div>',
+  splitL:
+    '<div class="photo" data-photo style="position:absolute;top:0;bottom:0;right:0;width:57%;border-radius:0"><div class="ph-label">нажми — фото справа</div></div>'+
+    '<div class="pad" style="justify-content:center;padding:44px 34px;right:auto;width:45%">'+
+      '<div class="kicker" data-edit data-ph="надзаголовок">рубрика</div>'+
+      '<div class="h mid" data-edit data-ph="Заголовок" style="margin:6px 0 8px;font-size:38px">текст слева</div>'+
+      '<div class="sub" data-edit data-ph="подзаголовок">пояснение</div>'+
+    '</div>',
+  splitR:
+    '<div class="photo" data-photo style="position:absolute;top:0;bottom:0;left:0;width:57%;border-radius:0"><div class="ph-label">нажми — фото слева</div></div>'+
+    '<div class="pad" style="justify-content:center;padding:44px 34px;left:auto;right:0;width:45%">'+
+      '<div class="kicker" data-edit data-ph="надзаголовок">рубрика</div>'+
+      '<div class="h mid" data-edit data-ph="Заголовок" style="margin:6px 0 8px;font-size:38px">текст справа</div>'+
+      '<div class="sub" data-edit data-ph="подзаголовок">пояснение</div>'+
     '</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева'};
 
 /* ---- build ---- */
 function makeSlide(type){
@@ -334,7 +375,12 @@ function makeSlide(type){
   el.dataset.type=type;
   el.dataset.bg='milk';
   el.innerHTML=tpl(type);
-  el.querySelectorAll('[data-edit]').forEach(function(e){e.setAttribute('contenteditable','true');e.setAttribute('spellcheck','false');});
+  el.querySelectorAll('[data-edit]').forEach(function(e){
+    e.setAttribute('contenteditable','true');e.setAttribute('spellcheck','false');
+    refreshPlaceholder(e);
+    e.addEventListener('input',function(){refreshPlaceholder(e);});
+    if(!e.classList.contains('tag-num'))wireTextMove(e);
+  });
   wirePhotos(el);
   if(type==='collage'){
     var cv=el.querySelector('[data-canvas]');
@@ -430,6 +476,45 @@ function wirePanZoom(p){
   },{passive:false});
 }
 
+/* ---- editable text: placeholder + drag to move ---- */
+function refreshPlaceholder(el){el.classList.toggle('ph-empty',(el.textContent||'').replace(/​/g,'').trim()==='');}
+function addTextBlock(slideEl){
+  var b=document.createElement('div');b.className='body';b.setAttribute('data-edit','');b.setAttribute('data-ph','Новый текст');
+  b.setAttribute('contenteditable','true');b.setAttribute('spellcheck','false');
+  b.style.position='absolute';b.style.left='70px';b.style.top='300px';b.style.width='320px';b.style.fontSize='22px';b.style.zIndex='7';
+  b.textContent='Новый текст';
+  slideEl.appendChild(b);
+  refreshPlaceholder(b);
+  b.addEventListener('input',function(){refreshPlaceholder(b);});
+  wireTextMove(b);
+  return b;
+}
+function wireTextMove(el){
+  var h=document.createElement('span');h.className='mv-handle';h.setAttribute('contenteditable','false');
+  el.appendChild(h);
+  var dl=document.createElement('span');dl.className='mv-del';dl.setAttribute('contenteditable','false');
+  el.appendChild(dl);
+  dl.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();});
+  dl.addEventListener('pointerup',function(e){e.preventDefault();e.stopPropagation();if(el.parentNode)el.parentNode.removeChild(el);updateFilm();});
+  var sx,sy,bl,bt,dragging=false;
+  h.addEventListener('pointerdown',function(e){
+    e.preventDefault();e.stopPropagation();
+    el.classList.add('moving');
+    if(getComputedStyle(el).position!=='absolute'){
+      var ol=el.offsetLeft,ot=el.offsetTop,w=el.offsetWidth;
+      el.style.position='absolute';el.style.left=ol+'px';el.style.top=ot+'px';el.style.margin='0';el.style.width=w+'px';
+    }
+    sx=e.clientX;sy=e.clientY;bl=parseFloat(el.style.left)||0;bt=parseFloat(el.style.top)||0;dragging=true;
+    try{h.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  h.addEventListener('pointermove',function(e){
+    if(!dragging)return;var sc=curFitScale||1;
+    el.style.left=(bl+(e.clientX-sx)/sc)+'px';el.style.top=(bt+(e.clientY-sy)/sc)+'px';e.preventDefault();
+  });
+  function up(){if(dragging){dragging=false;el.classList.remove('moving');updateFilm();}}
+  h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+}
+
 /* ---- free collage frames ---- */
 function addFrame(canvas,o){
   o=o||{};
@@ -475,8 +560,8 @@ function wireFrame(fr){
     if(ids.length===0){mode=null;updateFilm();}
     else if(ids.length===1){mode='move';var pt=pointers[ids[0]];sx=pt.x;sy=pt.y;bl=parseFloat(fr.style.left);bt=parseFloat(fr.style.top);}
     if(!moved){                                            // it was a tap
-      if(e.target.closest('.ph-pick')){selectFrame(fr);openPick(fr);}
-      else if(e.target.closest('.fr-del')){if(fr.parentNode)fr.parentNode.removeChild(fr);updateFilm();}
+      if(e.target.closest('.fr-del')){if(fr.parentNode)fr.parentNode.removeChild(fr);updateFilm();}
+      else if(e.target.closest('.ph-pick')||!fr.classList.contains('has-img')){selectFrame(fr);openPick(fr);}
     }
   });
   fr.addEventListener('pointercancel',function(e){delete pointers[e.pointerId];});
@@ -509,9 +594,13 @@ function buildSwatches(){
 }
 
 /* ---- text formatting ---- */
-document.querySelectorAll('.fmtbar button').forEach(function(b){
+document.querySelectorAll('.fmtbar button[data-cmd]').forEach(function(b){
   b.addEventListener('mousedown',function(e){e.preventDefault();});
   b.addEventListener('click',function(){document.execCommand(b.dataset.cmd,false,null);});
+});
+document.getElementById('addTextBtn').addEventListener('click',function(){
+  if(cur<0||!slides[cur])return;
+  var b=addTextBlock(slides[cur].el);b.focus();updateFilm();
 });
 
 /* ---- render ---- */
@@ -596,7 +685,7 @@ function slideToPNG(el){
     clone.style.transform='none';clone.style.boxShadow='none';clone.style.borderRadius='0';
     var fontcss=document.getElementById('fontcss').textContent;
     var slidecss=document.getElementById('slidecss').textContent;
-    var extra="[data-edit]:empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.fr-del,.fr-resize{display:none!important}.frame{outline:none!important;box-shadow:none!important}[data-edit]{box-shadow:none!important}";
+    var extra=".ph-empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.fr-del,.fr-resize,.mv-handle,.mv-del{display:none!important}.frame{outline:none!important;box-shadow:none!important}[data-edit]{box-shadow:none!important}";
     var xml=new XMLSerializer().serializeToString(clone);
     var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'+
       '<style>'+fontcss+slidecss+extra+'</style>'+
