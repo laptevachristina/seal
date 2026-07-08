@@ -64,7 +64,28 @@ em{font-style:italic}
 }
 .photo .ph-label{font-family:var(--sans);font-size:12px;color:#9a9384;text-align:center;padding:8px;pointer-events:none}
 .photo.drag{outline:2px dashed var(--sage);outline-offset:-6px}
-.tag-num{position:absolute;top:10px;left:12px;font-family:var(--serif);font-style:italic;font-size:17px;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
+.tag-num{position:absolute;top:10px;left:12px;z-index:3;font-family:var(--serif);font-style:italic;font-size:17px;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
+.ph-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:center center;display:none;pointer-events:none;-webkit-user-drag:none;user-select:none}
+.photo.has-img{cursor:grab;touch-action:none}
+.photo.has-img .ph-label{display:none}
+.ph-pick{position:absolute;bottom:8px;right:8px;z-index:4;width:32px;height:32px;border-radius:999px;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:19px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.photo.has-img .ph-pick,.frame.has-img .ph-pick{display:flex}
+.mini .ph-pick{display:none!important}
+
+/* free collage frames */
+.collage-canvas{position:absolute;inset:0;z-index:0}
+.frame{position:absolute;overflow:hidden;border-radius:14px;background:var(--slot);cursor:move;touch-action:none;box-shadow:0 2px 12px rgba(0,0,0,.10)}
+.frame .fr-label{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:#9a9384;text-align:center;padding:6px;pointer-events:none}
+.frame.has-img .fr-label{display:none}
+.frame .fr-del{position:absolute;top:6px;right:6px;z-index:6;width:26px;height:26px;border-radius:999px;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
+.frame.sel .fr-del{display:flex}
+.frame .fr-resize{position:absolute;right:0;bottom:0;width:28px;height:28px;z-index:6;cursor:nwse-resize;touch-action:none;display:none}
+.frame .fr-resize:after{content:'';position:absolute;right:6px;bottom:6px;width:11px;height:11px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+.frame.sel{outline:2px solid var(--sage);outline-offset:-1px}
+.frame.sel .fr-resize{display:block}
+.frame .ph-pick{bottom:6px;right:6px}
+.mini .fr-del,.mini .fr-resize{display:none!important}
+.mini .frame{outline:none!important}
 
 .cover-photo{position:absolute;inset:0;border-radius:0}
 .cover-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.6) 3%,rgba(0,0,0,.12) 40%,rgba(0,0,0,0) 65%)}
@@ -176,6 +197,15 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
       </div>
     </div>
+    <div id="sizeRow" style="display:none">
+      <div class="row-title">Размер фото-кругляшка</div>
+      <input type="range" id="sizeSlider" min="80" max="280" value="120" style="width:100%;accent-color:var(--ui-acc)">
+    </div>
+    <div id="collageRow" style="display:none">
+      <div class="row-title">Коллаж — свободные рамки</div>
+      <button class="hbtn primary" id="addFrameBtn">＋ Добавить рамку</button>
+      <div style="color:var(--ui-dim);font-size:12px;margin-top:7px;line-height:1.5">Тяни рамку — двигаешь · угол — размер · два пальца/колесо — масштаб фото · ＋ — фото · ✕ — убрать</div>
+    </div>
     <div>
       <div class="row-title">Добавить слайд</div>
       <div class="presets" id="presets">
@@ -193,7 +223,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </div>
 
   <div class="hint">
-    Кликни по <b>тексту</b> — печатай поверх. Кликни по <b>серому фото</b> — выбери картинку с телефона. Меняй <b>фон</b> и добавляй слайды снизу. Готово — жми <b>«Скачать всё»</b>.
+    Кликни по <b>тексту</b> — печатай поверх. Пустое <b>фото</b> — нажми и выбери картинку; когда фото стоит — <b>двигай его пальцем</b>, а двумя пальцами (или колесиком) <b>масштабируй</b>. Кнопка <b>＋</b> в углу фото — заменить снимок. Меняй <b>фон</b>, размер фото в «Финале», добавляй слайды. Готово — <b>«Скачать всё»</b>.
   </div>
 </div>
 
@@ -252,6 +282,7 @@ var COLORS=[
 var format='45';
 var slides=[];   // {type,bg,el}
 var cur=-1;
+var curFitScale=1;
 var host=document.getElementById('host');
 var scaler=document.getElementById('scaler');
 var stage=document.getElementById('stage');
@@ -274,14 +305,9 @@ function tpl(type){
       '<div class="body" data-edit data-ph="Пояснение" style="max-width:420px">и почему остальное только запутывает утро</div>'+
     '</div>',
   collage:
-    '<div class="pad">'+
-      '<div class="h mid" data-edit data-ph="Заголовок" style="margin-bottom:22px">собрала образы из того, что уже есть</div>'+
-      '<div class="grid4">'+
-        '<div class="photo" data-photo><span class="tag-num" data-edit data-ph="(1)">(1)</span><div class="ph-label">фото 1</div></div>'+
-        '<div class="photo" data-photo><span class="tag-num" data-edit data-ph="(2)">(2)</span><div class="ph-label">фото 2</div></div>'+
-        '<div class="photo" data-photo><span class="tag-num" data-edit data-ph="(3)">(3)</span><div class="ph-label">фото 3</div></div>'+
-        '<div class="photo" data-photo><span class="tag-num" data-edit data-ph="(4)">(4)</span><div class="ph-label">фото 4</div></div>'+
-      '</div>'+
+    '<div class="collage-canvas" data-canvas></div>'+
+    '<div class="pad" style="padding-bottom:0">'+
+      '<div class="h mid" data-edit data-ph="Заголовок">собрала образы из того, что уже есть</div>'+
     '</div>',
   cta:
     '<div class="pad">'+
@@ -310,6 +336,10 @@ function makeSlide(type){
   el.innerHTML=tpl(type);
   el.querySelectorAll('[data-edit]').forEach(function(e){e.setAttribute('contenteditable','true');e.setAttribute('spellcheck','false');});
   wirePhotos(el);
+  if(type==='collage'){
+    var cv=el.querySelector('[data-canvas]');
+    [{x:40,y:170,w:215,h:250},{x:270,y:170,w:232,h:158},{x:270,y:344,w:232,h:214}].forEach(function(o){addFrame(cv,o);});
+  }
   return el;
 }
 function addSlide(type){
@@ -317,25 +347,139 @@ function addSlide(type){
   slides.push(s);cur=slides.length-1;render();
 }
 
-/* ---- photos ---- */
+/* ---- photos: pick + live pan/zoom ---- */
 var pickTarget=null;
 var filepick=document.getElementById('filepick');
+
+function enhancePhoto(p){
+  if(p.querySelector('.ph-img'))return;
+  var img=document.createElement('img');img.className='ph-img';img.alt='';
+  p.insertBefore(img,p.firstChild);
+  var pick=document.createElement('button');pick.type='button';pick.className='ph-pick';pick.textContent='＋';pick.title='Заменить фото';
+  p.appendChild(pick);
+  if(p.dataset.scale===undefined){p.dataset.scale=1;p.dataset.x=0;p.dataset.y=0;}
+}
+function applyTransform(p){
+  var img=p.querySelector('.ph-img');if(!img)return;
+  var s=parseFloat(p.dataset.scale)||1,x=parseFloat(p.dataset.x)||0,y=parseFloat(p.dataset.y)||0;
+  img.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';
+}
 function wirePhotos(scope){
   scope.querySelectorAll('[data-photo]').forEach(function(p){
+    enhancePhoto(p);
+    p.querySelector('.ph-pick').addEventListener('click',function(e){e.stopPropagation();pickTarget=p;filepick.value='';filepick.click();});
     p.addEventListener('click',function(e){
       if(e.target.closest('[data-edit]'))return;
-      pickTarget=p;filepick.value='';filepick.click();
+      if(e.target.closest('.ph-pick'))return;
+      if(!p.classList.contains('has-img')){pickTarget=p;filepick.value='';filepick.click();}
     });
+    wirePanZoom(p);
     p.addEventListener('dragover',function(e){e.preventDefault();p.classList.add('drag');});
     p.addEventListener('dragleave',function(){p.classList.remove('drag');});
     p.addEventListener('drop',function(e){e.preventDefault();p.classList.remove('drag');var f=e.dataTransfer.files[0];if(f)setPhoto(p,f);});
+    applyTransform(p);
   });
 }
 filepick.addEventListener('change',function(){if(pickTarget&&filepick.files[0])setPhoto(pickTarget,filepick.files[0]);});
 function setPhoto(slot,file){
   var r=new FileReader();
-  r.onload=function(){slot.style.backgroundImage="url('"+r.result+"')";var l=slot.querySelector('.ph-label');if(l)l.style.display='none';updateFilm();};
+  r.onload=function(){
+    var img=slot.querySelector('.ph-img');
+    img.src=r.result;img.style.display='block';
+    slot.classList.add('has-img');
+    slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);
+    updateFilm();
+  };
   r.readAsDataURL(file);
+}
+function wirePanZoom(p){
+  var pointers={},startX,startY,baseX,baseY,startDist,baseScale;
+  p.addEventListener('pointerdown',function(e){
+    if(!p.classList.contains('has-img'))return;
+    if(e.target.closest('.ph-pick'))return;
+    try{p.setPointerCapture(e.pointerId);}catch(_){}
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(pointers);
+    if(ids.length===1){startX=e.clientX;startY=e.clientY;baseX=parseFloat(p.dataset.x)||0;baseY=parseFloat(p.dataset.y)||0;p.style.cursor='grabbing';}
+    else if(ids.length===2){var a=pointers[ids[0]],b=pointers[ids[1]];startDist=Math.hypot(a.x-b.x,a.y-b.y);baseScale=parseFloat(p.dataset.scale)||1;}
+    e.preventDefault();
+  });
+  p.addEventListener('pointermove',function(e){
+    if(!pointers[e.pointerId])return;
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(pointers);
+    if(ids.length>=2){
+      var a=pointers[ids[0]],b=pointers[ids[1]];var d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(startDist){var s=Math.max(1,Math.min(5,baseScale*(d/startDist)));p.dataset.scale=s;applyTransform(p);}
+    } else {
+      var sc=curFitScale||1;
+      p.dataset.x=baseX+(e.clientX-startX)/sc;p.dataset.y=baseY+(e.clientY-startY)/sc;applyTransform(p);
+    }
+    e.preventDefault();
+  });
+  function up(e){
+    delete pointers[e.pointerId];
+    var ids=Object.keys(pointers);
+    if(ids.length===1){var pt=pointers[ids[0]];startX=pt.x;startY=pt.y;baseX=parseFloat(p.dataset.x)||0;baseY=parseFloat(p.dataset.y)||0;}
+    else if(ids.length===0){p.style.cursor='grab';updateFilm();}
+  }
+  p.addEventListener('pointerup',up);
+  p.addEventListener('pointercancel',up);
+  p.addEventListener('wheel',function(e){
+    if(!p.classList.contains('has-img'))return;
+    e.preventDefault();
+    var s=Math.max(1,Math.min(5,(parseFloat(p.dataset.scale)||1)+(e.deltaY<0?0.12:-0.12)));
+    p.dataset.scale=s;applyTransform(p);
+  },{passive:false});
+}
+
+/* ---- free collage frames ---- */
+function addFrame(canvas,o){
+  o=o||{};
+  var fr=document.createElement('div');fr.className='frame';
+  fr.style.left=(o.x||120)+'px';fr.style.top=(o.y||200)+'px';
+  fr.style.width=(o.w||210)+'px';fr.style.height=(o.h||210)+'px';
+  fr.dataset.scale=1;fr.dataset.x=0;fr.dataset.y=0;
+  fr.innerHTML='<img class="ph-img" alt=""><div class="fr-label">нажми ＋ и добавь фото</div><button type="button" class="ph-pick">＋</button><button type="button" class="fr-del">✕</button><div class="fr-resize"></div>';
+  canvas.appendChild(fr);
+  wireFrame(fr);
+  return fr;
+}
+function selectFrame(fr){
+  var cv=fr.parentNode;if(cv)cv.querySelectorAll('.frame').forEach(function(f){f.classList.remove('sel');});
+  fr.classList.add('sel');
+}
+function wireFrame(fr){
+  fr.querySelector('.ph-pick').addEventListener('click',function(e){e.stopPropagation();pickTarget=fr;filepick.value='';filepick.click();});
+  fr.querySelector('.fr-del').addEventListener('click',function(e){e.stopPropagation();if(fr.parentNode)fr.parentNode.removeChild(fr);updateFilm();});
+  var pointers={},mode=null,sx,sy,bl,bt,bw,bh,startDist,baseScale;
+  fr.addEventListener('pointerdown',function(e){
+    if(e.target.closest('.ph-pick')||e.target.closest('.fr-del'))return;
+    selectFrame(fr);
+    try{fr.setPointerCapture(e.pointerId);}catch(_){}
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(pointers);
+    if(e.target.classList.contains('fr-resize')){mode='resize';sx=e.clientX;sy=e.clientY;bw=parseFloat(fr.style.width);bh=parseFloat(fr.style.height);}
+    else if(ids.length===2){mode='pinch';var a=pointers[ids[0]],b=pointers[ids[1]];startDist=Math.hypot(a.x-b.x,a.y-b.y);baseScale=parseFloat(fr.dataset.scale)||1;}
+    else{mode='move';sx=e.clientX;sy=e.clientY;bl=parseFloat(fr.style.left);bt=parseFloat(fr.style.top);}
+    e.preventDefault();e.stopPropagation();
+  });
+  fr.addEventListener('pointermove',function(e){
+    if(!pointers[e.pointerId])return;
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var sc=curFitScale||1,ids=Object.keys(pointers);
+    if(mode==='pinch'&&ids.length>=2){var a=pointers[ids[0]],b=pointers[ids[1]];var d=Math.hypot(a.x-b.x,a.y-b.y);if(startDist){fr.dataset.scale=Math.max(1,Math.min(5,baseScale*(d/startDist)));applyTransform(fr);}}
+    else if(mode==='resize'){fr.style.width=Math.max(60,bw+(e.clientX-sx)/sc)+'px';fr.style.height=Math.max(60,bh+(e.clientY-sy)/sc)+'px';}
+    else if(mode==='move'){fr.style.left=(bl+(e.clientX-sx)/sc)+'px';fr.style.top=(bt+(e.clientY-sy)/sc)+'px';}
+    e.preventDefault();
+  });
+  function up(e){
+    delete pointers[e.pointerId];var ids=Object.keys(pointers);
+    if(ids.length===0){mode=null;updateFilm();}
+    else if(ids.length===1){mode='move';var pt=pointers[ids[0]];sx=pt.x;sy=pt.y;bl=parseFloat(fr.style.left);bt=parseFloat(fr.style.top);}
+  }
+  fr.addEventListener('pointerup',up);fr.addEventListener('pointercancel',up);
+  fr.addEventListener('wheel',function(e){e.preventDefault();fr.dataset.scale=Math.max(1,Math.min(5,(parseFloat(fr.dataset.scale)||1)+(e.deltaY<0?0.12:-0.12)));applyTransform(fr);},{passive:false});
 }
 
 /* ---- background swatches ---- */
@@ -374,6 +518,7 @@ function fit(){
   var s=slides[cur];if(!s)return;
   var avail=stage.clientWidth-32;
   var sc=Math.min(1,avail/540);
+  curFitScale=sc;
   var h=s.el.classList.contains('f916')?960:675;
   s.el.style.transform='scale('+sc+')';
   scaler.style.width=(540*sc)+'px';scaler.style.height=(h*sc)+'px';
@@ -381,9 +526,30 @@ function fit(){
 function render(){
   host.innerHTML='';
   if(cur>=0&&slides[cur]){host.appendChild(slides[cur].el);applyBg(slides[cur]);fit();}
-  buildSwatches();updateFilm();
+  buildSwatches();updateFilm();updateSizeRow();updateCollageRow();
   document.getElementById('cnt').textContent=slides.length?('· '+slides.length):'';
 }
+function updateCollageRow(){
+  var isC=slides[cur]&&slides[cur].type==='collage';
+  document.getElementById('collageRow').style.display=isC?'':'none';
+}
+document.getElementById('addFrameBtn').addEventListener('click',function(){
+  var s=slides[cur];if(!s||s.type!=='collage')return;
+  var cv=s.el.querySelector('[data-canvas]');
+  var fr=addFrame(cv,{x:130,y:230,w:220,h:220});selectFrame(fr);updateFilm();
+});
+var sizeSlider=document.getElementById('sizeSlider');
+function circlePhoto(){var s=slides[cur];if(!s||s.type!=='final')return null;return s.el.querySelector('.photo');}
+function updateSizeRow(){
+  var ph=circlePhoto();
+  document.getElementById('sizeRow').style.display=ph?'':'none';
+  if(ph)sizeSlider.value=parseInt(ph.style.width,10)||120;
+}
+sizeSlider.addEventListener('input',function(){
+  var ph=circlePhoto();if(!ph)return;
+  ph.style.width=sizeSlider.value+'px';ph.style.height=sizeSlider.value+'px';
+  updateFilm();
+});
 function updateFilm(){
   var film=document.getElementById('film');film.innerHTML='';
   slides.forEach(function(s,i){
@@ -429,7 +595,7 @@ function slideToPNG(el){
     clone.style.transform='none';clone.style.boxShadow='none';clone.style.borderRadius='0';
     var fontcss=document.getElementById('fontcss').textContent;
     var slidecss=document.getElementById('slidecss').textContent;
-    var extra="[data-edit]:empty:before{content:''!important}.ph-label{display:none!important}[data-edit]{box-shadow:none!important}";
+    var extra="[data-edit]:empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.fr-del,.fr-resize{display:none!important}.frame{outline:none!important;box-shadow:none!important}[data-edit]{box-shadow:none!important}";
     var xml=new XMLSerializer().serializeToString(clone);
     var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'+
       '<style>'+fontcss+slidecss+extra+'</style>'+
