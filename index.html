@@ -123,7 +123,7 @@ html,body{margin:0}
 body{background:var(--ui-bg);color:var(--ui-text);font-family:'Inter',system-ui,sans-serif;-webkit-text-size-adjust:100%}
 .app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
 
-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--ui-line);flex-wrap:wrap}
+header{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));border-bottom:1px solid var(--ui-line);flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--ui-panel)}
 header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px}
 header .logo b{color:var(--ui-acc);font-weight:700}
 .grow{flex:1}
@@ -143,7 +143,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 [data-edit]:focus{box-shadow:inset 0 0 0 1px rgba(155,160,126,.9)}
 .slide .photo:hover{filter:brightness(.97)}
 
-.controls{border-top:1px solid var(--ui-line);padding:12px 14px 20px;display:flex;flex-direction:column;gap:14px}
+.controls{border-top:1px solid var(--ui-line);padding:12px 14px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
 .row-title{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ui-dim);margin-bottom:7px}
 .swatches{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:999px;cursor:pointer;border:2px solid transparent;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}
@@ -167,7 +167,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .hint b{color:var(--ui-acc)}
 
 /* feed grid planner */
-.planner{flex:1;overflow:auto;display:flex;justify-content:center;padding:18px 14px 30px}
+.planner{flex:1;overflow:auto;display:flex;justify-content:center;padding:18px 14px calc(30px + env(safe-area-inset-bottom,0px))}
 .phone{width:100%;max-width:390px}
 .phone .ptitle{color:var(--ui-dim);font-size:12px;text-align:center;margin-bottom:12px}
 .phone .pnote{color:var(--ui-dim);font-size:12px;text-align:center;margin-top:12px;line-height:1.5}
