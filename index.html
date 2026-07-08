@@ -36,7 +36,8 @@
 .slide.dark .pill{border-color:var(--milk);color:var(--milk)}
 .slide.dark .tag-num{color:var(--milk)}
 
-.pad{position:absolute;inset:0;padding:48px;display:flex;flex-direction:column}
+.pad{position:absolute;inset:0;padding:48px;display:flex;flex-direction:column;pointer-events:none}
+[data-edit],.photo,.pill{pointer-events:auto}
 .center{align-items:center;text-align:center;justify-content:center}
 .bottom{justify-content:flex-end}
 
@@ -66,14 +67,14 @@ em{font-style:italic}
 .tag-num{position:absolute;top:10px;left:12px;font-family:var(--serif);font-style:italic;font-size:17px;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
 
 .cover-photo{position:absolute;inset:0;border-radius:0}
-.cover-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 3%,rgba(0,0,0,.12) 40%,rgba(0,0,0,0) 65%)}
+.cover-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(0,0,0,.6) 3%,rgba(0,0,0,.12) 40%,rgba(0,0,0,0) 65%)}
 .on-photo{color:#fff}
 .on-photo .kicker{color:rgba(255,255,255,.9)}
 .on-photo .sub{color:rgba(255,255,255,.92)}
 
 .grid4{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:13px;flex:1}
 
-[data-edit]{outline:none}
+[data-edit]{outline:none;-webkit-user-select:text;user-select:text;touch-action:manipulation}
 [data-edit]:empty:before{content:attr(data-ph);opacity:.32}
 </style>
 
@@ -206,7 +207,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="imgs" id="imgs"></div>
 </div>
 
-<input type="file" id="filepick" accept="image/*" style="display:none">
+<input type="file" id="filepick" accept="image/*" style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
 
 <script>
 /* ---- viewport + PWA metas (in case skeleton lacks them) ---- */
@@ -307,6 +308,7 @@ function makeSlide(type){
   el.dataset.type=type;
   el.dataset.bg='milk';
   el.innerHTML=tpl(type);
+  el.querySelectorAll('[data-edit]').forEach(function(e){e.setAttribute('contenteditable','true');e.setAttribute('spellcheck','false');});
   wirePhotos(el);
   return el;
 }
@@ -389,8 +391,9 @@ function updateFilm(){
     chip.className='chip'+(s.el.classList.contains('f916')?' f916':'')+(i===cur?' on':'');
     var mini=document.createElement('div');mini.className='mini';
     var clone=s.el.cloneNode(true);clone.style.transform='';clone.style.boxShadow='none';
+    clone.querySelectorAll('[data-edit]').forEach(function(e){e.removeAttribute('contenteditable');});
     var w=64,scMini=w/540;
-    mini.style.transform='scale('+scMini+')';mini.appendChild(clone);
+    mini.style.transform='scale('+scMini+')';mini.style.pointerEvents='none';mini.appendChild(clone);
     chip.appendChild(mini);
     var idx=document.createElement('div');idx.className='idx';idx.textContent=(i+1);chip.appendChild(idx);
     var del=document.createElement('div');del.className='del';del.textContent='✕';chip.appendChild(del);
