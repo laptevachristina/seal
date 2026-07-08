@@ -188,9 +188,9 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .gh{position:fixed;z-index:100;pointer-events:none;border-radius:3px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.5);opacity:.95}
 .gh img{width:100%;height:100%;object-fit:cover;display:block}
 
-.modal{position:fixed;inset:0;background:rgba(15,17,20,.94);z-index:50;display:none;flex-direction:column;padding:16px;overflow:auto}
+.modal{position:fixed;inset:0;background:rgba(15,17,20,.96);z-index:50;display:none;flex-direction:column;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px));overflow:auto}
 .modal.open{display:flex}
-.modal .mh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal .mh{position:sticky;top:0;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 0 12px;margin-bottom:8px;background:rgba(15,17,20,.96);z-index:3}
 .modal .mh .t{font-weight:600}
 .modal .imgs{display:flex;flex-direction:column;gap:16px;align-items:center}
 .modal img{max-width:100%;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
@@ -285,7 +285,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <div class="grow"></div>
     <div class="t">Готовые картинки</div>
   </div>
-  <div class="save-note">На телефоне: задержи палец на картинке → <b>«Сохранить в Фото»</b>. На компьютере — кнопка «Скачать» под каждой.</div>
+  <div class="save-note">Нажми <b>«Сохранить в Фото»</b> → в открывшемся окне выбери <b>«Сохранить изображение»</b> (попадёт в галерею). Или задержи палец на картинке → «Сохранить в Фото».</div>
   <div class="imgs" id="imgs"></div>
 </div>
 
@@ -786,15 +786,27 @@ function slideToPNG(el){
     img.src=url;
   });
 }
+function saveBlobs(blobs){
+  var files=blobs.map(function(b,i){return new File([b],'slide-'+String(i+1).padStart(2,'0')+'.png',{type:'image/png'});});
+  if(navigator.canShare&&navigator.canShare({files:files})){
+    navigator.share({files:files,title:'Слайды'}).catch(function(){});
+  }else{
+    blobs.forEach(function(b,i){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='slide-'+String(i+1).padStart(2,'0')+'.png';document.body.appendChild(a);a.click();a.remove();});
+  }
+}
 function openModal(blobs){
   var imgs=document.getElementById('imgs');imgs.innerHTML='';
+  var canPhoto=!!(navigator.canShare&&navigator.canShare({files:[new File([blobs[0]],'a.png',{type:'image/png'})]}));
+  var top=document.createElement('button');top.className='hbtn primary';top.style.cssText='margin:0 auto 8px;display:block';
+  top.textContent=canPhoto?(blobs.length>1?('⬇ Сохранить все в Фото ('+blobs.length+')'):'⬇ Сохранить в Фото'):(blobs.length>1?('⬇ Скачать все ('+blobs.length+')'):'⬇ Скачать');
+  top.addEventListener('click',function(){saveBlobs(blobs);});
+  imgs.appendChild(top);
   blobs.forEach(function(blob,i){
     var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center';
-    var u=URL.createObjectURL(blob);
-    var im=document.createElement('img');im.src=u;im.style.maxHeight='70vh';
-    var a=document.createElement('a');a.href=u;a.download='slide-'+String(i+1).padStart(2,'0')+'.png';
-    a.className='hbtn primary';a.textContent='⬇ Скачать '+(i+1);a.style.textDecoration='none';
-    wrap.appendChild(im);wrap.appendChild(a);imgs.appendChild(wrap);
+    var im=document.createElement('img');im.src=URL.createObjectURL(blob);im.style.maxHeight='68vh';
+    var b=document.createElement('button');b.className='hbtn';b.textContent=canPhoto?'Сохранить в Фото':'Скачать';
+    b.addEventListener('click',function(){saveBlobs([blob]);});
+    wrap.appendChild(im);wrap.appendChild(b);imgs.appendChild(wrap);
   });
   document.getElementById('modal').classList.add('open');
 }
