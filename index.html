@@ -364,15 +364,10 @@ function applyTransform(p){
   var s=parseFloat(p.dataset.scale)||1,x=parseFloat(p.dataset.x)||0,y=parseFloat(p.dataset.y)||0;
   img.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';
 }
+function openPick(el){pickTarget=el;filepick.value='';filepick.click();}
 function wirePhotos(scope){
   scope.querySelectorAll('[data-photo]').forEach(function(p){
     enhancePhoto(p);
-    p.querySelector('.ph-pick').addEventListener('click',function(e){e.stopPropagation();pickTarget=p;filepick.value='';filepick.click();});
-    p.addEventListener('click',function(e){
-      if(e.target.closest('[data-edit]'))return;
-      if(e.target.closest('.ph-pick'))return;
-      if(!p.classList.contains('has-img')){pickTarget=p;filepick.value='';filepick.click();}
-    });
     wirePanZoom(p);
     p.addEventListener('dragover',function(e){e.preventDefault();p.classList.add('drag');});
     p.addEventListener('dragleave',function(){p.classList.remove('drag');});
@@ -393,10 +388,11 @@ function setPhoto(slot,file){
   r.readAsDataURL(file);
 }
 function wirePanZoom(p){
-  var pointers={},startX,startY,baseX,baseY,startDist,baseScale;
+  var pointers={},startX,startY,baseX,baseY,startDist,baseScale,downX,downY,moved;
   p.addEventListener('pointerdown',function(e){
-    if(!p.classList.contains('has-img'))return;
-    if(e.target.closest('.ph-pick'))return;
+    downX=e.clientX;downY=e.clientY;moved=false;
+    if(e.target.closest('.ph-pick'))return;               // pick handled on tap (pointerup)
+    if(!p.classList.contains('has-img'))return;           // empty → wait for tap
     try{p.setPointerCapture(e.pointerId);}catch(_){}
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var ids=Object.keys(pointers);
@@ -405,31 +401,32 @@ function wirePanZoom(p){
     e.preventDefault();
   });
   p.addEventListener('pointermove',function(e){
+    if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>8)moved=true;
     if(!pointers[e.pointerId])return;
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
-    var ids=Object.keys(pointers);
+    var ids=Object.keys(pointers),sc=curFitScale||1;
     if(ids.length>=2){
       var a=pointers[ids[0]],b=pointers[ids[1]];var d=Math.hypot(a.x-b.x,a.y-b.y);
-      if(startDist){var s=Math.max(1,Math.min(5,baseScale*(d/startDist)));p.dataset.scale=s;applyTransform(p);}
+      if(startDist){p.dataset.scale=Math.max(1,Math.min(5,baseScale*(d/startDist)));applyTransform(p);}
     } else {
-      var sc=curFitScale||1;
       p.dataset.x=baseX+(e.clientX-startX)/sc;p.dataset.y=baseY+(e.clientY-startY)/sc;applyTransform(p);
     }
     e.preventDefault();
   });
-  function up(e){
+  p.addEventListener('pointerup',function(e){
     delete pointers[e.pointerId];
     var ids=Object.keys(pointers);
     if(ids.length===1){var pt=pointers[ids[0]];startX=pt.x;startY=pt.y;baseX=parseFloat(p.dataset.x)||0;baseY=parseFloat(p.dataset.y)||0;}
     else if(ids.length===0){p.style.cursor='grab';updateFilm();}
-  }
-  p.addEventListener('pointerup',up);
-  p.addEventListener('pointercancel',up);
+    if(!moved){                                           // it was a tap
+      if(e.target.closest('.ph-pick')||!p.classList.contains('has-img'))openPick(p);
+    }
+  });
+  p.addEventListener('pointercancel',function(e){delete pointers[e.pointerId];});
   p.addEventListener('wheel',function(e){
     if(!p.classList.contains('has-img'))return;
     e.preventDefault();
-    var s=Math.max(1,Math.min(5,(parseFloat(p.dataset.scale)||1)+(e.deltaY<0?0.12:-0.12)));
-    p.dataset.scale=s;applyTransform(p);
+    p.dataset.scale=Math.max(1,Math.min(5,(parseFloat(p.dataset.scale)||1)+(e.deltaY<0?0.12:-0.12)));applyTransform(p);
   },{passive:false});
 }
 
@@ -450,11 +447,10 @@ function selectFrame(fr){
   fr.classList.add('sel');
 }
 function wireFrame(fr){
-  fr.querySelector('.ph-pick').addEventListener('click',function(e){e.stopPropagation();pickTarget=fr;filepick.value='';filepick.click();});
-  fr.querySelector('.fr-del').addEventListener('click',function(e){e.stopPropagation();if(fr.parentNode)fr.parentNode.removeChild(fr);updateFilm();});
-  var pointers={},mode=null,sx,sy,bl,bt,bw,bh,startDist,baseScale;
+  var pointers={},mode=null,sx,sy,bl,bt,bw,bh,startDist,baseScale,downX,downY,moved;
   fr.addEventListener('pointerdown',function(e){
-    if(e.target.closest('.ph-pick')||e.target.closest('.fr-del'))return;
+    downX=e.clientX;downY=e.clientY;moved=false;
+    if(e.target.closest('.ph-pick')||e.target.closest('.fr-del')){e.stopPropagation();return;} // tap handled on pointerup
     selectFrame(fr);
     try{fr.setPointerCapture(e.pointerId);}catch(_){}
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
@@ -465,6 +461,7 @@ function wireFrame(fr){
     e.preventDefault();e.stopPropagation();
   });
   fr.addEventListener('pointermove',function(e){
+    if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>8)moved=true;
     if(!pointers[e.pointerId])return;
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var sc=curFitScale||1,ids=Object.keys(pointers);
@@ -473,12 +470,16 @@ function wireFrame(fr){
     else if(mode==='move'){fr.style.left=(bl+(e.clientX-sx)/sc)+'px';fr.style.top=(bt+(e.clientY-sy)/sc)+'px';}
     e.preventDefault();
   });
-  function up(e){
+  fr.addEventListener('pointerup',function(e){
     delete pointers[e.pointerId];var ids=Object.keys(pointers);
     if(ids.length===0){mode=null;updateFilm();}
     else if(ids.length===1){mode='move';var pt=pointers[ids[0]];sx=pt.x;sy=pt.y;bl=parseFloat(fr.style.left);bt=parseFloat(fr.style.top);}
-  }
-  fr.addEventListener('pointerup',up);fr.addEventListener('pointercancel',up);
+    if(!moved){                                            // it was a tap
+      if(e.target.closest('.ph-pick')){selectFrame(fr);openPick(fr);}
+      else if(e.target.closest('.fr-del')){if(fr.parentNode)fr.parentNode.removeChild(fr);updateFilm();}
+    }
+  });
+  fr.addEventListener('pointercancel',function(e){delete pointers[e.pointerId];});
   fr.addEventListener('wheel',function(e){e.preventDefault();fr.dataset.scale=Math.max(1,Math.min(5,(parseFloat(fr.dataset.scale)||1)+(e.deltaY<0?0.12:-0.12)));applyTransform(fr);},{passive:false});
 }
 
