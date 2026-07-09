@@ -183,6 +183,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .sw.on{border-color:var(--ui-acc)}
 .fmtbar{display:flex;gap:8px;flex-wrap:wrap}
 .fmtbar button{border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-text);border-radius:8px;padding:6px 10px;font:600 12px 'Inter';cursor:pointer}
+.fmtbar .alnbtn{display:inline-flex;align-items:center;justify-content:center;padding:6px 9px}
+.snap-guide{position:absolute;background:var(--ui-acc,#E45D50);z-index:60;pointer-events:none;display:none;opacity:.9}
+.snap-guide.v{top:0;bottom:0;width:2px;margin-left:-1px}
+.snap-guide.h{left:0;right:0;height:2px;margin-top:-1px}
 
 .presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .presets button{flex:0 0 auto;border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-text);border-radius:9px;padding:7px 11px;font:600 12px 'Inter';cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
@@ -268,6 +272,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <div class="fmtbar">
         <button data-cmd="italic"><em>Курсив</em></button>
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
+        <button class="alnbtn" data-align="left" title="Слева"><svg viewBox="0 0 18 12" width="16" height="11" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="0" y="5" width="11" height="2"/><rect x="0" y="10" width="14" height="2"/></svg></button><button class="alnbtn" data-align="center" title="По центру"><svg viewBox="0 0 18 12" width="16" height="11" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="3.5" y="5" width="11" height="2"/><rect x="2" y="10" width="14" height="2"/></svg></button><button class="alnbtn" data-align="right" title="Справа"><svg viewBox="0 0 18 12" width="16" height="11" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="7" y="5" width="11" height="2"/><rect x="4" y="10" width="14" height="2"/></svg></button><button class="alnbtn" data-align="justify" title="По ширине"><svg viewBox="0 0 18 12" width="16" height="11" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="0" y="5" width="18" height="2"/><rect x="0" y="10" width="18" height="2"/></svg></button>
         <button class="dd-btn" id="addTextBtn" data-dd="txtmenu">＋ Текст ▾</button>
       </div>
     </div>
@@ -604,6 +609,8 @@ function addTextBlock(slideEl,kind){
   wireEditable(b);
   return b;
 }
+function ensureGuide(slide,kind){if(!slide)return null;var g=null,ch=slide.children;for(var i=0;i<ch.length;i++){if(ch[i].classList&&ch[i].classList.contains('snap-guide')&&ch[i].classList.contains(kind)){g=ch[i];break;}}if(!g){g=document.createElement('div');g.className='snap-guide '+kind;g.setAttribute('contenteditable','false');slide.appendChild(g);}return g;}
+function hideGuides(slide){if(!slide)return;var gs=slide.querySelectorAll('.snap-guide');for(var i=0;i<gs.length;i++)gs[i].style.display='none';}
 function wireEditable(el){
   if(el.__w)return;el.__w=1;
   el.setAttribute('contenteditable','true');el.setAttribute('spellcheck','false');
@@ -634,8 +641,8 @@ function wireEditable(el){
     if(getComputedStyle(el).position!=='absolute'){var ol=el.offsetLeft,ot=el.offsetTop,w=el.offsetWidth;el.style.position='absolute';el.style.left=ol+'px';el.style.top=ot+'px';el.style.margin='0';el.style.width=w+'px';}
     sx=e.clientX;sy=e.clientY;bl=parseFloat(el.style.left)||0;bt=parseFloat(el.style.top)||0;dragging=true;try{h.setPointerCapture(e.pointerId);}catch(_){}
   });
-  h.addEventListener('pointermove',function(e){if(!dragging)return;var sc=curFitScale||1;el.style.left=(bl+(e.clientX-sx)/sc)+'px';el.style.top=(bt+(e.clientY-sy)/sc)+'px';e.preventDefault();});
-  function mup(){if(dragging){dragging=false;el.classList.remove('moving');updateFilm();pushHistory();}}
+  h.addEventListener('pointermove',function(e){if(!dragging)return;var sc=curFitScale||1;var nl=bl+(e.clientX-sx)/sc,nt=bt+(e.clientY-sy)/sc;var slide=el.parentNode,SW=540,SH=(slide&&slide.classList&&slide.classList.contains('f916'))?960:675;var bw=el.offsetWidth,bh=el.offsetHeight,T=8;var gx=ensureGuide(slide,'v'),gy=ensureGuide(slide,'h');if(Math.abs(nl+bw/2-SW/2)<T){nl=SW/2-bw/2;if(gx){gx.style.left=(SW/2)+'px';gx.style.display='block';}}else if(gx){gx.style.display='none';}if(Math.abs(nt+bh/2-SH/2)<T){nt=SH/2-bh/2;if(gy){gy.style.top=(SH/2)+'px';gy.style.display='block';}}else if(gy){gy.style.display='none';}el.style.left=nl+'px';el.style.top=nt+'px';e.preventDefault();});
+  function mup(){if(dragging){dragging=false;el.classList.remove('moving');hideGuides(el.parentNode);updateFilm();pushHistory();}}
   h.addEventListener('pointerup',mup);h.addEventListener('pointercancel',mup);
   /* pinch-scale font size (two fingers on the text) */
   var tp={},sd,bf;
@@ -777,6 +784,9 @@ document.querySelectorAll('.fmtbar button[data-cmd]').forEach(function(b){
   b.addEventListener('mousedown',function(e){e.preventDefault();});
   b.addEventListener('click',function(){document.execCommand(b.dataset.cmd,false,null);});
 });
+var lastEdit=null;
+document.addEventListener('focusin',function(e){var el=e.target;if(el&&el.getAttribute&&el.getAttribute('data-edit')!==null)lastEdit=el;});
+document.querySelectorAll('.alnbtn[data-align]').forEach(function(b){b.addEventListener('mousedown',function(e){e.preventDefault();});b.addEventListener('pointerdown',function(e){e.preventDefault();});b.addEventListener('click',function(){var el=lastEdit;if(!el){var a=document.activeElement;if(a&&a.getAttribute&&a.getAttribute('data-edit')!==null)el=a;}if(!el||!(typeof slides!=='undefined'&&slides[cur]&&slides[cur].el.contains(el)))return;el.style.textAlign=b.dataset.align;if(typeof updateFilm==='function')updateFilm();if(typeof pushHistory==='function')pushHistory();});});
 document.querySelectorAll('#txtmenu button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();if(cur<0||!slides[cur])return;var el=addTextBlock(slides[cur].el,b.dataset.k);el.focus();updateFilm();pushHistory();var m=document.getElementById('txtmenu');if(m)m.classList.remove('open');});});
 document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.classList.add('open');var mh=t.offsetHeight||160,mw=t.offsetWidth||200;var top=r.bottom+6;if(top+mh>window.innerHeight-8){top=Math.max(8,r.top-mh-6);}t.style.top=top+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-mw-8))+'px';}});});
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
@@ -887,7 +897,7 @@ function slideToPNG(el){
     clone.style.transform='none';clone.style.boxShadow='none';clone.style.borderRadius='0';clone.style.background='transparent';
     var fontcss=document.getElementById('fontcss').textContent;
     var slidecss=document.getElementById('slidecss').textContent;
-    var extra=".ph-empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.fr-del,.fr-resize,.fr-move,.mv-handle,.mv-del,.tx-resize{display:none!important}.frame{outline:none!important;box-shadow:none!important;background:transparent!important}.photo{background:transparent!important}.ph-img{display:none!important}.slide{background:transparent!important}[data-edit]{box-shadow:none!important}";
+    var extra=".ph-empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.fr-del,.fr-resize,.fr-move,.mv-handle,.mv-del,.tx-resize,.snap-guide{display:none!important}.frame{outline:none!important;box-shadow:none!important;background:transparent!important}.photo{background:transparent!important}.ph-img{display:none!important}.slide{background:transparent!important}[data-edit]{box-shadow:none!important}";
     var xml=new XMLSerializer().serializeToString(clone);
     var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><style>'+fontcss+slidecss+extra+'</style><foreignObject x="0" y="0" width="'+w+'" height="'+h+'"><div xmlns="http://www.w3.org/1999/xhtml">'+xml+'</div></foreignObject></svg>';
     var overlay=new Image();
