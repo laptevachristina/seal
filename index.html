@@ -249,6 +249,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     </div>
     <div class="grow"></div>
     <button class="hbtn primary" id="exp-all">Скачать</button>
+    <button class="hbtn primary" id="dlGrid" style="display:none">⬇ Скачать</button>
   </header>
 
   <div class="stage" id="stage">
@@ -303,10 +304,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 
   <div class="planner" id="planner" style="display:none">
     <div class="phone">
-      <div class="ptitle">Как будет выглядеть лента · тяни плитки местами</div>
-      <button class="hbtn primary" id="dlGrid" style="display:block;margin:0 auto 12px">⬇ Скачать сетку</button>
       <div class="grid12" id="grid12"></div>
-      <div class="pnote">Пустую плитку — нажми и добавь фото. Заполненную — тяни на другое место. ✕ — убрать.</div>
     </div>
   </div>
 </div>
@@ -600,7 +598,7 @@ function addTextBlock(slideEl,kind){
   var fs={h:'40px',sub:'22px',body:'20px'}[kind]||'20px';
   var txt={h:'Заголовок',sub:'Подзаголовок',body:'Текст'}[kind]||'Текст';
   var b=document.createElement('div');b.className=cls;b.setAttribute('data-edit','');b.setAttribute('data-ph',txt);
-  b.style.position='absolute';b.style.left='70px';b.style.top='300px';b.style.width='320px';b.style.fontSize=fs;b.style.zIndex='7';
+  var _n=slideEl.querySelectorAll('[data-added]').length;b.setAttribute('data-added','');b.style.position='absolute';b.style.left=(70+(_n%6)*18)+'px';b.style.top=(300+(_n%6)*56)+'px';b.style.width='320px';b.style.fontSize=fs;b.style.zIndex='7';
   b.textContent=txt;
   slideEl.appendChild(b);
   wireEditable(b);
@@ -611,6 +609,7 @@ function wireEditable(el){
   el.setAttribute('contenteditable','true');el.setAttribute('spellcheck','false');
   refreshPlaceholder(el);
   el.addEventListener('input',function(){refreshPlaceholder(el);pushSoon();});
+  el.addEventListener('paste',function(e){e.preventDefault();var t='';try{t=(e.clipboardData||window.clipboardData).getData('text/plain');}catch(_){}document.execCommand('insertText',false,t);});
   el.addEventListener('blur',function(){pushHistory();});
   if(el.classList.contains('tag-num'))return;   /* маленькие теги: без ручек и щипка */
   var h=el.querySelector(':scope>.mv-handle');
@@ -779,7 +778,7 @@ document.querySelectorAll('.fmtbar button[data-cmd]').forEach(function(b){
   b.addEventListener('click',function(){document.execCommand(b.dataset.cmd,false,null);});
 });
 document.querySelectorAll('#txtmenu button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();if(cur<0||!slides[cur])return;var el=addTextBlock(slides[cur].el,b.dataset.k);el.focus();updateFilm();pushHistory();var m=document.getElementById('txtmenu');if(m)m.classList.remove('open');});});
-document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.style.top=(r.bottom+6)+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-296))+'px';t.classList.add('open');}});});
+document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.classList.add('open');var mh=t.offsetHeight||160,mw=t.offsetWidth||200;var top=r.bottom+6;if(top+mh>window.innerHeight-8){top=Math.max(8,r.top-mh-6);}t.style.top=top+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-mw-8))+'px';}});});
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
 /* ---- render ---- */
@@ -1003,7 +1002,7 @@ function setMode(m){
   document.querySelectorAll('#mode button').forEach(function(x){x.classList.toggle('on',x.dataset.m===m);});
   var deck=m==='deck';
   ['.stage','.controls','.hint'].forEach(function(sel){var el=document.querySelector(sel);if(el)el.style.display=deck?'':'none';});
-  ['fmt','undoBtn','redoBtn','exp-all'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display=deck?'':'none';});
+  ['fmt','undoBtn','redoBtn','exp-all'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display=deck?'':'none';});var _dg=document.getElementById('dlGrid');if(_dg)_dg.style.display=deck?'none':'';
   var _af=document.getElementById('addFrameBtn');if(_af){if(!deck)_af.style.display='none';else updateCollageRow();}
   document.getElementById('planner').style.display=deck?'none':'flex';
   if(!deck)renderGrid();
