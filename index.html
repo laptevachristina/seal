@@ -161,6 +161,9 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .btn-grp{display:inline-flex;gap:6px}
 .ctl-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .swatches.dd{display:none;position:fixed;z-index:60;max-width:300px;background:var(--ui-panel);border:1px solid var(--ui-line);padding:10px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.txtmenu.dd{display:none;position:fixed;z-index:60;min-width:180px;background:var(--ui-panel);border:1px solid var(--ui-line);padding:8px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.txtmenu.dd.open{display:flex;flex-direction:column;gap:6px}
+.txtmenu button{border:0;background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:10px 12px;font:600 13px 'Inter',sans-serif;cursor:pointer;text-align:left}
 .swatches.dd.open{display:flex;flex-wrap:wrap;gap:8px}
 .hbtn:disabled{opacity:.32;cursor:default}
 
@@ -264,7 +267,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <div class="fmtbar">
         <button data-cmd="italic"><em>Курсив</em></button>
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
-        <button id="addTextBtn">＋ Текст</button>
+        <button class="dd-btn" id="addTextBtn" data-dd="txtmenu">＋ Текст ▾</button>
       </div>
     </div>
     <div>
@@ -301,15 +304,16 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="planner" id="planner" style="display:none">
     <div class="phone">
       <div class="ptitle">Как будет выглядеть лента · тяни плитки местами</div>
+      <button class="hbtn primary" id="dlGrid" style="display:block;margin:0 auto 12px">⬇ Скачать сетку</button>
       <div class="grid12" id="grid12"></div>
       <div class="pnote">Пустую плитку — нажми и добавь фото. Заполненную — тяни на другое место. ✕ — убрать.</div>
-      <button class="hbtn primary" id="dlGrid" style="display:block;margin:14px auto 0">⬇ Скачать сетку</button>
     </div>
   </div>
 </div>
 
 <div class="swatches dd" id="swatches"></div>
 <div class="swatches dd" id="textcolors"></div>
+<div class="txtmenu dd" id="txtmenu"><button data-k="h">Заголовок</button><button data-k="sub">Подзаголовок</button><button data-k="body">Обычный текст</button></div>
 <div class="modal" id="modal">
   <div class="mh">
     <button class="hbtn" id="modal-close">← Назад</button>
@@ -467,9 +471,9 @@ function tpl(type){
     '</div>'
   ,
   grid4:
-    '<div class="fixed-grid g4"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 4</div></div></div><div class="mid-band"><div class="h mid" data-edit data-ph="Заголовок">заголовок по центру</div></div>',
+    '<div class="fixed-grid g4"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 4</div></div></div>',
   strips3:
-    '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div><div class="mid-band"><div class="h mid" data-edit data-ph="Заголовок">заголовок по центру</div></div>'
+    '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>'
   };
   return T[type]||T.quote;
 }
@@ -591,10 +595,13 @@ function wirePanZoom(p){
 
 /* ---- editable text: placeholder + move + delete + pinch-scale ---- */
 function refreshPlaceholder(el){el.classList.toggle('ph-empty',(el.textContent||'').replace(/​/g,'').trim()==='');}
-function addTextBlock(slideEl){
-  var b=document.createElement('div');b.className='body';b.setAttribute('data-edit','');b.setAttribute('data-ph','Новый текст');
-  b.style.position='absolute';b.style.left='70px';b.style.top='300px';b.style.width='320px';b.style.fontSize='22px';b.style.zIndex='7';
-  b.textContent='Новый текст';
+function addTextBlock(slideEl,kind){
+  var cls={h:'h',sub:'sub',body:'body'}[kind]||'body';
+  var fs={h:'40px',sub:'22px',body:'20px'}[kind]||'20px';
+  var txt={h:'Заголовок',sub:'Подзаголовок',body:'Текст'}[kind]||'Текст';
+  var b=document.createElement('div');b.className=cls;b.setAttribute('data-edit','');b.setAttribute('data-ph',txt);
+  b.style.position='absolute';b.style.left='70px';b.style.top='300px';b.style.width='320px';b.style.fontSize=fs;b.style.zIndex='7';
+  b.textContent=txt;
   slideEl.appendChild(b);
   wireEditable(b);
   return b;
@@ -771,10 +778,7 @@ document.querySelectorAll('.fmtbar button[data-cmd]').forEach(function(b){
   b.addEventListener('mousedown',function(e){e.preventDefault();});
   b.addEventListener('click',function(){document.execCommand(b.dataset.cmd,false,null);});
 });
-document.getElementById('addTextBtn').addEventListener('click',function(){
-  if(cur<0||!slides[cur])return;
-  var b=addTextBlock(slides[cur].el);b.focus();updateFilm();pushHistory();
-});
+document.querySelectorAll('#txtmenu button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();if(cur<0||!slides[cur])return;var el=addTextBlock(slides[cur].el,b.dataset.k);el.focus();updateFilm();pushHistory();var m=document.getElementById('txtmenu');if(m)m.classList.remove('open');});});
 document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.style.top=(r.bottom+6)+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-296))+'px';t.classList.add('open');}});});
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
