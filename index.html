@@ -210,11 +210,15 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .modal .save-note{color:var(--ui-dim);font-size:13px;text-align:center;max-width:420px;margin:0 auto 4px}
 
 @media (max-width:520px){
+  header{gap:7px}
   header .logo{font-size:17px}
+  .seg{flex:0 0 auto;padding:2px}
+  .seg button{padding:6px 8px;font-size:11px}
+  .hbtn{padding:8px 11px;font-size:12px;flex:0 0 auto}
   .pad{padding:44px}
   .hint{display:none}
-  .stage{padding:8px;min-height:0}
-  .controls{height:29vh;max-height:29vh}
+  .stage{padding:4px;min-height:0}
+  .controls{height:26vh;max-height:26vh}
 }
 </style>
 
@@ -320,9 +324,11 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       var c=document.createElement('canvas');c.width=c.height=180;var x=c.getContext('2d');
       x.fillStyle='#31353A';x.fillRect(0,0,180,180);
       x.fillStyle='#F4EEE0';
-      x.textAlign='center';x.textBaseline='middle';
       x.font="700 52px 'Playfair Display', Georgia, serif";
-      x.fillText('SeaL_',90,96);
+      var t='SeaL_',m=x.measureText(t);
+      var abl=m.actualBoundingBoxLeft,abr=m.actualBoundingBoxRight,aba=m.actualBoundingBoxAscent,abd=m.actualBoundingBoxDescent;
+      if(abr==null||aba==null){x.textAlign='center';x.textBaseline='middle';x.fillText(t,90,90);}
+      else{x.textAlign='left';x.textBaseline='alphabetic';x.fillText(t,90-(abr-abl)/2,90+(aba-abd)/2);}
       var href=c.toDataURL('image/png');
       var l=document.querySelector('link[rel="apple-touch-icon"]');
       if(!l){l=document.createElement('link');l.rel='apple-touch-icon';document.head.appendChild(l);}
