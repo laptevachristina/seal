@@ -79,10 +79,10 @@ em{font-style:italic}
 .frame .ph-pick{display:flex}
 .ph-pick.ph-pick-wide{width:auto;height:30px;padding:0 12px;font-size:13px;font-weight:600;gap:5px}
 .mini .ph-pick{display:none!important}
-.mv-handle{position:absolute;top:-11px;left:-11px;width:23px;height:23px;border-radius:999px;background:var(--sage);display:none;cursor:move;z-index:8;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
+.mv-handle{position:absolute;top:-11px;right:-11px;width:23px;height:23px;border-radius:999px;background:var(--sage);display:none;cursor:move;z-index:8;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
 .mv-handle:before{content:'✥';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
 [data-edit]:hover>.mv-handle,[data-edit]:focus>.mv-handle,[data-edit].moving>.mv-handle{display:block}
-.mv-del{position:absolute;top:-11px;left:16px;width:23px;height:23px;border-radius:999px;background:#c0655c;display:none;cursor:pointer;z-index:9;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
+.mv-del{position:absolute;top:-11px;left:-11px;width:23px;height:23px;border-radius:999px;background:#c0655c;display:none;cursor:pointer;z-index:9;box-shadow:0 1px 5px rgba(0,0,0,.45);touch-action:none;user-select:none}
 .mv-del:before{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
 [data-edit]:hover>.mv-del,[data-edit]:focus>.mv-del,[data-edit].moving>.mv-del{display:block}
 .mini .mv-handle,.mini .mv-del{display:none!important}
@@ -109,7 +109,7 @@ em{font-style:italic}
 .frame.round{border-radius:999px}
 .frame.sel{outline:2px solid var(--sage);outline-offset:-1px}
 .frame.sel .fr-resize{display:block}
-.frame .fr-move{position:absolute;top:-11px;left:-11px;width:24px;height:24px;border-radius:999px;background:var(--sage);z-index:6;cursor:move;display:none;align-items:center;justify-content:center;touch-action:none;box-shadow:0 1px 5px rgba(0,0,0,.45)}
+.frame .fr-move{position:absolute;top:50%;right:-12px;margin-top:-12px;width:24px;height:24px;border-radius:999px;background:var(--sage);z-index:6;cursor:move;display:none;align-items:center;justify-content:center;touch-action:none;box-shadow:0 1px 5px rgba(0,0,0,.45)}
 .frame .fr-move:before{content:'\2725';color:#fff;font-size:13px}
 .frame.sel .fr-move{display:flex}
 .mini .fr-move{display:none!important}
@@ -253,7 +253,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     </div>
     <div class="grow"></div>
     <button class="hbtn primary" id="exp-all">Скачать</button>
-    <button class="hbtn primary" id="dlGrid" style="display:none">⬇ Скачать</button>
+    <button class="hbtn primary" id="dlGrid" style="display:none">Скачать</button>
   </header>
 
   <div class="stage" id="stage">
