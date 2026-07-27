@@ -1,5 +1,5 @@
 /* Офлайн-кэш: сеть-сначала (свежая версия при интернете, кэш — без интернета) */
-var CACHE='app-cache-v3';
+var CACHE='app-cache-v4';
 self.addEventListener('install',function(e){self.skipWaiting();});
 self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});
 self.addEventListener('fetch',function(e){
