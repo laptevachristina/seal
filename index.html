@@ -1,4 +1,4 @@
-<!--seal-github-v2|presets=milk,sage,graphite,film,rose|video=local-->
+<!--seal-github-v3|presets=milk,sage,graphite,film;intensity;compact-panel;hd-actions|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -188,6 +188,7 @@ body{background:var(--ui-bg);color:var(--ui-text);font-family:'Inter',system-ui,
 
 header{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));border-bottom:1px solid var(--ui-line);flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--ui-panel)}
 header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px}
+.hd-actions{display:inline-flex;gap:6px;flex-wrap:nowrap;flex-shrink:0}
 header .logo b{color:var(--ui-acc);font-weight:700}
 .grow{flex:1}
 .seg{display:inline-flex;background:var(--ui-panel-2);border-radius:9px;padding:3px}
@@ -237,17 +238,17 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .presets button:hover{border-color:var(--ui-acc)}
 
 /* photo editor: presets + sliders */
-.photofx.dd{display:none;position:fixed;z-index:60;min-width:252px;max-width:88vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:12px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:11px}
+.photofx.dd{display:none;position:fixed;z-index:60;min-width:220px;max-width:86vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:9px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:6px}
 .photofx.dd.open{display:flex}
-.fx-title{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ui-dim)}
-.fx-row{display:flex;gap:6px;flex-wrap:wrap}
-.fx-chip{flex:1 1 auto;min-width:60px;border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:9px;padding:8px 5px;font:600 11px 'Inter';cursor:pointer;text-align:center;white-space:nowrap}
+.fx-title{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-dim)}
+.fx-row{display:flex;gap:5px;flex-wrap:wrap}
+.fx-chip{flex:1 1 auto;min-width:54px;border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:6px 4px;font:600 10px 'Inter';cursor:pointer;text-align:center;white-space:nowrap}
 .fx-chip.on{border-color:var(--ui-acc);background:var(--ui-acc);color:#fff}
-.fx-slider label{font:600 11px 'Inter';color:var(--ui-dim);display:flex;justify-content:space-between;margin-bottom:2px}
-.fx-slider input[type=range]{width:100%;accent-color:var(--ui-acc)}
-.fx-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
-.fx-note{font:500 10.5px 'Inter';color:var(--ui-dim);line-height:1.4;max-width:150px}
-.fx-reset{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:7px 12px;font:600 11px 'Inter';cursor:pointer}
+.fx-slider label{font:600 10px 'Inter';color:var(--ui-dim);display:flex;justify-content:space-between;margin-bottom:1px}
+.fx-slider input[type=range]{width:100%;accent-color:var(--ui-acc);height:16px}
+.fx-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:1px}
+.fx-note{font:500 9.5px 'Inter';color:var(--ui-dim);line-height:1.35;max-width:138px}
+.fx-reset{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:7px;padding:5px 10px;font:600 10px 'Inter';cursor:pointer}
 
 .film{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .chip{flex:0 0 auto;position:relative;width:52px;height:66px;border-radius:8px;overflow:hidden;background:var(--ui-panel-2);border:2px solid transparent;cursor:pointer}
@@ -312,8 +313,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <button data-f="916">9:16</button>
     </div>
     <div class="grow"></div>
-    <button class="hbtn primary" id="exp-all">Скачать</button><button class="hbtn" id="exp-gif">✨ Видео</button>
-    <button class="hbtn primary" id="dlGrid" style="display:none">Скачать</button>
+    <div class="hd-actions">
+      <button class="hbtn primary" id="exp-all">Скачать</button><button class="hbtn" id="exp-gif">✨ Видео</button>
+      <button class="hbtn primary" id="dlGrid" style="display:none">Скачать</button>
+    </div>
   </header>
 
   <div class="stage" id="stage">
@@ -392,8 +395,8 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="fx-chip" data-fxpreset="sage">Шалфей</button>
     <button class="fx-chip" data-fxpreset="graphite">Графит</button>
     <button class="fx-chip" data-fxpreset="film">Плёнка</button>
-    <button class="fx-chip" data-fxpreset="rose">Розовый</button>
   </div>
+  <div class="fx-slider"><label>Сила пресета <span id="fxIntensityV">70</span>%</label><input type="range" id="fxIntensity" min="0" max="100" value="70"></div>
   <div class="fx-slider"><label>Яркость <span id="fxBrightV">0</span></label><input type="range" id="fxBright" min="-100" max="100" value="0"></div>
   <div class="fx-slider"><label>Контраст <span id="fxContrastV">0</span></label><input type="range" id="fxContrast" min="-100" max="100" value="0"></div>
   <div class="fx-slider"><label>Насыщенность <span id="fxSatV">0</span></label><input type="range" id="fxSat" min="-100" max="100" value="0"></div>
@@ -1430,6 +1433,8 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   document.querySelectorAll('#fxChips .fx-chip').forEach(function(c){
     c.addEventListener('click',function(e){e.stopPropagation();var el=targetPhoto();if(!el)return;el.dataset.fxpreset=c.dataset.fxpreset;applyPhotoFx(el);syncPhotoFxUI();updateFilm();pushSoon();});
   });
+  var intInp=document.getElementById('fxIntensity'),intSp=document.getElementById('fxIntensityV');
+  if(intInp){intInp.addEventListener('input',function(e){e.stopPropagation();var el=targetPhoto();var val=+intInp.value||0;if(intSp)intSp.textContent=val;if(!el)return;el.dataset.fxintensity=val;applyPhotoFx(el);updateFilm();pushSoon();});intInp.addEventListener('click',function(e){e.stopPropagation();});}
   [['fxBright','bright'],['fxContrast','contrast'],['fxSat','sat'],['fxWarm','warm']].forEach(function(pair){
     var inp=document.getElementById(pair[0]),sp=document.getElementById(pair[0]+'V');
     if(!inp)return;
@@ -1545,24 +1550,26 @@ function truncateVisibleText(root,maxChars,showCursor){
 }
 /* ---- photo editor: presets + sliders (CSS filter) ---- */
 var PHOTO_FX={
-  none:'',
-  milk:'brightness(1.05) contrast(0.93) saturate(0.88) sepia(0.10)',
-  sage:'saturate(0.78) brightness(1.02) sepia(0.18) hue-rotate(-14deg) contrast(0.96)',
-  graphite:'grayscale(1) contrast(1.12) brightness(1.02)',
-  film:'contrast(1.08) saturate(0.90) sepia(0.22) brightness(1.03)',
-  rose:'sepia(0.45) hue-rotate(310deg) saturate(1.25) brightness(1.04)'
+  none:{b:0,c:0,s:0,gray:0,sepia:0,hue:0},
+  milk:{b:0.05,c:-0.07,s:-0.12,sepia:0.10},
+  sage:{b:0.02,c:-0.04,s:-0.22,sepia:0.18,hue:-14},
+  graphite:{b:0.02,c:0.12,gray:1},
+  film:{b:0.03,c:0.08,s:-0.10,sepia:0.22}
 };
 function photoFilterOf(el){
   if(!el)return'none';
-  var pr=el.dataset.fxpreset;if(!pr||pr==='none')pr='none';
-  var f=PHOTO_FX[pr]||'';
+  var key=el.dataset.fxpreset||'none';
+  var p=PHOTO_FX[key]||PHOTO_FX.none;
+  var t=parseFloat(el.dataset.fxintensity);if(isNaN(t))t=70;t=t/100;
   var b=+el.dataset.fxbright||0,c=+el.dataset.fxcontrast||0,s=+el.dataset.fxsat||0,w=+el.dataset.fxwarm||0;
-  if(b)f+=' brightness('+(1+b/100).toFixed(3)+')';
-  if(c)f+=' contrast('+(1+c/100).toFixed(3)+')';
-  if(s)f+=' saturate('+(1+s/100).toFixed(3)+')';
+  var br=1+(p.b||0)*t+b/100,co=1+(p.c||0)*t+c/100,sa=1+(p.s||0)*t+s/100;
+  var f='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')';
+  if((p.gray||0)*t>0.001)f+=' grayscale('+((p.gray||0)*t).toFixed(3)+')';
+  if((p.sepia||0)*t>0.001)f+=' sepia('+((p.sepia||0)*t).toFixed(3)+')';
+  if((p.hue||0)*t)f+=' hue-rotate('+((p.hue||0)*t).toFixed(2)+'deg)';
   if(w>0)f+=' sepia('+(w*0.004).toFixed(3)+')';
   else if(w<0)f+=' hue-rotate('+(w*0.25).toFixed(2)+'deg) brightness('+(1+w*0.0015).toFixed(3)+')';
-  return f.trim()||'none';
+  return f;
 }
 function applyPhotoFx(el){
   if(!el)return;
@@ -1583,6 +1590,9 @@ function syncPhotoFxUI(){
   var el=targetPhoto();
   var p=(el&&(el.dataset.fxpreset||'none'))||'none';
   document.querySelectorAll('#fxChips .fx-chip').forEach(function(c){c.classList.toggle('on',c.dataset.fxpreset===p);});
+  var intensity=el?(el.dataset.fxintensity===undefined?70:(+el.dataset.fxintensity||0)):70;
+  var ii=document.getElementById('fxIntensity'),iv=document.getElementById('fxIntensityV');
+  if(ii)ii.value=intensity;if(iv)iv.textContent=intensity;
   var keys=[['Bright','bright'],['Contrast','contrast'],['Sat','sat'],['Warm','warm']];
   keys.forEach(function(pair){
     var val=el?(+el.dataset['fx'+pair[1]]||0):0;
