@@ -1,3 +1,4 @@
+<!--seal-github-v2|presets=milk,sage,graphite,film,rose|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -235,6 +236,19 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .presets button{flex:0 0 auto;border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-text);border-radius:9px;padding:7px 11px;font:600 12px 'Inter';cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
 .presets button:hover{border-color:var(--ui-acc)}
 
+/* photo editor: presets + sliders */
+.photofx.dd{display:none;position:fixed;z-index:60;min-width:252px;max-width:88vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:12px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:11px}
+.photofx.dd.open{display:flex}
+.fx-title{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ui-dim)}
+.fx-row{display:flex;gap:6px;flex-wrap:wrap}
+.fx-chip{flex:1 1 auto;min-width:60px;border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:9px;padding:8px 5px;font:600 11px 'Inter';cursor:pointer;text-align:center;white-space:nowrap}
+.fx-chip.on{border-color:var(--ui-acc);background:var(--ui-acc);color:#fff}
+.fx-slider label{font:600 11px 'Inter';color:var(--ui-dim);display:flex;justify-content:space-between;margin-bottom:2px}
+.fx-slider input[type=range]{width:100%;accent-color:var(--ui-acc)}
+.fx-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
+.fx-note{font:500 10.5px 'Inter';color:var(--ui-dim);line-height:1.4;max-width:150px}
+.fx-reset{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:7px 12px;font:600 11px 'Inter';cursor:pointer}
+
 .film{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .chip{flex:0 0 auto;position:relative;width:52px;height:66px;border-radius:8px;overflow:hidden;background:var(--ui-panel-2);border:2px solid transparent;cursor:pointer}
 .chip.f916{height:82px}
@@ -311,6 +325,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <span class="btn-grp"><button class="hbtn iconbtn" id="undoBtn" title="Отменить">↶</button><button class="hbtn iconbtn" id="redoBtn" title="Вернуть">↷</button></span>
       <button class="hbtn dd-btn" data-dd="swatches">🎨 Фон</button>
       <button class="hbtn dd-btn" data-dd="textcolors">🅰 Цвет</button>
+      <button class="hbtn dd-btn" data-dd="photofx">📷 Фото</button>
       <button class="hbtn" id="addFrameBtn" style="display:none">＋ Рамка</button><span class="btn-grp"><button class="hbtn" id="addStickerBtn">＋ Стикер</button><button class="hbtn" id="addVideoBtn">＋ Видео</button></span>
     </div>
     <div>
@@ -368,6 +383,25 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="row-title">Жёсткость вырезания фона</div>
   <input type="range" id="cutSliderInput" min="20" max="110" value="55" style="width:100%">
   <button class="hbtn primary" id="cutSliderDone" style="align-self:flex-end">Готово</button>
+</div>
+<div class="photofx dd" id="photofx">
+  <div class="fx-title">Пресеты фото</div>
+  <div class="fx-row" id="fxChips">
+    <button class="fx-chip" data-fxpreset="none">Оригинал</button>
+    <button class="fx-chip" data-fxpreset="milk">Молоко</button>
+    <button class="fx-chip" data-fxpreset="sage">Шалфей</button>
+    <button class="fx-chip" data-fxpreset="graphite">Графит</button>
+    <button class="fx-chip" data-fxpreset="film">Плёнка</button>
+    <button class="fx-chip" data-fxpreset="rose">Розовый</button>
+  </div>
+  <div class="fx-slider"><label>Яркость <span id="fxBrightV">0</span></label><input type="range" id="fxBright" min="-100" max="100" value="0"></div>
+  <div class="fx-slider"><label>Контраст <span id="fxContrastV">0</span></label><input type="range" id="fxContrast" min="-100" max="100" value="0"></div>
+  <div class="fx-slider"><label>Насыщенность <span id="fxSatV">0</span></label><input type="range" id="fxSat" min="-100" max="100" value="0"></div>
+  <div class="fx-slider"><label>Тепло / Холод <span id="fxWarmV">0</span></label><input type="range" id="fxWarm" min="-100" max="100" value="0"></div>
+  <div class="fx-bottom">
+    <div class="fx-note">Применится к выбранной рамке или к основному фото слайда. Сохраняется в слайд и в экспорт.</div>
+    <button class="fx-reset" id="fxReset">Сброс</button>
+  </div>
 </div>
 <div class="modal" id="modal">
   <div class="mh">
@@ -1074,14 +1108,14 @@ function setPhoto(slot,file){
     var img=slot.querySelector('.ph-img');
     img.src=r.result;img.style.display='block';
     slot.classList.add('has-img');
-    slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);
+    slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);applyPhotoFx(slot);
     updateFilm();pushHistory();
   };
   r.readAsDataURL(file);
 }
 function wirePhoto(p){
   if(p.__w)return;p.__w=1;
-  enhancePhoto(p);applyTransform(p);
+  enhancePhoto(p);applyTransform(p);applyPhotoFx(p);
   wirePanZoom(p);
   if(p.classList.contains('gcell'))wireGcellMove(p);
   p.addEventListener('dragover',function(e){e.preventDefault();p.classList.add('drag');});
@@ -1388,7 +1422,23 @@ var lastEdit=null;
 document.addEventListener('focusin',function(e){var el=e.target;if(el&&el.getAttribute&&el.getAttribute('data-edit')!==null)lastEdit=el;});
 document.querySelectorAll('#alnmenu button[data-align]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var el=lastEdit;if(!el){var a=document.activeElement;if(a&&a.getAttribute&&a.getAttribute('data-edit')!==null)el=a;}if(el&&typeof slides!=='undefined'&&slides[cur]&&slides[cur].el.contains(el)){el.style.textAlign=b.dataset.align;if(typeof updateFilm==='function')updateFilm();if(typeof pushHistory==='function')pushHistory();}var m=document.getElementById('alnmenu');if(m)m.classList.remove('open');});});
 document.querySelectorAll('#txtmenu button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();if(cur<0||!slides[cur])return;var el=addTextBlock(slides[cur].el,b.dataset.k);el.focus();updateFilm();pushHistory();var m=document.getElementById('txtmenu');if(m)m.classList.remove('open');});});
-document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.classList.add('open');var mh=t.offsetHeight||160,mw=t.offsetWidth||200;var top=r.bottom+6;if(top+mh>window.innerHeight-8){top=Math.max(8,r.top-mh-6);}t.style.top=top+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-mw-8))+'px';}});});
+document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var t=document.getElementById(b.dataset.dd);var wasOpen=t.classList.contains('open');document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});if(!wasOpen){var r=b.getBoundingClientRect();t.classList.add('open');var mh=t.offsetHeight||160,mw=t.offsetWidth||200;var top=r.bottom+6;if(top+mh>window.innerHeight-8){top=Math.max(8,r.top-mh-6);}t.style.top=top+'px';t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-mw-8))+'px';if(b.dataset.dd==='photofx')syncPhotoFxUI();}});});
+/* photo fx handlers */
+(function(){
+  var pushT2=null;
+  function pushSoon(){if(pushT2)return;pushT2=setTimeout(function(){pushT2=null;pushHistory();},420);}
+  document.querySelectorAll('#fxChips .fx-chip').forEach(function(c){
+    c.addEventListener('click',function(e){e.stopPropagation();var el=targetPhoto();if(!el)return;el.dataset.fxpreset=c.dataset.fxpreset;applyPhotoFx(el);syncPhotoFxUI();updateFilm();pushSoon();});
+  });
+  [['fxBright','bright'],['fxContrast','contrast'],['fxSat','sat'],['fxWarm','warm']].forEach(function(pair){
+    var inp=document.getElementById(pair[0]),sp=document.getElementById(pair[0]+'V');
+    if(!inp)return;
+    inp.addEventListener('input',function(e){e.stopPropagation();var el=targetPhoto();var val=+inp.value||0;if(sp)sp.textContent=val;if(!el)return;el.dataset['fx'+pair[1]]=val;applyPhotoFx(el);updateFilm();pushSoon();});
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+  });
+  var rs=document.getElementById('fxReset');
+  if(rs)rs.addEventListener('click',function(e){e.stopPropagation();var el=targetPhoto();if(!el)return;el.dataset.fxpreset='none';delete el.dataset.fxbright;delete el.dataset.fxcontrast;delete el.dataset.fxsat;delete el.dataset.fxwarm;applyPhotoFx(el);syncPhotoFxUI();updateFilm();pushHistory();});
+})();
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
 /* ---- render ---- */
@@ -1493,6 +1543,53 @@ function truncateVisibleText(root,maxChars,showCursor){
     cur.style.cssText='opacity:.75';root.appendChild(cur);
   }
 }
+/* ---- photo editor: presets + sliders (CSS filter) ---- */
+var PHOTO_FX={
+  none:'',
+  milk:'brightness(1.05) contrast(0.93) saturate(0.88) sepia(0.10)',
+  sage:'saturate(0.78) brightness(1.02) sepia(0.18) hue-rotate(-14deg) contrast(0.96)',
+  graphite:'grayscale(1) contrast(1.12) brightness(1.02)',
+  film:'contrast(1.08) saturate(0.90) sepia(0.22) brightness(1.03)',
+  rose:'sepia(0.45) hue-rotate(310deg) saturate(1.25) brightness(1.04)'
+};
+function photoFilterOf(el){
+  if(!el)return'none';
+  var pr=el.dataset.fxpreset;if(!pr||pr==='none')pr='none';
+  var f=PHOTO_FX[pr]||'';
+  var b=+el.dataset.fxbright||0,c=+el.dataset.fxcontrast||0,s=+el.dataset.fxsat||0,w=+el.dataset.fxwarm||0;
+  if(b)f+=' brightness('+(1+b/100).toFixed(3)+')';
+  if(c)f+=' contrast('+(1+c/100).toFixed(3)+')';
+  if(s)f+=' saturate('+(1+s/100).toFixed(3)+')';
+  if(w>0)f+=' sepia('+(w*0.004).toFixed(3)+')';
+  else if(w<0)f+=' hue-rotate('+(w*0.25).toFixed(2)+'deg) brightness('+(1+w*0.0015).toFixed(3)+')';
+  return f.trim()||'none';
+}
+function applyPhotoFx(el){
+  if(!el)return;
+  var img=el.querySelector('.ph-img');if(!img)return;
+  img.style.filter=photoFilterOf(el);
+}
+function targetPhoto(){
+  if(cur<0||!slides[cur])return null;
+  var sl=slides[cur].el;
+  var sel=sl.querySelector('.frame.sel');
+  if(sel)return sel;
+  var withImg=sl.querySelector('[data-photo].has-img');
+  if(withImg)return withImg;
+  var any=sl.querySelector('[data-photo], .frame');
+  return any||null;
+}
+function syncPhotoFxUI(){
+  var el=targetPhoto();
+  var p=(el&&(el.dataset.fxpreset||'none'))||'none';
+  document.querySelectorAll('#fxChips .fx-chip').forEach(function(c){c.classList.toggle('on',c.dataset.fxpreset===p);});
+  var keys=[['Bright','bright'],['Contrast','contrast'],['Sat','sat'],['Warm','warm']];
+  keys.forEach(function(pair){
+    var val=el?(+el.dataset['fx'+pair[1]]||0):0;
+    var inp=document.getElementById('fx'+pair[0]),sp=document.getElementById('fx'+pair[0]+'V');
+    if(inp)inp.value=val;if(sp)sp.textContent=val;
+  });
+}
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
     var w=540,h=el.classList.contains('f916')?960:675,ES=2;
@@ -1508,7 +1605,8 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       photos.push({img:im,x:r.left-sr.left,y:r.top-sr.top,W:r.width,H:r.height,
         rad:parseFloat(cs.borderTopLeftRadius)||0,
         s:parseFloat(p.dataset.scale)||1,tx:parseFloat(p.dataset.x)||0,ty:parseFloat(p.dataset.y)||0,
-        opacity:a?a.opacity:1,dy:a?a.dy:0});
+        opacity:a?a.opacity:1,dy:a?a.dy:0,
+        fx:photoFilterOf(p)});
     });
     var stickersBelow=[],stickersAbove=[];
     el.querySelectorAll('.sticker').forEach(function(st){
@@ -1520,7 +1618,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       (st.dataset.layer==='below'?stickersBelow:stickersAbove).push(rec);
     });
     var vidsBelow=[],vidsAbove=[];
-    el.querySelectorAll('.vidclip').forEach(function(vc){
+    if(!window._skipVids){el.querySelectorAll('.vidclip').forEach(function(vc){
       var v=vc.querySelector('video');if(!v)return;
       var override=videoFrameMap&&videoFrameMap.get(v);
       var src=override||v;
@@ -1528,7 +1626,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       if(!vw||!vh)return;
       var rec={src:src,vw:vw,vh:vh,x:vc.offsetLeft,y:vc.offsetTop,W:vc.offsetWidth,H:vc.offsetHeight};
       (vc.dataset.layer==='below'?vidsBelow:vidsAbove).push(rec);
-    });
+    });}
     var origTexts=el.querySelectorAll('[data-edit]');
     var bg=bgColorOf(el),clone=el.cloneNode(true);
     if(animState){
@@ -1557,7 +1655,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         var ctx=c.getContext('2d');ctx.scale(ES,ES);
         ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
         photos.forEach(function(p){
-          ctx.save();ctx.globalAlpha=p.opacity;roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();
+          ctx.save();ctx.globalAlpha=p.opacity;if(p.fx&&p.fx!=='none'){try{ctx.filter=p.fx;}catch(_){}}roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();
           var nw=p.img.naturalWidth,nh=p.img.naturalHeight,cover=Math.max(p.W/nw,p.H/nh);
           var dw=nw*cover*p.s,dh=nh*cover*p.s,cx=p.x+p.W/2+p.tx,cy=p.y+p.dy+p.H/2+p.ty;
           ctx.drawImage(p.img,cx-dw/2,cy-dh/2,dw,dh);ctx.restore();
@@ -1743,6 +1841,37 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
     }
     setTimeout(finish,Math.min(20000,video.duration*1000+3000)); /* жёсткая подстраховка — не дольше длины клипа+3с */
   });
+}
+var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
+/* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
+   отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
+   Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
+function serverCompose(el,format,btn){
+  var vc=el.querySelector('.vidclip');var v=vc&&vc.querySelector('video');
+  if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
+  var dur=Math.min(10,Math.max(0.5,v.duration));
+  var st=function(t){if(btn)btn.textContent=t;};
+  st('⏳ фон…');
+  window._skipVids=true;
+  return renderSlideCanvas(el,null,null).then(function(canvas){
+    window._skipVids=false;
+    if(!canvas)throw new Error('рендер фона не удался');
+    var ES=canvas.width/540;
+    var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),w=Math.round(vc.offsetWidth*ES),h=Math.round(vc.offsetHeight*ES);
+    var rad=Math.round((parseFloat(getComputedStyle(vc.querySelector('video')).borderTopLeftRadius)||28)*ES);
+    return new Promise(function(res){canvas.toBlob(function(b){res(b);},'image/png');}).then(function(bgBlob){
+      st('⏳ сервер…');
+      return fetch(v.src).then(function(r){return r.blob();}).then(function(vblob){
+        var cutColor=vc.dataset.cutColor||'';
+        var cutThresh=vc.dataset.cutThresh||'';
+        var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh});
+        var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
+        st('⏳ сборка…');
+        return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
+      }).then(function(r){if(!r.ok)throw new Error('сервер '+r.status);return r.blob();})
+        .then(function(b){return {blob:b,mime:'video/mp4'};});
+    });
+  })['catch'](function(err){window._skipVids=false;throw err;});
 }
 var gifBtn=document.getElementById('exp-gif');
 var videoExportBusy=false;
