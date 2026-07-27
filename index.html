@@ -1,4 +1,4 @@
-<!--seal-github-v4|presets-panel-compact-2|video=local-->
+<!--seal-github-v5|video-v2:trim+timeline+freeze|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -249,6 +249,16 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .fx-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:1px}
 .fx-note{font:500 8.5px 'Inter';color:var(--ui-dim);line-height:1.3;max-width:128px}
 .fx-reset{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:6px;padding:4px 9px;font:600 9px 'Inter';cursor:pointer}
+/* video clip editor: trim + timeline window */
+.vidclipfx.dd{display:none;position:fixed;z-index:60;min-width:230px;max-width:88vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:7px;border-radius:11px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:5px}
+.vidclipfx.dd.open{display:flex}
+.cx-hint{font:500 8.5px 'Inter';color:var(--ui-dim);line-height:1.3}
+/* video clip editor panel */
+.vidclipfx.dd{display:none;position:fixed;z-index:60;min-width:215px;max-width:86vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:7px;border-radius:11px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:5px}
+.vidclipfx.dd.open{display:flex}
+.cx-dur{font:600 8.5px 'Inter';color:var(--ui-dim);text-align:center;letter-spacing:.05em}
+.cx-chip{flex:1 1 auto;min-width:54px;border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:7px;padding:5px 3px;font:600 9px 'Inter';cursor:pointer;text-align:center;white-space:nowrap}
+.cx-chip.on{border-color:var(--ui-acc);background:var(--ui-acc);color:#fff}
 
 .film{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .chip{flex:0 0 auto;position:relative;width:52px;height:66px;border-radius:8px;overflow:hidden;background:var(--ui-panel-2);border:2px solid transparent;cursor:pointer}
@@ -404,6 +414,21 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-bottom">
     <div class="fx-note">Применится к выбранной рамке или к основному фото слайда. Сохраняется в слайд и в экспорт.</div>
     <button class="fx-reset" id="fxReset">Сброс</button>
+  </div>
+</div>
+<div class="vidclipfx dd" id="vidclipfx">
+  <div class="fx-title">Видео-клип <span class="cx-hint" id="cxDur"></span></div>
+  <div class="fx-slider"><label>Обрезка: старт <span id="cxTrimSV">0.0</span>с</label><input type="range" id="cxTrimS" min="0" max="100" step="0.1" value="0"></div>
+  <div class="fx-slider"><label>Обрезка: конец <span id="cxTrimEV">0.0</span>с</label><input type="range" id="cxTrimE" min="0" max="100" step="0.1" value="100"></div>
+  <div class="fx-slider"><label>Оживает на <span id="cxPlaySV">0.0</span>с</label><input type="range" id="cxPlayS" min="0" max="60" step="0.1" value="0"></div>
+  <div class="fx-slider"><label>Замирает на <span id="cxPlayEV">0.0</span>с</label><input type="range" id="cxPlayE" min="0" max="60" step="0.1" value="0"></div>
+  <div class="fx-slider"><label>Длина слайда <span id="cxSlideLenV">—</span>с</label><input type="range" id="cxSlideLen" min="0.5" max="30" step="0.1" value="3"></div>
+  <div class="fx-row">
+    <button class="fx-chip" id="cxLayer">Слой: выше текста</button>
+  </div>
+  <div class="fx-bottom">
+    <div class="cx-hint">До/после окна — стоп-кадр. Эффект виден в экспорте «✨ Видео».</div>
+    <button class="fx-reset" id="cxReset">Сброс</button>
   </div>
 </div>
 <div class="modal" id="modal">
@@ -1039,6 +1064,7 @@ function hydrateVideoClip(vc){
 function selectVideoClip(vc){
   document.querySelectorAll('.vidclip.sel').forEach(function(s){if(s!==vc)s.classList.remove('sel');});
   vc.classList.add('sel');
+  if(typeof openVidClipFx==='function')openVidClipFx(vc);
 }
 function wireVideoClip(vc){
   if(vc.__w)return;vc.__w=1;
@@ -1444,6 +1470,27 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   var rs=document.getElementById('fxReset');
   if(rs)rs.addEventListener('click',function(e){e.stopPropagation();var el=targetPhoto();if(!el)return;el.dataset.fxpreset='none';delete el.dataset.fxbright;delete el.dataset.fxcontrast;delete el.dataset.fxsat;delete el.dataset.fxwarm;applyPhotoFx(el);syncPhotoFxUI();updateFilm();pushHistory();});
 })();
+/* video clip fx handlers */
+(function(){
+  var pt=null;
+  function pushSoon(){if(pt)return;pt=setTimeout(function(){pt=null;pushHistory();},420);}
+  function f1(x){return(Math.round(x*10)/10).toFixed(1);}
+  function bind(id,vid,applier){
+    var inp=document.getElementById(id),sp=document.getElementById(vid);if(!inp)return;
+    inp.addEventListener('input',function(e){e.stopPropagation();var val=+inp.value||0;if(sp)sp.textContent=f1(val);var vc=targetVidClip();if(!vc)return;applier(vc,val);updateFilm();pushSoon();});
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+  }
+  bind('cxTrimS','cxTrimSV',function(vc,val){vc.dataset.trimStart=val;});
+  bind('cxTrimE','cxTrimEV',function(vc,val){vc.dataset.trimEnd=val;});
+  bind('cxPlayS','cxPlaySV',function(vc,val){vc.dataset.playStart=Math.round(val*1000);});
+  bind('cxPlayE','cxPlayEV',function(vc,val){vc.dataset.playEnd=Math.round(val*1000);});
+  var slInp=document.getElementById('cxSlideLen'),slSp=document.getElementById('cxSlideLenV');
+  if(slInp){slInp.addEventListener('input',function(e){e.stopPropagation();var val=+slInp.value||0;if(slSp)slSp.textContent=f1(val);if(!slides[cur])return;if(val>=0.5)slides[cur].el.dataset.slideLen=val;else delete slides[cur].el.dataset.slideLen;updateFilm();pushSoon();});slInp.addEventListener('click',function(e){e.stopPropagation();});}
+  var lb=document.getElementById('cxLayer');
+  if(lb)lb.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;var below=vc.classList.contains('layer-below');if(below){vc.classList.remove('layer-below');vc.dataset.layer='above';}else{vc.classList.add('layer-below');vc.dataset.layer='below';}if(typeof updateLayerDOM==='function')updateLayerDOM(vc);syncVidClipFxUI();updateFilm();pushHistory();});
+  var cr=document.getElementById('cxReset');
+  if(cr)cr.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;delete vc.dataset.trimStart;delete vc.dataset.trimEnd;delete vc.dataset.playStart;delete vc.dataset.playEnd;if(slides[cur])delete slides[cur].el.dataset.slideLen;syncVidClipFxUI();updateFilm();pushHistory();});
+})();
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
 /* ---- render ---- */
@@ -1511,7 +1558,7 @@ function _updateFilmNow(){
 
 window.addEventListener('resize',fit);
 if(window.visualViewport){window.visualViewport.addEventListener('resize',fit);}
-stage.addEventListener('pointerdown',function(e){if(!e.target.closest('.frame'))document.querySelectorAll('.frame.sel').forEach(function(f){f.classList.remove('sel');});if(!e.target.closest('.sticker'))document.querySelectorAll('.sticker.sel').forEach(function(s){s.classList.remove('sel');});if(!e.target.closest('.vidclip'))document.querySelectorAll('.vidclip.sel').forEach(function(v){v.classList.remove('sel');});},true);
+stage.addEventListener('pointerdown',function(e){if(!e.target.closest('.frame'))document.querySelectorAll('.frame.sel').forEach(function(f){f.classList.remove('sel');});if(!e.target.closest('.sticker'))document.querySelectorAll('.sticker.sel').forEach(function(s){s.classList.remove('sel');});if(!e.target.closest('.vidclip')){document.querySelectorAll('.vidclip.sel').forEach(function(v){v.classList.remove('sel');});if(typeof closeVidClipFx==='function')closeVidClipFx();}},true);
 
 /* ---- format toggle ---- */
 document.getElementById('fmt').addEventListener('click',function(e){
@@ -1600,6 +1647,61 @@ function syncPhotoFxUI(){
     if(inp)inp.value=val;if(sp)sp.textContent=val;
   });
 }
+/* ---- video clip editor: trim + timeline window ---- */
+function targetVidClip(){
+  if(cur<0||!slides[cur])return null;
+  return slides[cur].el.querySelector('.vidclip.sel')||null;
+}
+function vidClipDuration(vc){
+  if(!vc)return 0;
+  var v=vc.querySelector('video');
+  return (v&&v.duration&&isFinite(v.duration))?v.duration:0;
+}
+function applyVidClipFx(vc){if(vc)updateFilm();}
+function fmt1(x){return (Math.round(x*10)/10).toFixed(1);}
+function syncVidClipFxUI(){
+  var vc=targetVidClip();
+  var dur=vidClipDuration(vc);
+  var dEl=document.getElementById('cxDur');if(dEl)dEl.textContent=dur?('('+fmt1(dur)+'с)'):'';
+  var mx=Math.max(0.5,Math.round(dur*10)/10);
+  function setRange(id,maxV){
+    var inp=document.getElementById(id);if(!inp)return;
+    if(parseFloat(inp.max)!==maxV||parseFloat(inp.step)!==0.1){inp.max=maxV;}
+  }
+  setRange('cxTrimS',mx);setRange('cxTrimE',mx);
+  setRange('cxPlayS',Math.max(mx,60));setRange('cxPlayE',Math.max(mx,60));
+  var trimS=0,trimE=dur,playS=0,playE=dur*1000;
+  if(vc){
+    var ts=parseFloat(vc.dataset.trimStart),te=parseFloat(vc.dataset.trimEnd);
+    var ps=parseFloat(vc.dataset.playStart),pe=parseFloat(vc.dataset.playEnd);
+    if(!isNaN(ts))trimS=ts; if(!isNaN(te))trimE=te;
+    if(!isNaN(ps))playS=ps; playE=!isNaN(pe)?pe:playS+(trimE-trimS)*1000;
+  }
+  function put(id,vid,val){var inp=document.getElementById(id),sp=document.getElementById(vid);if(inp)inp.value=val;if(sp)sp.textContent=fmt1(val);}
+  put('cxTrimS','cxTrimSV',trimS);
+  put('cxTrimE','cxTrimEV',trimE);
+  put('cxPlayS','cxPlaySV',playS/1000);
+  put('cxPlayE','cxPlayEV',playE/1000);
+  var sl=slides[cur]?parseFloat(slides[cur].el.dataset.slideLen):NaN;
+  var slInp=document.getElementById('cxSlideLen'),slSp=document.getElementById('cxSlideLenV');
+  if(slInp)slInp.value=isNaN(sl)?3:sl;if(slSp)slSp.textContent=isNaN(sl)?'авто':fmt1(sl);
+  var lb=document.getElementById('cxLayer');
+  if(lb)lb.textContent=vc&&vc.dataset.layer==='below'?'Слой: под текстом':'Слой: выше текста';
+}
+function openVidClipFx(vc){
+  var t=document.getElementById('vidclipfx');if(!t||!vc)return;
+  if(t.classList.contains('open')){syncVidClipFxUI();return;}
+  document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});
+  var r=vc.getBoundingClientRect();
+  t.classList.add('open');
+  var mh=t.offsetHeight||180,mw=t.offsetWidth||230;
+  var top=r.bottom+6;
+  if(top+mh>window.innerHeight-8)top=Math.max(8,r.top-mh-6);
+  t.style.top=top+'px';
+  t.style.left=Math.max(8,Math.min(r.left,window.innerWidth-mw-8))+'px';
+  syncVidClipFxUI();
+}
+function closeVidClipFx(){var t=document.getElementById('vidclipfx');if(t)t.classList.remove('open');}
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
     var w=540,h=el.classList.contains('f916')?960:675,ES=2;
@@ -1910,9 +2012,15 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     /* если на слайде есть вставленный видео-клип — видео должно успеть проиграться целиком внутри записи */
     var vidClipMs=0;
     el.querySelectorAll('.vidclip video').forEach(function(v){
-      if(v.duration&&isFinite(v.duration))vidClipMs=Math.max(vidClipMs,v.duration*1000);
+      var vc=v.closest('.vidclip');
+      var pe=parseFloat(vc&&vc.dataset.playEnd);
+      var endMs=(v.duration&&isFinite(v.duration))?v.duration*1000:0;
+      if(!isNaN(pe))endMs=pe;
+      if(endMs)vidClipMs=Math.max(vidClipMs,endMs);
     });
     if(vidClipMs>fullMs)fullMs=vidClipMs;
+    var slLen=parseFloat(el.dataset.slideLen);
+    if(!isNaN(slLen))fullMs=Math.max(fullMs,slLen*1000);
     var w=540,h=el.classList.contains('f916')?960:675,ES=2;
     var mime=pickVideoMime();
     var capFn=null;
@@ -1970,8 +2078,22 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         var videoFrameMap=new Map();
         prepared.forEach(function(p){
           if(!p.res.frames.length)return;
-          var idx=Math.floor((elapsed/1000)*p.res.fps)%p.res.frames.length;
-          var bmp=p.res.frames[idx];
+          var frames=p.res.frames,fps=p.res.fps,vc=p.v.closest('.vidclip');
+          var dur=p.v.duration||frames.length/fps;
+          var trimS=parseFloat(vc&&vc.dataset.trimStart),trimE=parseFloat(vc&&vc.dataset.trimEnd);
+          if(isNaN(trimS))trimS=0; if(isNaN(trimE)||trimE>dur)trimE=dur;
+          var playS=parseFloat(vc&&vc.dataset.playStart),playE=parseFloat(vc&&vc.dataset.playEnd);
+          if(isNaN(playS))playS=0; if(isNaN(playE))playE=playS+(trimE-trimS)*1000;
+          var v2=vc&&(vc.dataset.trimStart||vc.dataset.trimEnd||vc.dataset.playStart||vc.dataset.playEnd);
+          var idx;
+          if(!v2){idx=Math.floor((elapsed/1000)*fps)%frames.length;}
+          else{
+            var t0i=Math.round(trimS*fps),t1i=Math.min(frames.length-1,Math.round(trimE*fps));
+            if(elapsed<playS){idx=t0i;}
+            else if(elapsed>playE){idx=t1i;}
+            else{var prog=(elapsed-playS)/Math.max(1,(playE-playS));idx=t0i+Math.round(prog*Math.max(0,(t1i-t0i)));}
+          }
+          var bmp=frames[idx];
           if(bmp)videoFrameMap.set(p.v,bmp);
         });
         withTimeout(renderSlideCanvas(el,anim,videoFrameMap),1200).then(function(canvas){
