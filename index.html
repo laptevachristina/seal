@@ -1,4 +1,4 @@
-<!--seal-github-v9|series-17-layout|video=local-->
+<!--seal-github-v7|audio+series-grid|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -113,13 +113,11 @@ em{font-style:italic}
 .duo-cap{pointer-events:auto}
 .duo-cap .h{line-height:1.1}
 .duo-foot{margin-top:auto;padding-top:14px;text-align:center}
-/* series: вся серия одним слайдом (masonry 4 колонки) + текст справа */
-.series-wrap{position:absolute;inset:0;display:flex;gap:14px;padding:28px}
-.series-grid{flex:1 1 auto;column-count:4;column-gap:8px;align-content:flex-start}
-.series-grid .photo{width:100%;break-inside:avoid;margin-bottom:8px;aspect-ratio:1/1;display:block;border-radius:8px;background:var(--slot)}
-.series-side{flex:0 0 25%;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;gap:6px}
-.series-side [data-edit]{pointer-events:auto}
-.series-side .h{font-size:26px;line-height:1.08}
+/* series: вся серия одним слайдом (сетка 4 колонки) */
+.series-grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px;padding:26px;align-content:start}
+.series-grid .photo{width:100%;height:100%;aspect-ratio:1/1;border-radius:8px;background:var(--slot);position:relative;overflow:hidden}
+.series-grid .tag-num{top:auto;bottom:5px;left:0;right:0;text-align:center;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.series-grid .ph-label{font-size:10px}
 .fixed-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.s3{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
@@ -587,14 +585,7 @@ function tpl(type){
     var nums=[];for(var i=1;i<=17;i++)nums.push(i);
     for(var j=nums.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=nums[j];nums[j]=nums[k];nums[k]=t;}
     var cells=nums.map(function(n,i){return '<div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div><span class="tag-num">'+(n<10?'0':'')+n+'</span></div>';}).join('');
-    return '<div class="series-wrap">'+
-      '<div class="series-grid">'+cells+'</div>'+
-      '<div class="series-side">'+
-        '<div class="kicker" data-edit data-ph="надзаголовок">серия</div>'+
-        '<div class="h" data-edit data-ph="Заголовок" style="margin:4px 0">вся серия одним слайдом</div>'+
-        '<div class="sub" data-edit data-ph="Подпись" style="font-size:13px">текст справа — можно удалить</div>'+
-      '</div>'+
-    '</div>';
+    return '<div class="series-grid">'+cells+'</div>';
   })(),
   cover:
     '<div class="photo cover-photo" data-photo><div class="ph-label">нажми и добавь фото на весь слайд</div></div>'+
@@ -2302,11 +2293,25 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var recCanvas=document.createElement('canvas');recCanvas.width=w*ES;recCanvas.height=h*ES;
     var rctx=recCanvas.getContext('2d');
     var stream=recCanvas[capFn](VIDEO_FPS);
+    /* audio: добавить звуковую дорожку от видео-клипов (Web Audio → MediaStreamDestination) */
+    var _actx=null;
+    try{
+      var AC=window.AudioContext||window.webkitAudioContext;
+      if(AC&&clipEls.length){
+        _actx=new AC();
+        if(_actx.resume)_actx.resume();
+        var adest=_actx.createMediaStreamDestination();
+        clipEls.forEach(function(v){
+          try{if(!v.__aSrc)v.__aSrc=_actx.createMediaElementSource(v);v.__aSrc.connect(adest);}catch(_){}
+        });
+        adest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
+      }
+    }catch(e){}
     var chunks=[];
     var recorder=new MediaRecorder(stream,{mimeType:mime});
     recorder.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
     var stopped=new Promise(function(resolve,reject){
-      recorder.onstop=function(){resolve(new Blob(chunks,{type:mime}));};
+      recorder.onstop=function(){clipEls.forEach(function(v){v.muted=true;});try{if(_actx)_actx.close();}catch(_){}resolve(new Blob(chunks,{type:mime}));};
       recorder.onerror=function(e){reject(e.error||new Error('recorder error'));};
     });
     /* живая перемотка/декод видео 24 раза в секунду ненадёжна на телефоне (декодер не успевает, кадр
@@ -2329,6 +2334,8 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         showProgress(avg*prepWeight);
       }).then(function(res){return {v:v,res:res};});
     })).then(function(prepared){
+      /* снять muted на время записи — иначе аудио-дорожка пустая (graph получает тишину) */
+      var _wasMuted=clipEls.map(function(v){v.muted=false;return true;});
       recorder.start();
       var t0=performance.now(),frameMs=1000/VIDEO_FPS;
       /* защита от зависания: если рендер ОДНОГО кадра почему-то не отвечает — не ждём его вечно
