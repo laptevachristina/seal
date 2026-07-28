@@ -1,4 +1,4 @@
-<!--seal-github-v10|header-nowrap|video=local-->
+<!--seal-github-v11|sticker-preview-moves|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2066,13 +2066,24 @@ function previewReset(){
   if(_previewRAF){cancelAnimationFrame(_previewRAF);_previewRAF=0;}
   var el=_previewEl||(cur>=0&&slides[cur]&&slides[cur].el);if(!el)return;
   el.querySelectorAll('[data-edit], .frame, [data-photo], .sticker').forEach(function(e){e.style.opacity='';});
+  el.querySelectorAll('.sticker').forEach(function(st){var r=parseFloat(st.dataset.rot);st.style.transform=r?'rotate('+st.dataset.rot+'deg)':'';});
   el.querySelectorAll('.vidclip').forEach(function(vc){var v=vc.querySelector('video');if(v){try{v.pause();}catch(_){}try{v.currentTime=0;}catch(_){}}});
   _previewEl=null;
 }
 function previewApply(el,elapsed,fullMs){
   var items=getAnimItems(el);
   var anim=animStateAt(items,elapsed,hasSpinningSticker(items),buildTypeSchedule(items),fullMs);
-  items.forEach(function(it){var a=anim.get(it);if(a&&a.opacity<1)it.style.opacity=String(a.opacity);else it.style.opacity='';});
+  items.forEach(function(it){
+    var a=anim.get(it);
+    if(a&&a.opacity<1)it.style.opacity=String(a.opacity);else it.style.opacity='';
+    if(it.classList&&it.classList.contains('sticker')&&a){
+      var rot=(parseFloat(it.dataset.rot)||0)+(a.rotOffset?a.rotOffset*180/Math.PI:0);
+      var t='rotate('+rot+'deg)';
+      if(a.scale&&a.scale!==1)t+=' scale('+a.scale+')';
+      if(a.dy)t+=' translateY('+a.dy+'px)';
+      it.style.transform=t;
+    }
+  });
   el.querySelectorAll('.vidclip').forEach(function(vc){
     var v=vc.querySelector('video');if(!v)return;
     var dur=(v.duration&&isFinite(v.duration))?v.duration:0;
