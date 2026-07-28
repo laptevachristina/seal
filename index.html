@@ -1,4 +1,4 @@
-<!--seal-github-v6|stickerfx:in/out/loop+scale|video=local-->
+<!--seal-github-v7|preview-timeline;font-A+/-;filter-after-clip|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -257,6 +257,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .stickerfx.dd{display:none;position:fixed;z-index:60;min-width:236px;max-width:88vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:7px;border-radius:11px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:5px}
 .stickerfx.dd.open{display:flex}
 .fx-chip.tgl.on{background:var(--ui-acc);border-color:var(--ui-acc);color:#fff}
+/* preview timeline bar */
+.tl-bar{display:flex;align-items:center;gap:10px;padding:2px 0}
+.tl-bar input[type=range]{flex:1 1 auto;accent-color:var(--ui-acc);height:16px}
+.tl-time{font:600 10px 'Inter';color:var(--ui-dim);white-space:nowrap;min-width:78px;text-align:right}
 /* video clip editor panel */
 .vidclipfx.dd{display:none;position:fixed;z-index:60;min-width:215px;max-width:86vw;background:var(--ui-panel);border:1px solid var(--ui-line);padding:7px;border-radius:11px;box-shadow:0 12px 30px rgba(0,0,0,.5);flex-direction:column;gap:5px}
 .vidclipfx.dd.open{display:flex}
@@ -345,11 +349,17 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <button class="hbtn dd-btn" data-dd="photofx">📷 Фото</button>
       <button class="hbtn" id="addFrameBtn" style="display:none">＋ Рамка</button><span class="btn-grp"><button class="hbtn" id="addStickerBtn">＋ Стикер</button><button class="hbtn" id="addVideoBtn">＋ Видео</button></span>
     </div>
+    <div class="tl-bar" id="tlBar" style="display:none">
+      <button class="hbtn iconbtn" id="tlPlay">▶</button>
+      <input type="range" id="tlScrubber" min="0" max="1000" value="0" step="10">
+      <span class="tl-time" id="tlTime">0.0с / 0.0с</span>
+    </div>
     <div>
       <div class="row-title">Выделенный текст</div>
       <div class="fmtbar">
         <button data-cmd="italic"><em>Курсив</em></button>
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
+        <span class="btn-grp"><button class="alnbtn" id="fontMinusBtn" title="Меньше">A−</button><button class="alnbtn" id="fontPlusBtn" title="Больше">A+</button></span>
         <button class="dd-btn alnbtn" id="alignBtn" data-dd="alnmenu" title="Выравнивание"><svg viewBox="0 0 18 12" width="15" height="10" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="3.5" y="5" width="11" height="2"/><rect x="2" y="10" width="14" height="2"/></svg> ▾</button>
         <button class="dd-btn" id="addTextBtn" data-dd="txtmenu">＋ Текст ▾</button>
       </div>
@@ -1555,6 +1565,19 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   var sr=document.getElementById('stReset');
   if(sr)sr.addEventListener('click',function(e){e.stopPropagation();var st=targetSticker();if(!st)return;delete st.dataset.stin;delete st.dataset.stout;delete st.dataset.stpulse;delete st.dataset.stfloat;delete st.dataset.spin;delete st.dataset.stindur;delete st.dataset.stloops;syncStickerFxUI();updateFilm();pushHistory();});
 })();
+/* preview timeline + font size handlers */
+(function(){
+  var pb=document.getElementById('tlPlay');
+  if(pb)pb.addEventListener('click',function(e){e.stopPropagation();if(_previewRAF){previewStop();previewReset();}else previewPlay();});
+  var sc=document.getElementById('tlScrubber');
+  if(sc){sc.addEventListener('input',function(e){e.stopPropagation();previewScrub(sc.value);});sc.addEventListener('click',function(e){e.stopPropagation();});}
+  /* font size +/- */
+  function activeEdit(){var el=lastEdit;if(!el){var a=document.activeElement;if(a&&a.getAttribute&&a.getAttribute('data-edit')!==null)el=a;}if(el&&slides[cur]&&slides[cur].el.contains(el))return el;return null;}
+  function stepFont(d){return function(e){e.stopPropagation();var el=activeEdit();if(!el)return;var cur_=parseFloat(el.dataset.fontSize)||(el.style.fontSize?parseFloat(el.style.fontSize):0);if(!cur_){var cs=getComputedStyle(el);cur_=parseFloat(cs.fontSize)||19;}var n=Math.max(8,Math.min(160,Math.round(cur_+d)));el.style.fontSize=n+'px';el.dataset.fontSize=n;updateFilm();pushHistory();};}
+  var fm=document.getElementById('fontMinusBtn'),fp=document.getElementById('fontPlusBtn');
+  if(fm)fm.addEventListener('click',stepFont(-2));
+  if(fp)fp.addEventListener('click',stepFont(2));
+})();
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
 /* ---- render ---- */
@@ -1574,6 +1597,8 @@ function render(){
   if(cur>=0&&slides[cur]){host.appendChild(slides[cur].el);fit();}
   buildSwatches();updateFilm();updateSizeRow();updateCollageRow();updateUndoUI();
   document.getElementById('cnt').textContent=slides.length?('· '+slides.length):'';
+  if(typeof previewReset==='function')previewReset();
+  if(typeof previewRefreshUI==='function')previewRefreshUI();
 }
 function updateCollageRow(){
   var s=slides[cur],isC=s&&s.el.querySelector('[data-canvas]');
@@ -1599,6 +1624,7 @@ sizeSlider.addEventListener('input',function(){
 var _filmTimer=null;
 function updateFilm(){if(_filmTimer)clearTimeout(_filmTimer);_filmTimer=setTimeout(_updateFilmNow,140);}
 function _updateFilmNow(){
+  if(typeof previewRefreshUI==='function')previewRefreshUI();
   var film=document.getElementById('film');var _sl=film.scrollLeft;film.innerHTML='';
   slides.forEach(function(s,i){
     var chip=document.createElement('div');
@@ -1622,7 +1648,7 @@ function _updateFilmNow(){
 
 window.addEventListener('resize',fit);
 if(window.visualViewport){window.visualViewport.addEventListener('resize',fit);}
-stage.addEventListener('pointerdown',function(e){if(!e.target.closest('.frame'))document.querySelectorAll('.frame.sel').forEach(function(f){f.classList.remove('sel');});if(!e.target.closest('.sticker')){document.querySelectorAll('.sticker.sel').forEach(function(s){s.classList.remove('sel');});if(typeof closeStickerFx==='function')closeStickerFx();}if(!e.target.closest('.vidclip')){document.querySelectorAll('.vidclip.sel').forEach(function(v){v.classList.remove('sel');});if(typeof closeVidClipFx==='function')closeVidClipFx();}},true);
+stage.addEventListener('pointerdown',function(e){if(typeof previewReset==='function')previewReset();if(!e.target.closest('.frame'))document.querySelectorAll('.frame.sel').forEach(function(f){f.classList.remove('sel');});if(!e.target.closest('.sticker')){document.querySelectorAll('.sticker.sel').forEach(function(s){s.classList.remove('sel');});if(typeof closeStickerFx==='function')closeStickerFx();}if(!e.target.closest('.vidclip')){document.querySelectorAll('.vidclip.sel').forEach(function(v){v.classList.remove('sel');});if(typeof closeVidClipFx==='function')closeVidClipFx();}},true);
 
 /* ---- format toggle ---- */
 document.getElementById('fmt').addEventListener('click',function(e){
@@ -1868,7 +1894,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         var ctx=c.getContext('2d');ctx.scale(ES,ES);
         ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
         photos.forEach(function(p){
-          ctx.save();ctx.globalAlpha=p.opacity;if(p.fx&&p.fx!=='none'){try{ctx.filter=p.fx;}catch(_){}}roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();
+          ctx.save();ctx.globalAlpha=p.opacity;roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();if(p.fx&&p.fx!=='none'){try{ctx.filter=p.fx;}catch(_){}}
           var nw=p.img.naturalWidth,nh=p.img.naturalHeight,cover=Math.max(p.W/nw,p.H/nh);
           var dw=nw*cover*p.s,dh=nh*cover*p.s,cx=p.x+p.W/2+p.tx,cy=p.y+p.dy+p.H/2+p.ty;
           ctx.drawImage(p.img,cx-dw/2,cy-dh/2,dw,dh);ctx.restore();
@@ -1903,6 +1929,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
   });
 }
 function slideToPNG(el){
+  if(typeof previewReset==='function')previewReset();
   return renderSlideCanvas(el,null).then(function(c){
     return new Promise(function(resolve){c.toBlob(function(blob){resolve(blob);},'image/png');});
   });
@@ -1962,6 +1989,100 @@ function buildTypeSchedule(items){
   return sched;
 }
 function typeScheduleEndMs(sched){var end=0;sched.forEach(function(s){end=Math.max(end,s.start+s.dur);});return end;}
+function computeFullMs(el){
+  var items=getAnimItems(el);
+  var spinMode=hasSpinningSticker(items);
+  var fullMs;
+  if(spinMode){fullMs=SPIN_PERIOD_MS;}
+  else{
+    var fadeEnd=0;
+    items.forEach(function(it,i){if(!isTypedText(it))fadeEnd=Math.max(fadeEnd,i*ANIM_STAGGER+ANIM_DUR);});
+    fullMs=Math.max(fadeEnd,typeScheduleEndMs(buildTypeSchedule(items)))+500;
+  }
+  var vidClipMs=0;
+  el.querySelectorAll('.vidclip video').forEach(function(v){
+    var vc=v.closest('.vidclip');
+    var pe=parseFloat(vc&&vc.dataset.playEnd);
+    var endMs=(v.duration&&isFinite(v.duration))?v.duration*1000:0;
+    if(!isNaN(pe))endMs=pe;
+    if(endMs)vidClipMs=Math.max(vidClipMs,endMs);
+  });
+  if(vidClipMs>fullMs)fullMs=vidClipMs;
+  var slLen=parseFloat(el.dataset.slideLen);
+  if(!isNaN(slLen))fullMs=Math.max(fullMs,slLen*1000);
+  return fullMs;
+}
+/* ---- preview timeline (живой просмотр анимаций/очереди клипов в редакторе) ---- */
+var _previewRAF=0,_previewT0=0,_previewEl=null,_previewFull=0;
+function previewReset(){
+  if(_previewRAF){cancelAnimationFrame(_previewRAF);_previewRAF=0;}
+  var el=_previewEl||(cur>=0&&slides[cur]&&slides[cur].el);if(!el)return;
+  el.querySelectorAll('[data-edit], .frame, [data-photo], .sticker').forEach(function(e){e.style.opacity='';});
+  el.querySelectorAll('.vidclip').forEach(function(vc){var v=vc.querySelector('video');if(v){try{v.pause();}catch(_){}try{v.currentTime=0;}catch(_){}}});
+  _previewEl=null;
+}
+function previewApply(el,elapsed,fullMs){
+  var items=getAnimItems(el);
+  var anim=animStateAt(items,elapsed,hasSpinningSticker(items),buildTypeSchedule(items),fullMs);
+  items.forEach(function(it){var a=anim.get(it);if(a&&a.opacity<1)it.style.opacity=String(a.opacity);else it.style.opacity='';});
+  el.querySelectorAll('.vidclip').forEach(function(vc){
+    var v=vc.querySelector('video');if(!v)return;
+    var dur=(v.duration&&isFinite(v.duration))?v.duration:0;
+    var trimS=parseFloat(vc.dataset.trimStart),trimE=parseFloat(vc.dataset.trimEnd);
+    if(isNaN(trimS))trimS=0; if(isNaN(trimE)||trimE>dur)trimE=dur;
+    var playS=parseFloat(vc.dataset.playStart),playE=parseFloat(vc.dataset.playEnd);
+    if(isNaN(playS))playS=0; if(isNaN(playE))playE=playS+(trimE-trimS)*1000;
+    var v2=vc.dataset.trimStart||vc.dataset.trimEnd||vc.dataset.playStart||vc.dataset.playEnd;
+    try{
+      if(!v2){if(v.paused)v.play()['catch'](function(){});return;}
+      if(elapsed<playS){if(!v.paused)v.pause();v.currentTime=trimS;}
+      else if(elapsed>playE){if(!v.paused)v.pause();v.currentTime=trimE;}
+      else{if(v.paused)v.play()['catch'](function(){});}
+    }catch(_){}
+  });
+}
+function previewTick(){
+  if(!_previewRAF)return;
+  var elapsed=performance.now()-_previewT0;
+  if(elapsed>=_previewFull){previewApply(_previewEl,_previewFull,_previewFull);previewStop();return;}
+  var sc=document.getElementById('tlScrubber');if(sc)sc.value=Math.round(elapsed);
+  previewUpdateLabel(elapsed,_previewFull);
+  previewApply(_previewEl,elapsed,_previewFull);
+  _previewRAF=requestAnimationFrame(previewTick);
+}
+function previewPlay(){
+  if(cur<0||!slides[cur])return;
+  var el=slides[cur].el;
+  _previewEl=el;_previewFull=computeFullMs(el);_previewT0=performance.now();
+  var sc=document.getElementById('tlScrubber');if(sc)sc.max=Math.round(_previewFull);
+  var btn=document.getElementById('tlPlay');if(btn)btn.textContent='⏸';
+  _previewRAF=requestAnimationFrame(previewTick);
+}
+function previewStop(){
+  if(_previewRAF){cancelAnimationFrame(_previewRAF);_previewRAF=0;}
+  var btn=document.getElementById('tlPlay');if(btn)btn.textContent='▶';
+}
+function previewScrub(val){
+  if(cur<0||!slides[cur])return;
+  if(_previewRAF){cancelAnimationFrame(_previewRAF);_previewRAF=0;var btn=document.getElementById('tlPlay');if(btn)btn.textContent='▶';}
+  var el=slides[cur].el;_previewEl=el;_previewFull=computeFullMs(el);
+  previewApply(el,+val,_previewFull);
+  previewUpdateLabel(+val,_previewFull);
+}
+function previewUpdateLabel(elapsed,fullMs){
+  var lab=document.getElementById('tlTime');if(lab)lab.textContent=(elapsed/1000).toFixed(1)+'с / '+(fullMs/1000).toFixed(1)+'с';
+}
+function previewHasContent(el){
+  if(!el)return false;
+  if(el.querySelector('.vidclip'))return true;
+  return el.querySelectorAll('.sticker').some?Array.prototype.some.call(el.querySelectorAll('.sticker'),function(s){return s.dataset.spin||s.dataset.stin||s.dataset.stout||s.dataset.stpulse||s.dataset.stfloat;}):false;
+}
+function previewRefreshUI(){
+  var bar=document.getElementById('tlBar');
+  var has=mode==='deck'&&cur>=0&&slides[cur]&&previewHasContent(slides[cur].el);
+  if(bar)bar.style.display=has?'':'none';
+  if(!has)previewReset();
+}
 function popEase(t){if(t>=1)return 1;var c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);}
 function animStateAt(items,elapsedMs,spinMode,typeSchedule,fullMs){
   var state=new Map();
@@ -2113,6 +2234,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
   /* защита от повторного тапа, пока идёт пре-рендер/запись — раньше второй тап во время подготовки
      запускал ВТОРОЙ параллельный процесс поверх первого и вешал вкладку (белый экран) */
   if(videoExportBusy)return;
+  if(typeof previewReset==='function')previewReset();
   if(cur<0||!slides[cur])return;
   videoExportBusy=true;
   var btn=gifBtn,oldText=btn.textContent;btn.disabled=true;btn.textContent='⏳ …';
@@ -2121,28 +2243,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var items=getAnimItems(el);
     var spinMode=hasSpinningSticker(items);
     var typeSchedule=buildTypeSchedule(items);
-    var fullMs;
-    if(spinMode){fullMs=SPIN_PERIOD_MS;}
-    else{
-      var fadeEnd=0;
-      items.forEach(function(it,i){
-        if(!isTypedText(it))fadeEnd=Math.max(fadeEnd,i*ANIM_STAGGER+ANIM_DUR);
-      });
-      var typeEnd=typeScheduleEndMs(typeSchedule);
-      var HOLD=500;fullMs=Math.max(fadeEnd,typeEnd)+HOLD;
-    }
-    /* если на слайде есть вставленный видео-клип — видео должно успеть проиграться целиком внутри записи */
-    var vidClipMs=0;
-    el.querySelectorAll('.vidclip video').forEach(function(v){
-      var vc=v.closest('.vidclip');
-      var pe=parseFloat(vc&&vc.dataset.playEnd);
-      var endMs=(v.duration&&isFinite(v.duration))?v.duration*1000:0;
-      if(!isNaN(pe))endMs=pe;
-      if(endMs)vidClipMs=Math.max(vidClipMs,endMs);
-    });
-    if(vidClipMs>fullMs)fullMs=vidClipMs;
-    var slLen=parseFloat(el.dataset.slideLen);
-    if(!isNaN(slLen))fullMs=Math.max(fullMs,slLen*1000);
+    var fullMs=computeFullMs(el);
     var w=540,h=el.classList.contains('f916')?960:675,ES=2;
     var mime=pickVideoMime();
     var capFn=null;
