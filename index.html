@@ -1,4 +1,4 @@
-<!--seal-github-v7|preview-timeline;font-A+/-;filter-after-clip|video=local-->
+<!--seal-github-v8|duo-layout|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -106,6 +106,13 @@ em{font-style:italic}
 /* free collage frames */
 .collage-canvas{position:absolute;inset:0;z-index:0}
 .fixed-grid{position:absolute;inset:0;display:grid;gap:0;z-index:0}
+/* duo: 2 media + подписи + футер */
+.duo-media{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%}
+.duo-cell{display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.duo-cell .photo{aspect-ratio:4/5;width:100%;height:auto;pointer-events:auto}
+.duo-cap{pointer-events:auto}
+.duo-cap .h{line-height:1.1}
+.duo-foot{margin-top:auto;padding-top:14px;text-align:center}
 .fixed-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.s3{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
@@ -376,6 +383,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="splitR">▌ Фото слева</button>
         <button data-t="grid4">▦ Сетка 4</button>
         <button data-t="strips3">☰ 3 полосы</button>
+        <button data-t="duo">▭ 2 фото</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -631,11 +639,31 @@ function tpl(type){
   grid4:
     '<div class="fixed-grid g4"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 4</div></div></div>',
   strips3:
-    '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>'
+    '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>',
+  duo:
+    '<div class="pad" style="justify-content:flex-start">'+
+      '<div class="duo-media">'+
+        '<div class="duo-cell">'+
+          '<div class="photo" data-photo style="aspect-ratio:4/5;width:100%"><div class="ph-label">фото или видео 1</div></div>'+
+          '<div class="duo-cap">'+
+            '<div class="h" data-edit data-ph="Заголовок" style="font-size:23px;margin:2px 0">Заголовок 1</div>'+
+            '<div class="sub" data-edit data-ph="Подзаголовок" style="font-size:14px">подпись под первым</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="duo-cell">'+
+          '<div class="photo" data-photo style="aspect-ratio:4/5;width:100%"><div class="ph-label">фото или видео 2</div></div>'+
+          '<div class="duo-cap">'+
+            '<div class="h" data-edit data-ph="Заголовок" style="font-size:23px;margin:2px 0">Заголовок 2</div>'+
+            '<div class="sub" data-edit data-ph="Подзаголовок" style="font-size:14px">подпись под вторым</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sub duo-foot" data-edit data-ph="Нижний текст" style="font-size:14px">нижний текст</div>'+
+    '</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы',duo:'2 фото'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
