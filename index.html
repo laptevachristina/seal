@@ -1,4 +1,4 @@
-<!--seal-github-v13|multi-photo-fill|video=local-->
+<!--seal-github-v14|series-storyboard-numbers|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -595,9 +595,9 @@ var stage=document.getElementById('stage');
 function tpl(type){
   var T={
   series:(function(){
-    var nums=[];for(var i=1;i<=17;i++)nums.push(i);
-    for(var j=nums.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=nums[j];nums[j]=nums[k];nums[k]=t;}
-    var cells=nums.map(function(n,i){return '<div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div><span class="tag-num">'+(n<10?'0':'')+n+'</span></div>';}).join('');
+    var base=5501+Math.floor(Math.random()*40);
+    var cells='';
+    for(var i=0;i<17;i++){var n=base+i*3;cells+='<div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div><span class="tag-num">'+n+'</span></div>';}
     return '<div class="series-grid">'+cells+'</div>';
   })(),
   cover:
