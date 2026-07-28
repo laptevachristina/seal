@@ -1,4 +1,4 @@
-<!--seal-github-v8|duo-layout|video=local-->
+<!--seal-github-v9|series-17-layout|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -113,6 +113,13 @@ em{font-style:italic}
 .duo-cap{pointer-events:auto}
 .duo-cap .h{line-height:1.1}
 .duo-foot{margin-top:auto;padding-top:14px;text-align:center}
+/* series: вся серия одним слайдом (masonry 4 колонки) + текст справа */
+.series-wrap{position:absolute;inset:0;display:flex;gap:14px;padding:28px}
+.series-grid{flex:1 1 auto;column-count:4;column-gap:8px;align-content:flex-start}
+.series-grid .photo{width:100%;break-inside:avoid;margin-bottom:8px;aspect-ratio:1/1;display:block;border-radius:8px;background:var(--slot)}
+.series-side{flex:0 0 25%;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;gap:6px}
+.series-side [data-edit]{pointer-events:auto}
+.series-side .h{font-size:26px;line-height:1.08}
 .fixed-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.s3{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
@@ -384,6 +391,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="grid4">▦ Сетка 4</button>
         <button data-t="strips3">☰ 3 полосы</button>
         <button data-t="duo">▭ 2 фото</button>
+        <button data-t="series">▦ Серия 17</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -575,6 +583,19 @@ var stage=document.getElementById('stage');
 /* ---- templates ---- */
 function tpl(type){
   var T={
+  series:(function(){
+    var nums=[];for(var i=1;i<=17;i++)nums.push(i);
+    for(var j=nums.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var t=nums[j];nums[j]=nums[k];nums[k]=t;}
+    var cells=nums.map(function(n,i){return '<div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div><span class="tag-num">'+(n<10?'0':'')+n+'</span></div>';}).join('');
+    return '<div class="series-wrap">'+
+      '<div class="series-grid">'+cells+'</div>'+
+      '<div class="series-side">'+
+        '<div class="kicker" data-edit data-ph="надзаголовок">серия</div>'+
+        '<div class="h" data-edit data-ph="Заголовок" style="margin:4px 0">вся серия одним слайдом</div>'+
+        '<div class="sub" data-edit data-ph="Подпись" style="font-size:13px">текст справа — можно удалить</div>'+
+      '</div>'+
+    '</div>';
+  })(),
   cover:
     '<div class="photo cover-photo" data-photo><div class="ph-label">нажми и добавь фото на весь слайд</div></div>'+
     '<div class="cover-scrim"></div>'+
@@ -663,7 +684,7 @@ function tpl(type){
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы',duo:'2 фото'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы',duo:'2 фото',series:'Серия 17'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
