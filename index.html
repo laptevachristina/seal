@@ -1,4 +1,4 @@
-<!--seal-github-v11|sticker-preview-moves|video=local-->
+<!--seal-github-v12|video-crop-zoom-pan-round|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -160,8 +160,9 @@ em{font-style:italic}
 .mini .sticker.sel{outline:none!important}
 .mini .sticker .mv-handle,.mini .sticker .mv-del,.mini .sticker .tx-resize,.mini .sticker .rot-handle{display:none!important}
 
-.vidclip{position:absolute;touch-action:none;cursor:move}
-.vidclip video{width:100%;height:100%;object-fit:contain;background:#000;pointer-events:none;display:block}
+.vidclip{position:absolute;touch-action:none;cursor:move;border-radius:14px;overflow:hidden}
+.vidclip video{width:100%;height:100%;object-fit:cover;background:#000;pointer-events:none;display:block;transform-origin:center center}
+.vidclip.cround{border-radius:50%}
 .vidclip .mv-handle,.vidclip .mv-del,.vidclip .tx-resize,.vidclip .layer-toggle{display:none}
 .vidclip.sel{outline:2px dashed var(--sage);outline-offset:6px}
 .vidclip.sel .mv-handle,.vidclip.sel .mv-del,.vidclip.sel .tx-resize,.vidclip.sel .layer-toggle{display:block}
@@ -459,8 +460,12 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-slider"><label>Оживает на <span id="cxPlaySV">0.0</span>с</label><input type="range" id="cxPlayS" min="0" max="60" step="0.1" value="0"></div>
   <div class="fx-slider"><label>Замирает на <span id="cxPlayEV">0.0</span>с</label><input type="range" id="cxPlayE" min="0" max="60" step="0.1" value="0"></div>
   <div class="fx-slider"><label>Длина слайда <span id="cxSlideLenV">—</span>с</label><input type="range" id="cxSlideLen" min="0.5" max="30" step="0.1" value="3"></div>
+  <div class="fx-slider"><label>Зум (кадрирование) <span id="cxZoomV">1.0</span>×</label><input type="range" id="cxZoom" min="1" max="4" step="0.05" value="1"></div>
+  <div class="fx-slider"><label>Сдвиг по горизонтали <span id="cxPanXV">0</span></label><input type="range" id="cxPanX" min="-1" max="1" step="0.05" value="0"></div>
+  <div class="fx-slider"><label>Сдвиг по вертикали <span id="cxPanYV">0</span></label><input type="range" id="cxPanY" min="-1" max="1" step="0.05" value="0"></div>
   <div class="fx-row">
     <button class="fx-chip" id="cxLayer">Слой: выше текста</button>
+    <button class="fx-chip" id="cxRound">◯ Круг</button>
   </div>
   <div class="fx-bottom">
     <div class="cx-hint">До/после окна — стоп-кадр. Эффект виден в экспорте «✨ Видео».</div>
@@ -1160,6 +1165,7 @@ function selectVideoClip(vc){
 function wireVideoClip(vc){
   if(vc.__w)return;vc.__w=1;
   hydrateVideoClip(vc);
+  if(typeof applyVidClipFx==='function')applyVidClipFx(vc);
   if(!vc.dataset.layer)vc.dataset.layer='above';
   if(vc.dataset.layer==='below')vc.classList.add('layer-below');
   updateLayerDOM(vc);
@@ -1580,7 +1586,16 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   var lb=document.getElementById('cxLayer');
   if(lb)lb.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;var below=vc.classList.contains('layer-below');if(below){vc.classList.remove('layer-below');vc.dataset.layer='above';}else{vc.classList.add('layer-below');vc.dataset.layer='below';}if(typeof updateLayerDOM==='function')updateLayerDOM(vc);syncVidClipFxUI();updateFilm();pushHistory();});
   var cr=document.getElementById('cxReset');
-  if(cr)cr.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;delete vc.dataset.trimStart;delete vc.dataset.trimEnd;delete vc.dataset.playStart;delete vc.dataset.playEnd;if(slides[cur])delete slides[cur].el.dataset.slideLen;syncVidClipFxUI();updateFilm();pushHistory();});
+  if(cr)cr.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;delete vc.dataset.trimStart;delete vc.dataset.trimEnd;delete vc.dataset.playStart;delete vc.dataset.playEnd;delete vc.dataset.czoom;delete vc.dataset.cpanx;delete vc.dataset.cpany;delete vc.dataset.cround;if(slides[cur])delete slides[cur].el.dataset.slideLen;applyVidClipFx(vc);syncVidClipFxUI();updateFilm();pushHistory();});
+  /* кадрирование: зум / pan / круг */
+  function cbind(id,vid,fn,fmt){var inp=document.getElementById(id),sp=document.getElementById(vid);if(!inp)return;
+    inp.addEventListener('input',function(e){e.stopPropagation();var v=+inp.value;if(sp)sp.textContent=fmt?fmt(v):v;var vc=targetVidClip();if(!vc)return;fn(vc,v);applyVidClipFx(vc);pushSoon();});
+    inp.addEventListener('click',function(e){e.stopPropagation();});}
+  cbind('cxZoom','cxZoomV',function(vc,v){vc.dataset.czoom=v;},function(v){return(Math.round(v*20)/20).toFixed(2);});
+  cbind('cxPanX','cxPanXV',function(vc,v){vc.dataset.cpanx=v;},function(v){return Math.round(v*100);});
+  cbind('cxPanY','cxPanYV',function(vc,v){vc.dataset.cpany=v;},function(v){return Math.round(v*100);});
+  var rnd=document.getElementById('cxRound');
+  if(rnd)rnd.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(!vc)return;vc.dataset.cround=vc.dataset.cround==='1'?'':'1';applyVidClipFx(vc);syncVidClipFxUI();pushHistory();});
 })();
 /* sticker animation handlers */
 (function(){
@@ -1795,7 +1810,14 @@ function vidClipDuration(vc){
   var v=vc.querySelector('video');
   return (v&&v.duration&&isFinite(v.duration))?v.duration:0;
 }
-function applyVidClipFx(vc){if(vc)updateFilm();}
+function applyVidClipFx(vc){
+  if(!vc)return;
+  var v=vc.querySelector('video');
+  var zoom=parseFloat(vc.dataset.czoom)||1,panX=parseFloat(vc.dataset.cpanx)||0,panY=parseFloat(vc.dataset.cpany)||0;
+  vc.classList.toggle('cround',vc.dataset.cround==='1');
+  if(v){var t='scale('+zoom+')';if(panX||panY)t+=' translate('+panX*45+'%,'+panY*45+'%)';v.style.transform=t;}
+  updateFilm();
+}
 function fmt1(x){return (Math.round(x*10)/10).toFixed(1);}
 function syncVidClipFxUI(){
   var vc=targetVidClip();
@@ -1825,6 +1847,15 @@ function syncVidClipFxUI(){
   if(slInp)slInp.value=isNaN(sl)?3:sl;if(slSp)slSp.textContent=isNaN(sl)?'авто':fmt1(sl);
   var lb=document.getElementById('cxLayer');
   if(lb)lb.textContent=vc&&vc.dataset.layer==='below'?'Слой: под текстом':'Слой: выше текста';
+  var zoom=vc?(parseFloat(vc.dataset.czoom)||1):1,panX=vc?(parseFloat(vc.dataset.cpanx)||0):0,panY=vc?(parseFloat(vc.dataset.cpany)||0):0;
+  var zI=document.getElementById('cxZoom'),zV=document.getElementById('cxZoomV');
+  var pxI=document.getElementById('cxPanX'),pxV=document.getElementById('cxPanXV');
+  var pyI=document.getElementById('cxPanY'),pyV=document.getElementById('cxPanYV');
+  if(zI)zI.value=zoom;if(zV)zV.textContent=(Math.round(zoom*20)/20).toFixed(2);
+  if(pxI)pxI.value=panX;if(pxV)pxV.textContent=Math.round(panX*100);
+  if(pyI)pyI.value=panY;if(pyV)pyV.textContent=Math.round(panY*100);
+  var rnd=document.getElementById('cxRound');
+  if(rnd)rnd.textContent=(vc&&vc.dataset.cround==='1')?'◯ Круг ✓':'◯ Круг';
 }
 function openVidClipFx(vc){
   var t=document.getElementById('vidclipfx');if(!t||!vc)return;
@@ -1911,7 +1942,13 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       var src=override||v;
       var vw=override?override.width:v.videoWidth,vh=override?override.height:v.videoHeight;
       if(!vw||!vh)return;
-      var rec={src:src,vw:vw,vh:vh,x:vc.offsetLeft,y:vc.offsetTop,W:vc.offsetWidth,H:vc.offsetHeight};
+      var cs=getComputedStyle(vc);
+      var rec={src:src,vw:vw,vh:vh,x:vc.offsetLeft,y:vc.offsetTop,W:vc.offsetWidth,H:vc.offsetHeight,
+        rad:parseFloat(cs.borderTopLeftRadius)||14,
+        round:vc.classList.contains('cround'),
+        zoom:parseFloat(vc.dataset.czoom)||1,
+        panX:parseFloat(vc.dataset.cpanx)||0,
+        panY:parseFloat(vc.dataset.cpany)||0};
       (vc.dataset.layer==='below'?vidsBelow:vidsAbove).push(rec);
     });}
     var origTexts=el.querySelectorAll('[data-edit]');
@@ -1957,9 +1994,13 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         }
         function drawVid(rec){
           ctx.save();
+          if(rec.round){var cx=rec.x+rec.W/2,cy=rec.y+rec.H/2,rr=Math.min(rec.W,rec.H)/2;ctx.beginPath();ctx.arc(cx,cy,rr+1,0,7);ctx.clip();}
+          else{roundRectPath(ctx,rec.x,rec.y,rec.W,rec.H,rec.rad||14);ctx.clip();}
           ctx.fillStyle='#000';ctx.fillRect(rec.x,rec.y,rec.W,rec.H);
-          var scale=Math.min(rec.W/rec.vw,rec.H/rec.vh);
-          var dw=rec.vw*scale,dh=rec.vh*scale,dx=rec.x+(rec.W-dw)/2,dy=rec.y+(rec.H-dh)/2;
+          var zoom=rec.zoom||1,panX=rec.panX||0,panY=rec.panY||0;
+          var scale=Math.max(rec.W/rec.vw,rec.H/rec.vh)*zoom;
+          var dw=rec.vw*scale,dh=rec.vh*scale;
+          var dx=rec.x+(rec.W-dw)/2+panX*rec.W*0.45,dy=rec.y+(rec.H-dh)/2+panY*rec.H*0.45;
           try{ctx.drawImage(rec.src,dx,dy,dw,dh);}catch(e){}
           ctx.restore();
         }
