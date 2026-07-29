@@ -1,4 +1,4 @@
-<!--seal-github-v25|server-ON+circle-clip|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v26|reset-busy+video-restart|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1763,8 +1763,12 @@ function render(){
   if(cur>=0&&slides[cur]){host.appendChild(slides[cur].el);fit();}
   buildSwatches();updateFilm();updateSizeRow();updateCollageRow();updateUndoUI();
   document.getElementById('cnt').textContent=slides.length?('· '+slides.length):'';
+  if(typeof videoExportBusy!=='undefined')videoExportBusy=false; /* сброс застрявшего флага экспорта */
+  window._skipVids=false;
   if(typeof previewReset==='function')previewReset();
   if(typeof previewRefreshUI==='function')previewRefreshUI();
+  /* перезапуск видео на рабочем слайде (могло остановиться) */
+  if(slides[cur]){slides[cur].el.querySelectorAll('.vidclip video').forEach(function(v){try{if(v.paused)v.play()['catch'](function(){});}catch(_){}});}
 }
 function updateCollageRow(){
   var s=slides[cur],isC=s&&s.el.querySelector('[data-canvas]');
