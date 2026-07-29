@@ -1,4 +1,4 @@
-<!--seal-github-v22b|retouch-heal-clone|video=local-->
+<!--seal-github-v23|retouch-fullscreen-zoom|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -264,15 +264,17 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .fx-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:1px}
 .fx-note{font:500 8.5px 'Inter';color:var(--ui-dim);line-height:1.3;max-width:128px}
 .fx-reset{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:6px;padding:4px 9px;font:600 9px 'Inter';cursor:pointer}
-/* ретушь фото */
-.rt-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:7}
-.retouch-bar{display:none;position:fixed;left:8px;right:8px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:70;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:12px;padding:7px;box-shadow:0 12px 30px rgba(0,0,0,.5);align-items:center;gap:7px;flex-wrap:wrap}
-.retouch-bar.open{display:flex}
-.retouch-bar button{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:6px 10px;font:600 11px 'Inter';cursor:pointer}
-.retouch-bar button.on{background:var(--ui-acc);border-color:var(--ui-acc);color:#fff}
-.retouch-bar button.primary{background:var(--ui-acc);border-color:var(--ui-acc);color:#fff}
-.retouch-bar label{font:600 10px 'Inter';color:var(--ui-dim);display:flex;align-items:center;gap:5px}
-.retouch-bar input[type=range]{width:80px;accent-color:var(--ui-acc)}
+/* ретушь фото — полноэкранный модал с zoom/pan */
+.ret-modal{display:none;position:fixed;inset:0;z-index:80;background:#0e0f12;flex-direction:column}
+.ret-modal.open{display:flex}
+.ret-stage{flex:1;position:relative;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center}
+.rt-wrap{position:relative;transform-origin:center center;transition:transform .05s;line-height:0}
+.rt-canvas{display:block;max-width:96vw;max-height:74vh;box-shadow:0 8px 30px rgba(0,0,0,.6);touch-action:none;cursor:crosshair}
+.ret-bar{flex:0 0 auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--ui-panel);border-top:1px solid var(--ui-line)}
+.ret-bar button{border:1px solid var(--ui-line);background:var(--ui-panel-2);color:var(--ui-text);border-radius:8px;padding:7px 11px;font:600 11px 'Inter';cursor:pointer}
+.ret-bar button.on,.ret-bar button.primary{background:var(--ui-acc);border-color:var(--ui-acc);color:#fff}
+.ret-bar label{font:600 10px 'Inter';color:var(--ui-dim);display:flex;align-items:center;gap:5px}
+.ret-bar input[type=range]{width:90px;accent-color:var(--ui-acc)}
 /* контур текста + дублировать слайд */
 [data-edit].stroked{paint-order:stroke fill;-webkit-text-stroke:2px #1c1c1e;text-stroke:2px #1c1c1e}
 .chip .dup{position:absolute;top:2px;left:3px;z-index:2;color:#fff;background:rgba(0,0,0,.45);border-radius:5px;width:18px;height:18px;font-size:11px;display:none;align-items:center;justify-content:center}
@@ -530,14 +532,18 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="imgs" id="imgs"></div>
 </div>
 
-<div class="retouch-bar" id="retouchBar">
-  <button id="rtHeal" class="on">✦ Лампочка</button>
-  <button id="rtClone">⊕ Штамп</button>
-  <label>Кисть <input type="range" id="rtSize" min="6" max="90" value="26"></label>
-  <button id="rtUndo">↶ Шаг</button>
-  <div class="grow"></div>
-  <button id="rtCancel">Отмена</button>
-  <button id="rtOk" class="primary">Готово</button>
+<div class="ret-modal" id="retModal">
+  <div class="ret-stage" id="retStage"><div class="rt-wrap" id="rtWrap"></div></div>
+  <div class="ret-bar" id="retBar">
+    <button id="rtHeal" class="on">✦ Лампочка</button>
+    <button id="rtClone">⊕ Штамп</button>
+    <label>Кисть <input type="range" id="rtSize" min="6" max="120" value="30"></label>
+    <label>Масштаб <input type="range" id="rtZoom" min="1" max="6" step="0.1" value="1"></label>
+    <button id="rtUndo">↶ Шаг</button>
+    <div class="grow"></div>
+    <button id="rtCancel">Отмена</button>
+    <button id="rtOk" class="primary">Готово</button>
+  </div>
 </div>
 <input type="file" id="filepick" accept="image/*" multiple style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
 <div id="measurer" style="position:fixed;left:-99999px;top:0;width:540px;pointer-events:none;opacity:0"></div>
@@ -2030,7 +2036,7 @@ function openStickerFx(st){
 }
 function closeStickerFx(){var t=document.getElementById('stickerfx');if(t)t.classList.remove('open');}
 /* ---- ретушь фото: heal (лампочка) + clone (штамп) ---- */
-var RT={active:false,el:null,canvas:null,ctx:null,mode:'heal',size:26,hist:[],last:null,blur:null,cloneSrc:null,cloneOff:null,pointerId:null};
+var RT={active:false,el:null,canvas:null,ctx:null,mode:'heal',size:30,hist:[],last:null,blur:null,cloneSrc:null,cloneOff:null,pointerId:null,zoom:1,panX:0,panY:0,panMode:false,panId:null,panStart:null};
 function boxBlur(src,w,h,r){
   var out=new Uint8ClampedArray(src.length),tmp=new Uint8ClampedArray(src.length);
   for(var y=0;y<h;y++){for(var x=0;x<w;x++){var sr=0,sg=0,sb=0,sa=0,n=0;for(var dx=-r;dx<=r;dx++){var xx=x+dx;if(xx<0||xx>=w)continue;var i=(y*w+xx)*4;sr+=src[i];sg+=src[i+1];sb+=src[i+2];sa+=src[i+3];n++;}var oi=(y*w+x)*4;tmp[oi]=sr/n;tmp[oi+1]=sg/n;tmp[oi+2]=sb/n;tmp[oi+3]=sa/n;}}
@@ -2040,32 +2046,36 @@ function boxBlur(src,w,h,r){
 function openRetouch(el){
   if(!el)return;var img=el.querySelector('.ph-img');if(!img||!img.complete||!img.naturalWidth)return;
   RT.el=el;
-  var W=Math.max(40,el.clientWidth),H=Math.max(40,el.clientHeight);
+  var nw=img.naturalWidth,nh=img.naturalHeight,MAXD=1600,scale=Math.min(1,MAXD/Math.max(nw,nh));
+  var W=Math.max(40,Math.round(nw*scale)),H=Math.max(40,Math.round(nh*scale));
   var c=document.createElement('canvas');c.className='rt-canvas';c.width=W;c.height=H;
-  el.appendChild(c);RT.canvas=c;RT.ctx=c.getContext('2d');
-  var nw=img.naturalWidth,nh=img.naturalHeight,s=parseFloat(el.dataset.scale)||1,x=parseFloat(el.dataset.x)||0,y=parseFloat(el.dataset.y)||0;
-  var cover=Math.max(W/nw,H/nh),iw=nw*cover*s,ih=nh*cover*s,dx=(W-iw)/2+x,dy=(H-ih)/2+y;
-  RT.ctx.fillStyle='#000';RT.ctx.fillRect(0,0,W,H);
-  RT.ctx.drawImage(img,dx,dy,iw,ih);
+  document.getElementById('rtWrap').appendChild(c);RT.canvas=c;RT.ctx=c.getContext('2d');
+  RT.ctx.drawImage(img,0,0,W,H);
   RT.hist=[RT.ctx.getImageData(0,0,W,H)];
   try{RT.blur=boxBlur(RT.hist[0].data,W,H,6);}catch(_){RT.blur=null;}
-  RT.active=true;RT.cloneSrc=null;RT.cloneOff=null;RT.last=null;
+  RT.zoom=1;RT.panX=0;RT.panY=0;RT.panMode=false;RT.active=true;RT.cloneSrc=null;RT.cloneOff=null;RT.last=null;
+  rtApplyTransform();
   document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});
-  document.getElementById('retouchBar').classList.add('open');
+  document.getElementById('retModal').classList.add('open');
   wireRtCanvas(c);
+}
+function rtApplyTransform(){
+  var w=document.getElementById('rtWrap');if(!w)return;
+  w.style.transform='translate('+RT.panX+'px,'+RT.panY+'px) scale('+RT.zoom+')';
 }
 function closeRetouch(apply){
   if(!RT.el)return;
   if(apply&&RT.canvas){
-    var url=RT.canvas.toDataURL('image/png');
+    var url=RT.canvas.toDataURL('image/jpeg',0.92);
     var img=RT.el.querySelector('.ph-img');
     if(!RT.el.dataset.rtOrig)RT.el.dataset.rtOrig=img.src;
     img.src=url;img.style.display='block';RT.el.classList.add('has-img');
+    RT.el.dataset.scale=1;RT.el.dataset.x=0;RT.el.dataset.y=0;
     applyTransform(RT.el);applyPhotoFx(RT.el);updateFilm();pushHistory();
   }
   if(RT.canvas&&RT.canvas.parentNode)RT.canvas.parentNode.removeChild(RT.canvas);
   RT.active=false;RT.el=null;RT.canvas=null;RT.ctx=null;RT.hist=[];RT.blur=null;
-  document.getElementById('retouchBar').classList.remove('open');
+  document.getElementById('retModal').classList.remove('open');
 }
 function rtStampAt(cx,cy){
   var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
@@ -2087,10 +2097,16 @@ function wireRtCanvas(c){
     var dist=Math.hypot(x1-x0,y1-y0),step=Math.max(2,RT.size/3),n=Math.max(1,Math.round(dist/step));
     for(var i=0;i<=n;i++){var t=i/n,x=x0+(x1-x0)*t,y=y0+(y1-y0)*t;if(RT.mode==='heal')rtHealAt(x|0,y|0);else rtStampAt(x|0,y|0);}
   }
-  c.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();try{c.setPointerCapture(e.pointerId);}catch(_){}RT.pointerId=e.pointerId;var p=pos(e);RT.last=p;if(RT.mode==='heal')rtHealAt(p.x|0,p.y|0);else rtStampAt(p.x|0,p.y|0);},true);
-  c.addEventListener('pointermove',function(e){if(RT.pointerId!==e.pointerId||!RT.last)return;var p=pos(e);stroke(RT.last.x,RT.last.y,p.x,p.y);RT.last=p;},true);
-  c.addEventListener('pointerup',function(e){if(RT.pointerId!==e.pointerId)return;RT.pointerId=null;RT.last=null;},true);
-  c.addEventListener('pointercancel',function(e){RT.pointerId=null;RT.last=null;},true);
+  c.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();
+    if(RT.panMode){RT.panId=e.pointerId;RT.panStart={x:e.clientX-RT.panX,y:e.clientY-RT.panY};try{c.setPointerCapture(e.pointerId);}catch(_){}return;}
+    try{c.setPointerCapture(e.pointerId);}catch(_){}RT.pointerId=e.pointerId;var p=pos(e);RT.last=p;if(RT.mode==='heal')rtHealAt(p.x|0,p.y|0);else rtStampAt(p.x|0,p.y|0);
+  },true);
+  c.addEventListener('pointermove',function(e){
+    if(RT.panMode&&RT.panId===e.pointerId){RT.panX=e.clientX-RT.panStart.x;RT.panY=e.clientY-RT.panStart.y;rtApplyTransform();return;}
+    if(RT.pointerId!==e.pointerId||!RT.last)return;var p=pos(e);stroke(RT.last.x,RT.last.y,p.x,p.y);RT.last=p;
+  },true);
+  c.addEventListener('pointerup',function(e){if(RT.panId===e.pointerId)RT.panId=null;if(RT.pointerId===e.pointerId)RT.pointerId=null;RT.last=null;},true);
+  c.addEventListener('pointercancel',function(e){RT.panId=null;RT.pointerId=null;RT.last=null;},true);
 }
 (function(){
   var b=document.getElementById('fxRetouch');
@@ -2098,7 +2114,12 @@ function wireRtCanvas(c){
   function setMode(m){RT.mode=m;RT.cloneOff=null;RT.cloneSrc=null;document.getElementById('rtHeal').classList.toggle('on',m==='heal');document.getElementById('rtClone').classList.toggle('on',m==='clone');}
   var h=document.getElementById('rtHeal');if(h)h.addEventListener('click',function(){setMode('heal');});
   var cl=document.getElementById('rtClone');if(cl)cl.addEventListener('click',function(){setMode('clone');});
-  var sz=document.getElementById('rtSize');if(sz)sz.addEventListener('input',function(){RT.size=+sz.value||26;});
+  var sz=document.getElementById('rtSize');if(sz)sz.addEventListener('input',function(){RT.size=+sz.value||30;});
+  var zm=document.getElementById('rtZoom');
+  if(zm)zm.addEventListener('input',function(){RT.zoom=+zm.value||1;if(RT.zoom<=1){RT.panX=0;RT.panY=0;}rtApplyTransform();});
+  var mv=document.createElement('button');mv.id='rtMove';mv.textContent='✋ Двигать';mv.className='';
+  var bar=document.getElementById('retBar');if(bar&&bar.querySelector('#rtZoom')){bar.insertBefore(mv,document.getElementById('rtZoom'));}
+  if(mv)mv.addEventListener('click',function(){RT.panMode=!RT.panMode;mv.classList.toggle('on',RT.panMode);mv.textContent=RT.panMode?'✏ Рисовать':'✋ Двигать';RT.panId=null;RT.pointerId=null;RT.last=null;});
   var u=document.getElementById('rtUndo');if(u)u.addEventListener('click',function(){if(RT.hist.length>1){RT.hist.pop();RT.ctx.putImageData(RT.hist[RT.hist.length-1],0,0);}});
   var ok=document.getElementById('rtOk');if(ok)ok.addEventListener('click',function(){closeRetouch(true);});
   var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('click',function(){closeRetouch(false);});
