@@ -1,4 +1,4 @@
-<!--seal-github-v15|dup-slide+text-stroke|video=local-->
+<!--seal-github-v16|fix:стикер-поверх-видео|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2030,8 +2030,8 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         vidsBelow.forEach(drawVid);
         ctx.globalAlpha=1;
         ctx.drawImage(overlay,0,0,w,h);
-        stickersAbove.forEach(drawSticker);
         vidsAbove.forEach(drawVid);
+        stickersAbove.forEach(drawSticker);
         resolve(c);
       }catch(e){reject(e);}
     };
