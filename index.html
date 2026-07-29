@@ -1,4 +1,4 @@
-<!--seal-github-v31|debug-error-catcher|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v32|retouch-pinch+close-fix|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2071,18 +2071,20 @@ function rtApplyTransform(){
   w.style.transform='translate('+RT.panX+'px,'+RT.panY+'px) scale('+RT.zoom+')';
 }
 function closeRetouch(apply){
-  if(!RT.el)return;
-  if(apply&&RT.canvas){
-    var url=RT.canvas.toDataURL('image/jpeg',0.92);
-    var img=RT.el.querySelector('.ph-img');
-    if(!RT.el.dataset.rtOrig)RT.el.dataset.rtOrig=img.src;
-    img.src=url;img.style.display='block';RT.el.classList.add('has-img');
-    RT.el.dataset.scale=1;RT.el.dataset.x=0;RT.el.dataset.y=0;
-    applyTransform(RT.el);applyPhotoFx(RT.el);updateFilm();pushHistory();
+  if(apply&&RT.canvas&&RT.el){
+    try{
+      var url=RT.canvas.toDataURL('image/jpeg',0.92);
+      var img=RT.el.querySelector('.ph-img');
+      if(!RT.el.dataset.rtOrig&&img)RT.el.dataset.rtOrig=img.src;
+      if(img){img.src=url;img.style.display='block';}
+      RT.el.classList.add('has-img');
+      RT.el.dataset.scale=1;RT.el.dataset.x=0;RT.el.dataset.y=0;
+      applyTransform(RT.el);applyPhotoFx(RT.el);updateFilm();pushHistory();
+    }catch(e){try{alert('Не удалось сохранить ретушь: '+e.message);}catch(_){}}
   }
   if(RT.canvas&&RT.canvas.parentNode)RT.canvas.parentNode.removeChild(RT.canvas);
   RT.active=false;RT.el=null;RT.canvas=null;RT.ctx=null;RT.hist=[];RT.blur=null;
-  document.getElementById('retModal').classList.remove('open');
+  var m=document.getElementById('retModal');if(m)m.classList.remove('open');
 }
 function rtStampAt(cx,cy){
   var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
@@ -2104,16 +2106,24 @@ function wireRtCanvas(c){
     var dist=Math.hypot(x1-x0,y1-y0),step=Math.max(2,RT.size/3),n=Math.max(1,Math.round(dist/step));
     for(var i=0;i<=n;i++){var t=i/n,x=x0+(x1-x0)*t,y=y0+(y1-y0)*t;if(RT.mode==='heal')rtHealAt(x|0,y|0);else rtStampAt(x|0,y|0);}
   }
+  var pointers={},pinchStart=null,baseZoom=1,panStartC=null,panStartPan=null;
   c.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();
+    pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(pointers);
+    if(ids.length>=2){var a=pointers[ids[0]],b=pointers[ids[1]];pinchStart=Math.hypot(a.x-b.x,a.y-b.y);baseZoom=RT.zoom;panStartC={x:(a.x+b.x)/2,y:(a.y+b.y)/2};panStartPan={x:RT.panX,y:RT.panY};RT.pointerId=null;RT.last=null;RT.panId=null;return;}
     if(RT.panMode){RT.panId=e.pointerId;RT.panStart={x:e.clientX-RT.panX,y:e.clientY-RT.panY};try{c.setPointerCapture(e.pointerId);}catch(_){}return;}
     try{c.setPointerCapture(e.pointerId);}catch(_){}RT.pointerId=e.pointerId;var p=pos(e);RT.last=p;if(RT.mode==='heal')rtHealAt(p.x|0,p.y|0);else rtStampAt(p.x|0,p.y|0);
   },true);
   c.addEventListener('pointermove',function(e){
+    if(pointers[e.pointerId])pointers[e.pointerId]={x:e.clientX,y:e.clientY};
+    var ids=Object.keys(pointers);
+    if(ids.length>=2&&pinchStart){var a=pointers[ids[0]],b=pointers[ids[1]];var d=Math.hypot(a.x-b.x,a.y-b.y);RT.zoom=Math.max(1,Math.min(6,baseZoom*d/pinchStart));var cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;RT.panX=panStartPan.x+(cx-panStartC.x);RT.panY=panStartPan.y+(cy-panStartC.y);rtApplyTransform();var zs=document.getElementById('rtZoom');if(zs)zs.value=RT.zoom;return;}
     if(RT.panMode&&RT.panId===e.pointerId){RT.panX=e.clientX-RT.panStart.x;RT.panY=e.clientY-RT.panStart.y;rtApplyTransform();return;}
     if(RT.pointerId!==e.pointerId||!RT.last)return;var p=pos(e);stroke(RT.last.x,RT.last.y,p.x,p.y);RT.last=p;
   },true);
-  c.addEventListener('pointerup',function(e){if(RT.panId===e.pointerId)RT.panId=null;if(RT.pointerId===e.pointerId)RT.pointerId=null;RT.last=null;},true);
-  c.addEventListener('pointercancel',function(e){RT.panId=null;RT.pointerId=null;RT.last=null;},true);
+  function end(e){delete pointers[e.pointerId];if(Object.keys(pointers).length<2)pinchStart=null;if(RT.panId===e.pointerId)RT.panId=null;if(RT.pointerId===e.pointerId){RT.pointerId=null;RT.last=null;}}
+  c.addEventListener('pointerup',end,true);
+  c.addEventListener('pointercancel',end,true);
 }
 (function(){
   var b=document.getElementById('fxRetouch');
