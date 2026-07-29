@@ -1,4 +1,4 @@
-<!--seal-github-v20b|stickerfx+cutout-merged|video=local-->
+<!--seal-github-v21|trim-preview|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1648,8 +1648,8 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
     inp.addEventListener('input',function(e){e.stopPropagation();var val=+inp.value||0;if(sp)sp.textContent=f1(val);var vc=targetVidClip();if(!vc)return;applier(vc,val);updateFilm();pushSoon();});
     inp.addEventListener('click',function(e){e.stopPropagation();});
   }
-  bind('cxTrimS','cxTrimSV',function(vc,val){vc.dataset.trimStart=val;});
-  bind('cxTrimE','cxTrimEV',function(vc,val){vc.dataset.trimEnd=val;});
+  bind('cxTrimS','cxTrimSV',function(vc,val){vc.dataset.trimStart=val;seekVid(vc,val);});
+  bind('cxTrimE','cxTrimEV',function(vc,val){vc.dataset.trimEnd=val;seekVid(vc,val);});
   bind('cxPlayS','cxPlaySV',function(vc,val){vc.dataset.playStart=Math.round(val*1000);});
   bind('cxPlayE','cxPlayEV',function(vc,val){vc.dataset.playEnd=Math.round(val*1000);});
   var slInp=document.getElementById('cxSlideLen'),slSp=document.getElementById('cxSlideLenV');
@@ -1904,6 +1904,10 @@ function vidClipDuration(vc){
   if(!vc)return 0;
   var v=vc.querySelector('video');
   return (v&&v.duration&&isFinite(v.duration))?v.duration:0;
+}
+function seekVid(vc,sec){
+  var v=vc&&vc.querySelector('video');if(!v||!v.duration||!isFinite(v.duration))return;
+  try{v.currentTime=Math.max(0,Math.min(v.duration-0.05,sec));}catch(_){}
 }
 function applyVidClipFx(vc){
   if(!vc)return;
