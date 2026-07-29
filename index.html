@@ -1,4 +1,4 @@
-<!--seal-github-v36|sticker-overlay-serialized|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v37|heal-inpaint|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2060,8 +2060,7 @@ function openRetouch(el){
   document.getElementById('rtWrap').appendChild(c);RT.canvas=c;RT.ctx=c.getContext('2d');
   RT.ctx.drawImage(img,0,0,W,H);
   RT.hist=[RT.ctx.getImageData(0,0,W,H)];
-  try{RT.blur=boxBlur(RT.hist[0].data,W,H,6);}catch(_){RT.blur=null;}
-  RT.zoom=1;RT.panX=0;RT.panY=0;RT.panMode=false;RT.active=true;RT.cloneSrc=null;RT.cloneOff=null;RT.last=null;
+  RT.zoom=1;RT.panX=0;RT.panY=0;RT.panMode=false;RT.active=true;RT.cloneSrc=null;RT.cloneOff=null;RT.last=null;RT.lastHeal=0;
   rtApplyTransform();
   document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});
   document.getElementById('retModal').classList.add('open');
@@ -2095,10 +2094,23 @@ function rtStampAt(cx,cy){
   RT.ctx.putImageData(id,0,0);RT.hist.push(RT.ctx.getImageData(0,0,W,H));if(RT.hist.length>20)RT.hist.shift();
 }
 function rtHealAt(cx,cy){
-  var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data,B=RT.blur;
-  if(!B){RT.hist.push(RT.ctx.getImageData(0,0,W,H));return;}
+  if(performance.now()-(RT.lastHeal||0)<70)return;RT.lastHeal=performance.now();
+  var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
   var r=RT.size;
-  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var tx=cx+xx|0,ty=cy+yy|0;if(tx<0||ty<0||tx>=W||ty>=H)continue;var di=(ty*W+tx)*4;D[di]=B[di];D[di+1]=B[di+1];D[di+2]=B[di+2];D[di+3]=255;}}
+  var mask=[],inM={};
+  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var x=(cx+xx)|0,y=(cy+yy)|0;if(x<1||y<1||x>=W-1||y>=H-1)continue;var k=y*W+x;mask.push(k);inM[k]=1;}}
+  if(!mask.length){return;}
+  var filled={},remaining=mask.slice();
+  for(var it=0;it<r+4&&remaining.length;it++){
+    var next=[];
+    for(var mi=0;mi<remaining.length;mi++){
+      var k=remaining[mi],x=k%W,y=(k/W)|0,sR=0,sG=0,sB=0,n=0;
+      for(var dy=-1;dy<=1;dy++){for(var dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;var nk=(y+dy)*W+(x+dx);if(inM[nk]&&!filled[nk])continue;sR+=D[nk*4];sG+=D[nk*4+1];sB+=D[nk*4+2];n++;}}
+      if(n>0){filled[k]=[Math.round(sR/n),Math.round(sG/n),Math.round(sB/n)];}else{next.push(k);}
+    }
+    for(var key in filled){var kk=key|0;D[kk*4]=filled[key][0];D[kk*4+1]=filled[key][1];D[kk*4+2]=filled[key][2];D[kk*4+3]=255;delete inM[kk];}
+    remaining=next;
+  }
   RT.ctx.putImageData(id,0,0);RT.hist.push(RT.ctx.getImageData(0,0,W,H));if(RT.hist.length>20)RT.hist.shift();
 }
 function wireRtCanvas(c){
