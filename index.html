@@ -1,4 +1,4 @@
-<!--seal-github-v26|reset-busy+video-restart|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v27|server-OFF-local-render|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2558,17 +2558,6 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
   var btn=gifBtn,oldText=btn.textContent;btn.disabled=true;btn.textContent='⏳ …';
   document.fonts.ready.then(function(){
     var el=slides[cur].el;
-    /* серверный видео-экспорт: если на слайде есть вставленный видео-клип —
-       собираем честный MP4 на сервере (ffmpeg), минуя локальный MediaRecorder. */
-    if(el.querySelector('.vidclip video')){
-      return serverCompose(el,'mp4',btn).then(function(r){
-        videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        if(r&&r.blob)openVideoModal(r.blob,r.mime);
-      },function(e){
-        videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        alert('Не получилось собрать видео'+(e&&e.message?(': '+e.message):'')+' — напиши мне.');
-      });
-    }
     var items=getAnimItems(el);
     var spinMode=hasSpinningSticker(items);
     var typeSchedule=buildTypeSchedule(items);
