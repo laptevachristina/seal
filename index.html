@@ -1,4 +1,4 @@
-<!--seal-github-v20|stickerfx+cutout-merged|video=local-->
+<!--seal-github-v20b|stickerfx+cutout-merged|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -854,13 +854,6 @@ function updateCutResult(st,res,mySeq,thr){
   var img=st.querySelector('img');if(img)img.src=res.url;
   st.dataset.cutThreshold=String(thr);
   if(typeof updateFilm==='function')updateFilm();
-}
-  cutSliderTarget=st;
-  var panel=document.getElementById('cutSliderPanel'),input=document.getElementById('cutSliderInput');
-  if(!panel||!input)return;
-  input.value=thr;
-  panel.style.left='50%';panel.style.top='50%';panel.style.transform='translate(-50%,-50%)';
-  panel.classList.add('open');
 }
 function closeCutSlider(){
   var panel=document.getElementById('cutSliderPanel');
