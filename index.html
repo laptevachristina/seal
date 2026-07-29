@@ -1,4 +1,4 @@
-<!--seal-github-v33|FIX-insertBefore-crash|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v34|remove-stroke|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -399,7 +399,6 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-cmd="italic"><em>Курсив</em></button>
         <button data-cmd="underline"><span class="u">Подчеркнуть</span></button>
         <span class="btn-grp"><button class="alnbtn" id="fontMinusBtn" title="Меньше">A−</button><button class="alnbtn" id="fontPlusBtn" title="Больше">A+</button></span>
-        <button class="alnbtn" id="strokeBtn" title="Контур текста">▭ Контур</button>
         <button class="dd-btn alnbtn" id="alignBtn" data-dd="alnmenu" title="Выравнивание"><svg viewBox="0 0 18 12" width="15" height="10" fill="currentColor"><rect x="0" y="0" width="18" height="2"/><rect x="3.5" y="5" width="11" height="2"/><rect x="2" y="10" width="14" height="2"/></svg> ▾</button>
         <button class="dd-btn" id="addTextBtn" data-dd="txtmenu">＋ Текст ▾</button>
       </div>
@@ -1743,8 +1742,6 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   var fm=document.getElementById('fontMinusBtn'),fp=document.getElementById('fontPlusBtn');
   if(fm)fm.addEventListener('click',stepFont(-2));
   if(fp)fp.addEventListener('click',stepFont(2));
-  var sb=document.getElementById('strokeBtn');
-  if(sb)sb.addEventListener('click',function(e){e.stopPropagation();var el=activeEdit();if(!el)return;el.classList.toggle('stroked');updateFilm();pushHistory();});
 })();
 document.addEventListener('click',function(){document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});});
 
