@@ -1,4 +1,4 @@
-<!--seal-github-v35|sticker-over-video+cut-ui|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v36|sticker-overlay-serialized|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2545,10 +2545,13 @@ function serverCompose(el,format,btn){
   function reset(){window._skipVids=false;window._skipStickersAbove=false;window._onlyStickersAbove=false;}
   function blob(c){if(!c)return Promise.resolve(null);return new Promise(function(res){c.toBlob(function(b){res(b);},'image/png');});}
   window._skipVids=true;window._skipStickersAbove=true;
-  var bgP=renderSlideCanvas(el,null,null).then(function(c){reset();if(!c)throw new Error('рендер фона не удался');return blob(c);});
-  var ovP=hasAbove?(function(){window._onlyStickersAbove=true;return renderSlideCanvas(el,null,null).then(function(c){window._onlyStickersAbove=false;return blob(c);});})():Promise.resolve(null);
-  return Promise.all([bgP,ovP]).then(function(arr){
-    var bgBlob=arr[0],ovBlob=arr[1];
+  var bgP=renderSlideCanvas(el,null,null).then(function(c){window._skipVids=false;window._skipStickersAbove=false;if(!c)throw new Error('рендер фона не удался');return blob(c);});
+  return bgP.then(function(bgBlob){
+    if(!hasAbove)return Promise.resolve({bg:bgBlob,ov:null});
+    window._onlyStickersAbove=true;
+    return renderSlideCanvas(el,null,null).then(function(c){window._onlyStickersAbove=false;return blob(c);}).then(function(ov){return {bg:bgBlob,ov:ov};});
+  }).then(function(res){
+    var bgBlob=res.bg,ovBlob=res.ov;
     var ES=2;
     var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),w=Math.round(vc.offsetWidth*ES),h=Math.round(vc.offsetHeight*ES);
     var rad=Math.round((parseFloat(getComputedStyle(vc.querySelector('video')).borderTopLeftRadius)||28)*ES);
