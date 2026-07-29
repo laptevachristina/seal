@@ -1,4 +1,4 @@
-<!--seal-github-v24|server-ffmpeg-ON|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v25|server-ON+circle-clip|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -162,7 +162,7 @@ em{font-style:italic}
 
 .vidclip{position:absolute;touch-action:none;cursor:move}
 .vidclip video{width:100%;height:100%;object-fit:cover;background:#000;pointer-events:none;display:block;transform-origin:center center;border-radius:14px}
-.vidclip.cround video{border-radius:50%}
+.vidclip.cround video{border-radius:0;clip-path:circle(closest-side)}
 .vidclip .mv-handle,.vidclip .mv-del,.vidclip .tx-resize,.vidclip .layer-toggle{display:none}
 .vidclip.sel{outline:2px dashed var(--sage);outline-offset:6px}
 .vidclip.sel .mv-handle,.vidclip.sel .mv-del,.vidclip.sel .tx-resize,.vidclip.sel .layer-toggle{display:block}
