@@ -1,4 +1,4 @@
-<!--seal-github-v19|ui-panels-bottomright|video=local-->
+<!--seal-github-v20|stickerfx+cutout-merged|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -502,6 +502,9 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </div>
   <div class="fx-slider"><label>Скорость появления/исчезн. <span id="stInDurV">480</span>мс</label><input type="range" id="stInDur" min="150" max="2000" step="50" value="480"></div>
   <div class="fx-slider"><label>Скорость постоянных <span id="stLoopsV">1.0</span>×</label><input type="range" id="stLoops" min="0.3" max="3" step="0.1" value="1"></div>
+  <div class="cx-hint">Вырезание фона</div>
+  <div class="fx-row"><button class="fx-chip" id="stCutBtn">✂ Вырезать заново</button></div>
+  <div class="fx-slider"><label>Жёсткость <span id="stCutV">55</span></label><input type="range" id="stCut" min="20" max="110" value="55"></div>
   <div class="fx-bottom">
     <div class="cx-hint">Эффекты видны в экспорте «✨ Видео».</div>
     <button class="fx-reset" id="stReset">Сброс</button>
@@ -831,7 +834,27 @@ function selectSticker(st){
   if(typeof openStickerFx==='function')openStickerFx(st);
 }
 var cutSliderTarget=null,cutSliderT=null;
-function openCutSlider(st,thr){
+function openCutSlider(st,thr){ /* объединено с панелью стикера */
+  if(typeof openStickerFx==='function'){openStickerFx(st);}
+  var inp=document.getElementById('stCut');if(inp)inp.value=thr;
+  var v=document.getElementById('stCutV');if(v)v.textContent=thr;
+}
+var _cutSeq=0,_cutFast=null,_cutFinal=null;
+function applyCutoutAdjust(st,thr){
+  if(!st||!st.dataset.origSrc)return;
+  if(_cutFast)clearTimeout(_cutFast);if(_cutFinal)clearTimeout(_cutFinal);
+  _cutFast=setTimeout(function(){_cutSeq++;cutoutBackground(st.dataset.origSrc,thr,300).then(function(res){updateCutResult(st,res,_cutSeq,thr);});},40);
+  _cutFinal=setTimeout(function(){_cutSeq++;cutoutBackground(st.dataset.origSrc,thr,1200).then(function(res){updateCutResult(st,res,_cutSeq,thr);});},320);
+}
+function updateCutResult(st,res,mySeq,thr){
+  if(mySeq!==_cutSeq||!res||!st)return;
+  var oldW=st.offsetWidth,oldH=st.offsetHeight,oldL=parseFloat(st.style.left)||0,oldT=parseFloat(st.style.top)||0;
+  var cx=oldL+oldW/2,cy=oldT+oldH/2,newW=oldW,newH=newW*(res.h/res.w);
+  st.style.left=(cx-newW/2)+'px';st.style.top=(cy-newH/2)+'px';st.style.width=newW+'px';st.style.height=newH+'px';
+  var img=st.querySelector('img');if(img)img.src=res.url;
+  st.dataset.cutThreshold=String(thr);
+  if(typeof updateFilm==='function')updateFilm();
+}
   cutSliderTarget=st;
   var panel=document.getElementById('cutSliderPanel'),input=document.getElementById('cutSliderInput');
   if(!panel||!input)return;
@@ -1679,6 +1702,11 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   /* скорость постоянных */
   var lp=document.getElementById('stLoops'),lpv=document.getElementById('stLoopsV');
   if(lp){lp.addEventListener('input',function(e){e.stopPropagation();var v=+lp.value||1;if(lpv)lpv.textContent=(Math.round(v*10)/10).toFixed(1);var st=targetSticker();if(!st)return;st.dataset.stloops=v;updateFilm();pushSoon();});lp.addEventListener('click',function(e){e.stopPropagation();});}
+  /* вырезание фона */
+  var cutBtn=document.getElementById('stCutBtn');
+  if(cutBtn)cutBtn.addEventListener('click',function(e){e.stopPropagation();var st=targetSticker();if(!st)return;var img=st.querySelector('img');if(!st.dataset.origSrc&&img)st.dataset.origSrc=img.src;if(!st.dataset.origSrc)return;applyCutoutAdjust(st,parseFloat(st.dataset.cutThreshold)||55);pushSoon();});
+  var cutInp=document.getElementById('stCut'),cutV=document.getElementById('stCutV');
+  if(cutInp){cutInp.addEventListener('input',function(e){e.stopPropagation();var v=+cutInp.value||55;if(cutV)cutV.textContent=v;var st=targetSticker();if(!st||!st.dataset.origSrc)return;applyCutoutAdjust(st,v);});cutInp.addEventListener('click',function(e){e.stopPropagation();});}
   /* сброс */
   var sr=document.getElementById('stReset');
   if(sr)sr.addEventListener('click',function(e){e.stopPropagation();var st=targetSticker();if(!st)return;delete st.dataset.stin;delete st.dataset.stout;delete st.dataset.stpulse;delete st.dataset.stfloat;delete st.dataset.spin;delete st.dataset.stindur;delete st.dataset.stloops;syncStickerFxUI();updateFilm();pushHistory();});
@@ -1967,6 +1995,9 @@ function syncStickerFxUI(){
   var lp=document.getElementById('stLoops'),lpv=document.getElementById('stLoopsV');
   if(id)id.value=inDur;if(idv)idv.textContent=Math.round(inDur);
   if(lp)lp.value=loops;if(lpv)lpv.textContent=(Math.round(loops*10)/10).toFixed(1);
+  var cut=st?(parseFloat(st.dataset.cutThreshold)||55):55;
+  var cutInp=document.getElementById('stCut'),cutV=document.getElementById('stCutV');
+  if(cutInp)cutInp.value=cut;if(cutV)cutV.textContent=cut;
 }
 function openStickerFx(st){
   var t=document.getElementById('stickerfx');if(!t||!st)return;
