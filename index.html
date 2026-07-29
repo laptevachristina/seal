@@ -1,4 +1,4 @@
-<!--seal-github-v17|long-press-replace+z-order|video=local-->
+<!--seal-github-v18|video-24fps-smooth|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2301,9 +2301,7 @@ function animStateAt(items,elapsedMs,spinMode,typeSchedule,fullMs){
   });
   return state;
 }
-var VIDEO_FPS=16; /* было 24 — на телефоне рендер кадра (SVG-текст+фото+видео вместе) не всегда укладывается
-  в 1000/24≈42мс бюджет, из-за этого реальная запись отставала от расчёта и выглядела рвано; 16фпс даёт
-  каждому кадру больше времени и всё ещё смотрится гладко для этого типа анимации (не быстрое движение) */
+var VIDEO_FPS=24; /* 24 — киношный стандарт, плавное видео; рендер кадра оптимизирован под этот бюджет */
 function pickVideoMime(){
   if(!window.MediaRecorder||!MediaRecorder.isTypeSupported)return '';
   var cands=['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
@@ -2323,7 +2321,7 @@ function extFor(mime){return mime.indexOf('mp4')>=0?'mp4':'webm';}
 /* PRERENDER_FPS ровно равен VIDEO_FPS нарочно: если частота подготовленных кадров клипа не совпадает
    с частотой самой записи, кадры повторяются НЕРАВНОМЕРНО (то 1 раз, то 2) — это само по себе выглядит
    дёргано, отдельно от общей скорости. Одинаковый темп = ровный такт, без этого биения. */
-var PRERENDER_FPS=VIDEO_FPS,PRERENDER_MAX_FRAMES=260;
+var PRERENDER_FPS=VIDEO_FPS,PRERENDER_MAX_FRAMES=400;
 function prerenderClipFrames(video,targetW,targetH,onProgress){
   return new Promise(function(resolve){
     if(!video.duration||!isFinite(video.duration)||!video.videoWidth){resolve({frames:[],fps:PRERENDER_FPS});return;}
