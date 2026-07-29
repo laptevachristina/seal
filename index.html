@@ -1,4 +1,4 @@
-<!--seal-github-v34|remove-stroke|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v35|sticker-over-video+cut-ui|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -482,6 +482,9 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-slider"><label>Зум (кадрирование) <span id="cxZoomV">1.0</span>×</label><input type="range" id="cxZoom" min="1" max="4" step="0.05" value="1"></div>
   <div class="fx-slider"><label>Сдвиг по горизонтали <span id="cxPanXV">0</span></label><input type="range" id="cxPanX" min="-1" max="1" step="0.05" value="0"></div>
   <div class="fx-slider"><label>Сдвиг по вертикали <span id="cxPanYV">0</span></label><input type="range" id="cxPanY" min="-1" max="1" step="0.05" value="0"></div>
+  <div class="cx-hint">Вырезать кусок (склейка до и после)</div>
+  <div class="fx-slider"><label>Вырезать от <span id="cxCutSV">—</span>с</label><input type="range" id="cxCutS" min="0" max="10" step="0.1" value="0"></div>
+  <div class="fx-slider"><label>до <span id="cxCutEV">—</span>с</label><input type="range" id="cxCutE" min="0" max="10" step="0.1" value="0"></div>
   <div class="fx-row">
     <button class="fx-chip" id="cxLayer">Слой: выше текста</button>
     <button class="fx-chip" id="cxRound">◯ Круг</button>
@@ -1678,6 +1681,8 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   bind('cxTrimE','cxTrimEV',function(vc,val){vc.dataset.trimEnd=val;seekVid(vc,val);});
   bind('cxPlayS','cxPlaySV',function(vc,val){vc.dataset.playStart=Math.round(val*1000);});
   bind('cxPlayE','cxPlayEV',function(vc,val){vc.dataset.playEnd=Math.round(val*1000);});
+  bind('cxCutS','cxCutSV',function(vc,val){vc.dataset.cutS=val;seekVid(vc,val);});
+  bind('cxCutE','cxCutEV',function(vc,val){vc.dataset.cutE=val;seekVid(vc,val);});
   var slInp=document.getElementById('cxSlideLen'),slSp=document.getElementById('cxSlideLenV');
   if(slInp){slInp.addEventListener('input',function(e){e.stopPropagation();var val=+slInp.value||0;if(slSp)slSp.textContent=f1(val);if(!slides[cur])return;if(val>=0.5)slides[cur].el.dataset.slideLen=val;else delete slides[cur].el.dataset.slideLen;updateFilm();pushSoon();});slInp.addEventListener('click',function(e){e.stopPropagation();});}
   var lb=document.getElementById('cxLayer');
@@ -2206,7 +2211,9 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       try{
         var c=document.createElement('canvas');c.width=w*ES;c.height=h*ES;
         var ctx=c.getContext('2d');ctx.scale(ES,ES);
-        ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+        var _onlyAbove=!!window._onlyStickersAbove;
+        if(!_onlyAbove){ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);}
+        if(!_onlyAbove)
         photos.forEach(function(p){
           ctx.save();ctx.globalAlpha=p.opacity;roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();if(p.fx&&p.fx!=='none'){try{ctx.filter=p.fx;}catch(_){}}
           var nw=p.img.naturalWidth,nh=p.img.naturalHeight,cover=Math.max(p.W/nw,p.H/nh);
@@ -2233,12 +2240,12 @@ function renderSlideCanvas(el,animState,videoFrameMap){
           try{ctx.drawImage(rec.src,dx,dy,dw,dh);}catch(e){}
           ctx.restore();
         }
-        stickersBelow.forEach(drawSticker);
+        if(!_onlyAbove){stickersBelow.forEach(drawSticker);
         vidsBelow.forEach(drawVid);
         ctx.globalAlpha=1;
         ctx.drawImage(overlay,0,0,w,h);
-        vidsAbove.forEach(drawVid);
-        stickersAbove.forEach(drawSticker);
+        vidsAbove.forEach(drawVid);}
+        if(!window._skipStickersAbove)stickersAbove.forEach(drawSticker);
         resolve(c);
       }catch(e){reject(e);}
     };
@@ -2534,26 +2541,29 @@ function serverCompose(el,format,btn){
   var dur=Math.min(10,Math.max(0.5,v.duration));
   var st=function(t){if(btn)btn.textContent=t;};
   st('⏳ фон…');
-  window._skipVids=true;
-  return renderSlideCanvas(el,null,null).then(function(canvas){
-    window._skipVids=false;
-    if(!canvas)throw new Error('рендер фона не удался');
-    var ES=canvas.width/540;
+  var hasAbove=!!el.querySelector('.sticker:not([data-layer="below"])');
+  function reset(){window._skipVids=false;window._skipStickersAbove=false;window._onlyStickersAbove=false;}
+  function blob(c){if(!c)return Promise.resolve(null);return new Promise(function(res){c.toBlob(function(b){res(b);},'image/png');});}
+  window._skipVids=true;window._skipStickersAbove=true;
+  var bgP=renderSlideCanvas(el,null,null).then(function(c){reset();if(!c)throw new Error('рендер фона не удался');return blob(c);});
+  var ovP=hasAbove?(function(){window._onlyStickersAbove=true;return renderSlideCanvas(el,null,null).then(function(c){window._onlyStickersAbove=false;return blob(c);});})():Promise.resolve(null);
+  return Promise.all([bgP,ovP]).then(function(arr){
+    var bgBlob=arr[0],ovBlob=arr[1];
+    var ES=2;
     var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),w=Math.round(vc.offsetWidth*ES),h=Math.round(vc.offsetHeight*ES);
     var rad=Math.round((parseFloat(getComputedStyle(vc.querySelector('video')).borderTopLeftRadius)||28)*ES);
-    return new Promise(function(res){canvas.toBlob(function(b){res(b);},'image/png');}).then(function(bgBlob){
-      st('⏳ сервер…');
-      return fetch(v.src).then(function(r){return r.blob();}).then(function(vblob){
-        var cutColor=vc.dataset.cutColor||'';
-        var cutThresh=vc.dataset.cutThresh||'';
-        var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh});
-        var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
-        st('⏳ сборка…');
-        return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
-      }).then(function(r){if(!r.ok)throw new Error('сервер '+r.status);return r.blob();})
-        .then(function(b){return {blob:b,mime:'video/mp4'};});
-    });
-  })['catch'](function(err){window._skipVids=false;throw err;});
+    st('⏳ сервер…');
+    return fetch(v.src).then(function(r){return r.blob();}).then(function(vblob){
+      var cutColor=vc.dataset.cutColor||'',cutThresh=vc.dataset.cutThresh||'';
+      var cutS=vc.dataset.cutS||'',cutE=vc.dataset.cutE||'';
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,hasAbove:!!ovBlob});
+      var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
+      if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
+      st('⏳ сборка…');
+      return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
+    }).then(function(r){if(!r.ok)throw new Error('сервер '+r.status);return r.blob();})
+      .then(function(b){return {blob:b,mime:'video/mp4'};});
+  })['catch'](function(err){reset();throw err;});
 }
 var gifBtn=document.getElementById('exp-gif');
 var videoExportBusy=false;
