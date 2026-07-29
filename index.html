@@ -1,4 +1,4 @@
-<!--seal-github-v27|server-OFF-local-render|video=local-->
+<!--seal-github-v28|video-not-paused|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2328,7 +2328,7 @@ function previewReset(){
   var el=_previewEl||(cur>=0&&slides[cur]&&slides[cur].el);if(!el)return;
   el.querySelectorAll('[data-edit], .frame, [data-photo], .sticker').forEach(function(e){e.style.opacity='';});
   el.querySelectorAll('.sticker').forEach(function(st){var r=parseFloat(st.dataset.rot);st.style.transform=r?'rotate('+st.dataset.rot+'deg)':'';});
-  el.querySelectorAll('.vidclip').forEach(function(vc){var v=vc.querySelector('video');if(v){try{v.pause();}catch(_){}try{v.currentTime=0;}catch(_){}}});
+  /* видео НЕ трогаем — iOS блокирует play() без жеста, поэтому пауза здесь ломает воспроизведение */
   _previewEl=null;
 }
 function previewApply(el,elapsed,fullMs){
