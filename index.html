@@ -1,4 +1,4 @@
-<!--seal-github-v22|retouch-heal-clone|video=local-->
+<!--seal-github-v22b|retouch-heal-clone|video=local-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2071,7 +2071,7 @@ function rtStampAt(cx,cy){
   var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
   if(!RT.cloneOff){RT.cloneSrc={x:cx,y:cy};RT.cloneOff={x:0,y:0};return;}
   var sx0=cx-RT.cloneOff.x,sy0=cy-RT.cloneOff.y,r=RT.size,srcSnap=RT.ctx.getImageData(0,0,W,H).data;
-  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var tx=cx+xx|0,ty=cy+yy|0;if(tx<0||ty<0||tx>=W||ty>=H)continue;var sxi=sx0+xx|0,syi=sy0+yy|0;if(sxi<0||syi<0||sxi>=W||syi>=H)continue;var di=(ty*W+tx)*4,si=(syi*W+sxi)*4;D[di]=srcSnap[si];D[di+1]=srcSnap[si+1];D[di+2]=srcSnap[si+2];D[di+3]=255;}}}
+  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var tx=cx+xx|0,ty=cy+yy|0;if(tx<0||ty<0||tx>=W||ty>=H)continue;var sxi=sx0+xx|0,syi=sy0+yy|0;if(sxi<0||syi<0||sxi>=W||syi>=H)continue;var di=(ty*W+tx)*4,si=(syi*W+sxi)*4;D[di]=srcSnap[si];D[di+1]=srcSnap[si+1];D[di+2]=srcSnap[si+2];D[di+3]=255;}}
   RT.ctx.putImageData(id,0,0);RT.hist.push(RT.ctx.getImageData(0,0,W,H));if(RT.hist.length>20)RT.hist.shift();
 }
 function rtHealAt(cx,cy){
