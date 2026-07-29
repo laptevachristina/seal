@@ -1,4 +1,4 @@
-<!--seal-github-v32|retouch-pinch+close-fix|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v33|FIX-insertBefore-crash|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -549,7 +549,6 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 <input type="file" id="filepick" accept="image/*" multiple style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
 <div id="measurer" style="position:fixed;left:-99999px;top:0;width:540px;pointer-events:none;opacity:0"></div>
 
-<script>window.addEventListener("error",function(e){var m=e.error&&e.error.message||e.message||"unknown";try{alert("JS ERROR: "+m+"\n@"+(e.filename||"")+":"+(e.lineno||""));}catch(_){}});window.addEventListener("unhandledrejection",function(e){try{alert("PROMISE ERR: "+(e.reason&&e.reason.message||e.reason||""));}catch(_){}});</script>
 <script>
 /* ---- viewport + PWA metas ---- */
 (function(){
@@ -2135,7 +2134,7 @@ function wireRtCanvas(c){
   var zm=document.getElementById('rtZoom');
   if(zm)zm.addEventListener('input',function(){RT.zoom=+zm.value||1;if(RT.zoom<=1){RT.panX=0;RT.panY=0;}rtApplyTransform();});
   var mv=document.createElement('button');mv.id='rtMove';mv.textContent='✋ Двигать';mv.className='';
-  var bar=document.getElementById('retBar');if(bar&&bar.querySelector('#rtZoom')){bar.insertBefore(mv,document.getElementById('rtZoom'));}
+  var bar=document.getElementById('retBar');if(bar){bar.insertBefore(mv,bar.firstChild);}
   if(mv)mv.addEventListener('click',function(){RT.panMode=!RT.panMode;mv.classList.toggle('on',RT.panMode);mv.textContent=RT.panMode?'✏ Рисовать':'✋ Двигать';RT.panId=null;RT.pointerId=null;RT.last=null;});
   var u=document.getElementById('rtUndo');if(u)u.addEventListener('click',function(){if(RT.hist.length>1){RT.hist.pop();RT.ctx.putImageData(RT.hist[RT.hist.length-1],0,0);}});
   var ok=document.getElementById('rtOk');if(ok)ok.addEventListener('click',function(){closeRetouch(true);});
