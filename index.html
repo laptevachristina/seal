@@ -1,4 +1,4 @@
-<!--seal-github-v37|heal-inpaint|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v38|speed-slider|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -480,6 +480,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-slider"><label>Замирает на <span id="cxPlayEV">0.0</span>с</label><input type="range" id="cxPlayE" min="0" max="60" step="0.1" value="0"></div>
   <div class="fx-slider"><label>Длина слайда <span id="cxSlideLenV">—</span>с</label><input type="range" id="cxSlideLen" min="0.5" max="30" step="0.1" value="3"></div>
   <div class="fx-slider"><label>Зум (кадрирование) <span id="cxZoomV">1.0</span>×</label><input type="range" id="cxZoom" min="1" max="4" step="0.05" value="1"></div>
+  <div class="fx-slider"><label>Скорость <span id="cxSpeedV">1.0</span>×</label><input type="range" id="cxSpeed" min="0.25" max="4" step="0.05" value="1"></div>
   <div class="fx-slider"><label>Сдвиг по горизонтали <span id="cxPanXV">0</span></label><input type="range" id="cxPanX" min="-1" max="1" step="0.05" value="0"></div>
   <div class="fx-slider"><label>Сдвиг по вертикали <span id="cxPanYV">0</span></label><input type="range" id="cxPanY" min="-1" max="1" step="0.05" value="0"></div>
   <div class="cx-hint">Вырезать кусок (склейка до и после)</div>
@@ -1683,6 +1684,7 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   bind('cxPlayE','cxPlayEV',function(vc,val){vc.dataset.playEnd=Math.round(val*1000);});
   bind('cxCutS','cxCutSV',function(vc,val){vc.dataset.cutS=val;seekVid(vc,val);});
   bind('cxCutE','cxCutEV',function(vc,val){vc.dataset.cutE=val;seekVid(vc,val);});
+  bind('cxSpeed','cxSpeedV',function(vc,val){vc.dataset.cspeed=val;});
   var slInp=document.getElementById('cxSlideLen'),slSp=document.getElementById('cxSlideLenV');
   if(slInp){slInp.addEventListener('input',function(e){e.stopPropagation();var val=+slInp.value||0;if(slSp)slSp.textContent=f1(val);if(!slides[cur])return;if(val>=0.5)slides[cur].el.dataset.slideLen=val;else delete slides[cur].el.dataset.slideLen;updateFilm();pushSoon();});slInp.addEventListener('click',function(e){e.stopPropagation();});}
   var lb=document.getElementById('cxLayer');
@@ -1979,11 +1981,13 @@ function syncVidClipFxUI(){
   if(slInp)slInp.value=isNaN(sl)?3:sl;if(slSp)slSp.textContent=isNaN(sl)?'авто':fmt1(sl);
   var lb=document.getElementById('cxLayer');
   if(lb)lb.textContent=vc&&vc.dataset.layer==='below'?'Слой: под текстом':'Слой: выше текста';
-  var zoom=vc?(parseFloat(vc.dataset.czoom)||1):1,panX=vc?(parseFloat(vc.dataset.cpanx)||0):0,panY=vc?(parseFloat(vc.dataset.cpany)||0):0;
+  var zoom=vc?(parseFloat(vc.dataset.czoom)||1):1,panX=vc?(parseFloat(vc.dataset.cpanx)||0):0,panY=vc?(parseFloat(vc.dataset.cpany)||0):0,speed=vc?(parseFloat(vc.dataset.cspeed)||1):1;
   var zI=document.getElementById('cxZoom'),zV=document.getElementById('cxZoomV');
   var pxI=document.getElementById('cxPanX'),pxV=document.getElementById('cxPanXV');
   var pyI=document.getElementById('cxPanY'),pyV=document.getElementById('cxPanYV');
+  var spI=document.getElementById('cxSpeed'),spV=document.getElementById('cxSpeedV');
   if(zI)zI.value=zoom;if(zV)zV.textContent=(Math.round(zoom*20)/20).toFixed(2);
+  if(spI)spI.value=speed;if(spV)spV.textContent=(Math.round(speed*20)/20).toFixed(2);
   if(pxI)pxI.value=panX;if(pxV)pxV.textContent=Math.round(panX*100);
   if(pyI)pyI.value=panY;if(pyV)pyV.textContent=Math.round(panY*100);
   var rnd=document.getElementById('cxRound');
@@ -2571,7 +2575,8 @@ function serverCompose(el,format,btn){
     return fetch(v.src).then(function(r){return r.blob();}).then(function(vblob){
       var cutColor=vc.dataset.cutColor||'',cutThresh=vc.dataset.cutThresh||'';
       var cutS=vc.dataset.cutS||'',cutE=vc.dataset.cutE||'';
-      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,hasAbove:!!ovBlob});
+      var cspeed=vc.dataset.cspeed||'';
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,cspeed:cspeed,hasAbove:!!ovBlob});
       var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
       if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
       st('⏳ сборка…');
