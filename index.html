@@ -1,4 +1,4 @@
-<!--seal-github-v42|vedit-layout-playrow|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v43|vedit-dup+layout|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -616,6 +616,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </div>
   <div class="vedit-tools">
     <button class="vedit-tool" id="veCut"><span class="vedit-tool-ic">✂</span><span class="vedit-tool-lbl">Резать</span></button>
+    <button class="vedit-tool" id="veDup"><span class="vedit-tool-ic">⧉</span><span class="vedit-tool-lbl">Дубликат</span></button>
     <button class="vedit-tool" id="veFreeze"><span class="vedit-tool-ic">❄</span><span class="vedit-tool-lbl">Заморозить</span></button>
     <button class="vedit-tool" id="veDel"><span class="vedit-tool-ic">🗑</span><span class="vedit-tool-lbl">Удалить</span></button>
     <button class="vedit-tool" id="veSpeedBtn"><span class="vedit-tool-ic">⏩</span><span class="vedit-tool-lbl">Скорость</span></button>
@@ -2332,6 +2333,8 @@ function veUpdateCursor(elapsed){
 (function(){
   /* открыть из панели клипа */
   var ob=document.getElementById('cxVedit');if(ob)ob.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(vc)openVedit(vc);});
+  /* дубликат выбранного сегмента */
+  var dup=document.getElementById('veDup');if(dup)dup.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var copy=JSON.parse(JSON.stringify(VE.edl[VE.sel]));VE.edl.splice(VE.sel+1,0,copy);VE.sel=VE.sel+1;VE.full=edlDur(VE.edl);veditRender();});
   /* резать: разделить в позиции курсора */
   var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){
     var at=edlAt(VE.edl,VE.cursorMs);var i=at.i,s=VE.edl[i];if(!s)return;
