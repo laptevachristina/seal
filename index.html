@@ -1,4 +1,4 @@
-<!--seal-github-v38|speed-slider|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v39|speed12+safe45|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -202,6 +202,12 @@ body{background:var(--ui-bg);color:var(--ui-text);font-family:'Inter',system-ui,
 header{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));border-bottom:1px solid var(--ui-line);flex-wrap:wrap;position:sticky;top:0;z-index:20;background:var(--ui-panel)}
 header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px}
 .hd-actions{display:inline-flex;gap:6px;flex-wrap:nowrap;flex-shrink:0}
+/* safe-zone 4:5 внутри 9:16 (обложка профиля Instagram) */
+.safe45{position:absolute;left:0;right:0;height:21%;background:rgba(10,10,14,.5);pointer-events:none;z-index:50;display:none;backdrop-filter:blur(1px)}
+.safe45.top{top:0;border-bottom:1px dashed rgba(255,255,255,.4)}
+.safe45.bot{bottom:0;border-top:1px dashed rgba(255,255,255,.4)}
+.safe45-note{position:absolute;top:21%;left:0;right:0;text-align:center;color:#fff;font:600 11px 'Inter';text-shadow:0 1px 4px rgba(0,0,0,.7);z-index:51;display:none;pointer-events:none;padding:4px;background:rgba(0,0,0,.25)}
+.scaler.show45 .safe45,.scaler.show45 .safe45-note{display:block}
 .hd-actions .hbtn{padding:7px 10px;font-size:11.5px}
 .hd-actions .hbtn.primary{padding:7px 10px}
 header .logo b{color:var(--ui-acc);font-weight:700}
@@ -369,6 +375,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <button data-f="45" class="on">4:5</button>
       <button data-f="916">9:16</button>
     </div>
+    <button class="hbtn" id="safe45Btn" title="Показать обложку 4:5 в 9:16">▣4:5</button>
     <div class="grow"></div>
     <div class="hd-actions">
       <button class="hbtn primary" id="exp-all">Скачать</button><button class="hbtn" id="exp-gif">✨ Видео</button>
@@ -377,7 +384,11 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </header>
 
   <div class="stage" id="stage">
-    <div class="scaler" id="scaler"><div id="host"></div></div>
+    <div class="scaler" id="scaler">
+      <div id="host"></div>
+      <div class="safe45 top"></div><div class="safe45 bot"></div>
+      <div class="safe45-note">обложка 4:5 (видно в профиле)</div>
+    </div>
   </div>
 
   <div class="controls">
@@ -480,7 +491,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-slider"><label>Замирает на <span id="cxPlayEV">0.0</span>с</label><input type="range" id="cxPlayE" min="0" max="60" step="0.1" value="0"></div>
   <div class="fx-slider"><label>Длина слайда <span id="cxSlideLenV">—</span>с</label><input type="range" id="cxSlideLen" min="0.5" max="30" step="0.1" value="3"></div>
   <div class="fx-slider"><label>Зум (кадрирование) <span id="cxZoomV">1.0</span>×</label><input type="range" id="cxZoom" min="1" max="4" step="0.05" value="1"></div>
-  <div class="fx-slider"><label>Скорость <span id="cxSpeedV">1.0</span>×</label><input type="range" id="cxSpeed" min="0.25" max="4" step="0.05" value="1"></div>
+  <div class="fx-slider"><label>Скорость <span id="cxSpeedV">1.0</span>×</label><input type="range" id="cxSpeed" min="0.25" max="12" step="0.05" value="1"></div>
   <div class="fx-slider"><label>Сдвиг по горизонтали <span id="cxPanXV">0</span></label><input type="range" id="cxPanX" min="-1" max="1" step="0.05" value="0"></div>
   <div class="fx-slider"><label>Сдвиг по вертикали <span id="cxPanYV">0</span></label><input type="range" id="cxPanY" min="-1" max="1" step="0.05" value="0"></div>
   <div class="cx-hint">Вырезать кусок (склейка до и после)</div>
@@ -1851,6 +1862,15 @@ document.getElementById('fmt').addEventListener('click',function(e){
   slides.forEach(function(s){s.el.classList.toggle('f916',format==='916');});
   render();pushHistory();
 });
+/* safe-zone 4:5 внутри 9:16 — показывает какую часть увидят как обложку в профиле */
+(function(){
+  var btn=document.getElementById('safe45Btn');if(!btn)return;
+  var scaler=document.getElementById('scaler');
+  btn.addEventListener('click',function(){
+    scaler.classList.toggle('show45');
+    btn.classList.toggle('primary',scaler.classList.contains('show45'));
+  });
+})();
 
 /* ---- add preset ---- */
 document.getElementById('presets').addEventListener('click',function(e){
