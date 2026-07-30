@@ -1,4 +1,4 @@
-<!--seal-github-v41|vedit-capcut-style|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v42|vedit-layout-playrow|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -211,30 +211,33 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 /* монтажный мод видео — CapCut-стиль */
 .vedit-modal{display:none;position:fixed;inset:0;z-index:82;background:#000;flex-direction:column}
 .vedit-modal.open{display:flex}
-.vedit-top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 6px;background:#000}
+.vedit-top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 4px;background:#000}
 .vedit-top .vclose{font-size:20px;color:#fff;background:none;border:0;cursor:pointer}
 .vedit-top .vexp{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:6px 14px;font:700 12px 'Inter';cursor:pointer}
 .vedit-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;min-height:80px}
-.vedit-stage video{max-width:96vw;max-height:52vh;border-radius:6px}
-/* ряд круглых инструментов (CapCut-стиль) */
-.vedit-tools{flex:0 0 auto;display:flex;gap:4px;justify-content:center;align-items:flex-start;padding:6px 4px;background:#000;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.vedit-tool{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;flex:0 0 auto;background:none;border:0;cursor:pointer}
-.vedit-tool-ic{width:42px;height:42px;border-radius:50%;background:#1e1f24;display:flex;align-items:center;justify-content:center;font-size:17px;color:#e0e0e0;border:1.5px solid transparent}
-.vedit-tool.sel .vedit-tool-ic{border-color:var(--ui-acc,#E45D50);color:var(--ui-acc,#E45D50)}
-.vedit-tool-lbl{font:500 8.5px 'Inter';color:#888;line-height:1}
+.vedit-stage video{max-width:96vw;max-height:50vh;border-radius:6px}
+/* ▶ прямо под превью */
+.vedit-playrow{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:12px;padding:2px 0 4px;background:#000}
+.vedit-playrow .vpb{width:48px;height:48px;border-radius:50%;background:#fff;border:0;color:#000;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.vedit-playrow .vtime{font:600 11px 'Inter';color:#888}
 /* timeline */
-.vedit-tl{flex:0 0 auto;background:#0d0e11;padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px))}
-.vedit-tl-times{font:500 8px 'Inter';color:#555;margin-bottom:2px;display:flex;justify-content:space-between}
-.vedit-tl-track{position:relative;display:flex;gap:2px;height:48px;background:#16171b;border-radius:6px;padding:3px;overflow-x:auto;touch-action:pan-x;-webkit-overflow-scrolling:touch}
-.vedit-seg{flex:0 0 auto;height:100%;min-width:28px;background:linear-gradient(135deg,#2d3a30,#1f2823);border-radius:5px;border:2px solid transparent;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;color:#b0c0b4;font:700 8px 'Inter';overflow:hidden;touch-action:none}
+.vedit-tl{flex:0 0 auto;background:#0d0e11;padding:4px 8px 2px}
+.vedit-tl-times{font:500 8px 'Inter';color:#555;margin-bottom:1px;display:flex;justify-content:space-between}
+.vedit-tl-track{position:relative;display:flex;gap:2px;height:44px;background:#16171b;border-radius:6px;padding:3px;overflow-x:auto;touch-action:pan-x;-webkit-overflow-scrolling:touch}
+.vedit-seg{flex:0 0 auto;height:100%;min-width:24px;background:linear-gradient(135deg,#2d3a30,#1f2823);border-radius:5px;border:2px solid transparent;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;color:#b0c0b4;font:700 8px 'Inter';overflow:hidden;touch-action:none}
 .vedit-seg.sel{border-color:var(--ui-acc,#E45D50)}
 .vedit-seg.fr{background:linear-gradient(135deg,#2d2d3a,#1f1f28)}
 .vedit-seg .del{position:absolute;top:0;right:0;font-size:9px;color:#fff;background:rgba(229,93,80,.9);border-radius:0 4px 0 4px;width:15px;height:15px;display:none;align-items:center;justify-content:center;z-index:2}
 .vedit-seg.sel .del{display:flex}
-.vedit-seg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6}
-.vedit-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:3;pointer-events:none;display:none}
-/* панель скорости */
-.vedit-sp{display:none;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;padding:4px 8px;background:#000}
+.vedit-seg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+.vedit-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:3;pointer-events:none;left:3px}
+/* ряд круглых инструментов */
+.vedit-tools{flex:0 0 auto;display:flex;gap:4px;justify-content:center;align-items:flex-start;padding:5px 4px calc(8px + env(safe-area-inset-bottom,0px));background:#0d0e11;overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid #1a1b1f}
+.vedit-tool{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:50px;flex:0 0 auto;background:none;border:0;cursor:pointer}
+.vedit-tool-ic{width:40px;height:40px;border-radius:50%;background:#1e1f24;display:flex;align-items:center;justify-content:center;font-size:16px;color:#e0e0e0;border:1.5px solid transparent}
+.vedit-tool.sel .vedit-tool-ic{border-color:var(--ui-acc,#E45D50);color:var(--ui-acc,#E45D50)}
+.vedit-tool-lbl{font:500 8.5px 'Inter';color:#888;line-height:1}
+.vedit-sp{display:none;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;padding:3px 8px;background:#0d0e11}
 .vedit-sp.show{display:flex}
 .vedit-sp input[type=range]{width:130px;accent-color:var(--ui-acc,#E45D50)}
 .vedit-sp label{font:700 11px 'Inter';color:#fff;min-width:38px}
@@ -599,22 +602,24 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="vexp" id="veOk">Готово</button>
   </div>
   <div class="vedit-stage" id="veditStage"></div>
-  <div class="vedit-tools">
-    <button class="vedit-tool" id="vePlay"><span class="vedit-tool-ic">▶</span><span class="vedit-tool-lbl">Играть</span></button>
-    <button class="vedit-tool" id="veCut"><span class="vedit-tool-ic">✂</span><span class="vedit-tool-lbl">Резать</span></button>
-    <button class="vedit-tool" id="veFreeze"><span class="vedit-tool-ic">❄</span><span class="vedit-tool-lbl">Заморозить</span></button>
-    <button class="vedit-tool" id="veDel"><span class="vedit-tool-ic">🗑</span><span class="vedit-tool-lbl">Удалить</span></button>
-    <button class="vedit-tool" id="veSpeedBtn"><span class="vedit-tool-ic">⏩</span><span class="vedit-tool-lbl">Скорость</span></button>
-    <button class="vedit-tool" id="veAdd"><span class="vedit-tool-ic">＋</span><span class="vedit-tool-lbl">Видео</span></button>
+  <div class="vedit-playrow">
+    <button class="vpb" id="vePlay">▶</button>
+    <span class="vtime" id="veTime">0:00 / 0:00</span>
+  </div>
+  <div class="vedit-tl">
+    <div class="vedit-tl-track" id="veditTrack"><div class="vedit-cursor" id="veCursor"></div></div>
   </div>
   <div class="vedit-sp" id="veSpeedPanel">
     <label id="veSpeedV">1.0×</label>
     <input type="range" id="veSpeed" min="0.1" max="12" step="0.1" value="1">
     <button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="3">3×</button><button data-sp="4">4×</button><button data-sp="6">6×</button><button data-sp="12">12×</button>
   </div>
-  <div class="vedit-tl">
-    <div class="vedit-tl-times" id="veTimes"><span>0:00</span><span id="veTotal">0:00</span></div>
-    <div class="vedit-tl-track" id="veditTrack"><div class="vedit-cursor" id="veCursor"></div></div>
+  <div class="vedit-tools">
+    <button class="vedit-tool" id="veCut"><span class="vedit-tool-ic">✂</span><span class="vedit-tool-lbl">Резать</span></button>
+    <button class="vedit-tool" id="veFreeze"><span class="vedit-tool-ic">❄</span><span class="vedit-tool-lbl">Заморозить</span></button>
+    <button class="vedit-tool" id="veDel"><span class="vedit-tool-ic">🗑</span><span class="vedit-tool-lbl">Удалить</span></button>
+    <button class="vedit-tool" id="veSpeedBtn"><span class="vedit-tool-ic">⏩</span><span class="vedit-tool-lbl">Скорость</span></button>
+    <button class="vedit-tool" id="veAdd"><span class="vedit-tool-ic">＋</span><span class="vedit-tool-lbl">Видео</span></button>
   </div>
 </div>
 <input type="file" id="filepick" accept="image/*" multiple style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
@@ -2237,7 +2242,7 @@ function wireRtCanvas(c){
   var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('click',function(){closeRetouch(false);});
 })();
 /* ---- монтажный мод видео: EDL (edit decision list) ---- */
-var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[]};
+var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorMs:0};
 function edlGet(vc){
   var dur=vidClipDuration(vc),id=vc.dataset.vidId;
   if(vc.dataset.edl){try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length)return a;}catch(_){}}
@@ -2303,18 +2308,37 @@ function edlAt(edl,elapsed){
 function vePlayTick(){
   if(!VE.playRAF)return;
   var el=performance.now()-VE.t0;
-  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';return;}
+  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';veUpdateCursor(VE.full);return;}
   var at=edlAt(VE.edl,el);
   if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
   try{if(Math.abs(VE.clone.currentTime-at.clipT)>0.08)VE.clone.currentTime=Math.max(0,at.clipT);}catch(_){}
   if(VE.clone.paused){try{VE.clone.play()['catch'](function(){});}catch(_){}}
+  veUpdateCursor(el);
   VE.playRAF=requestAnimationFrame(vePlayTick);
+}
+function veUpdateCursor(elapsed){
+  VE.cursorMs=elapsed;
+  var tr=document.getElementById('veditTrack');if(!tr)return;
+  var cur=document.getElementById('veCursor');
+  var total=VE.full||edlDur(VE.edl)||1;
+  var pct=Math.min(1,elapsed/total);
+  var contentW=tr.scrollWidth-6;
+  var left=3+contentW*pct;
+  if(cur)cur.style.left=left+'px';
+  if(left>tr.scrollLeft+tr.clientWidth-20)tr.scrollLeft=left-tr.clientWidth+40;
+  var tm=document.getElementById('veTime');
+  if(tm)tm.textContent=formatTs(elapsed)+' / '+formatTs(total);
 }
 (function(){
   /* открыть из панели клипа */
   var ob=document.getElementById('cxVedit');if(ob)ob.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(vc)openVedit(vc);});
-  /* резать: разделить выбранный сегмент в середине */
-  var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var s=VE.edl[VE.sel];var mid=(s.s+s.e)/2;var n2=JSON.parse(JSON.stringify(s));s.e=mid;n2.s=mid;VE.edl.splice(VE.sel+1,0,n2);VE.full=edlDur(VE.edl);veditRender();});
+  /* резать: разделить в позиции курсора */
+  var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){
+    var at=edlAt(VE.edl,VE.cursorMs);var i=at.i,s=VE.edl[i];if(!s)return;
+    var clipT=at.clipT;if(clipT<=s.s+0.05||clipT>=s.e-0.05)return;
+    var n2=JSON.parse(JSON.stringify(s));s.e=clipT;n2.s=clipT;VE.edl.splice(i+1,0,n2);VE.sel=i;
+    VE.full=edlDur(VE.edl);veditRender();
+  });
   /* заморозить: добавить freeze в конце выбранного */
   var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
   /* удалить выбранный */
@@ -2325,8 +2349,11 @@ function vePlayTick(){
   function setSp(v){spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';if(VE.sel>=0&&VE.edl[VE.sel]){VE.edl[VE.sel].sp=v;VE.full=edlDur(VE.edl);veditRender();}}
   if(sp)sp.addEventListener('input',function(){setSp(+sp.value||1);});
   document.querySelectorAll('#veSpeedPanel button[data-sp]').forEach(function(b){b.addEventListener('click',function(){sp.value=b.dataset.sp;setSp(+b.dataset.sp);});});
-  /* ▶ превью */
-  var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('click',function(){if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';}else{VE.t0=performance.now();VE.full=edlDur(VE.edl);pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}});
+  /* ▶ превью (под видео) */
+  var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('click',function(){
+    if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';try{VE.clone.pause();}catch(_){}}
+    else{VE.t0=performance.now()-VE.cursorMs;VE.full=edlDur(VE.edl);pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}
+  });
   /* выбрать сегмент + удалить ✕ */
   var tr=document.getElementById('veditTrack');
   tr.addEventListener('click',function(e){var seg=e.target.closest('.vedit-seg');if(!seg)return;if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}else{VE.sel=+seg.dataset.i;}VE.full=edlDur(VE.edl);veditRender();});
