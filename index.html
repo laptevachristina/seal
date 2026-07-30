@@ -1,4 +1,4 @@
-<!--seal-github-v39|speed12+safe45|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v40|vedit-modal+EDL|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -208,6 +208,25 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .safe45.bot{bottom:0;border-top:1px dashed rgba(255,255,255,.4)}
 .safe45-note{position:absolute;top:21%;left:0;right:0;text-align:center;color:#fff;font:600 11px 'Inter';text-shadow:0 1px 4px rgba(0,0,0,.7);z-index:51;display:none;pointer-events:none;padding:4px;background:rgba(0,0,0,.25)}
 .scaler.show45 .safe45,.scaler.show45 .safe45-note{display:block}
+/* монтажный мод видео */
+.vedit-modal{display:none;position:fixed;inset:0;z-index:82;background:#0e0f12;flex-direction:column}
+.vedit-modal.open{display:flex}
+.vedit-stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;min-height:120px}
+.vedit-stage video{max-width:96vw;max-height:60vh;border-radius:8px}
+.vedit-tl{flex:0 0 auto;background:#16171b;padding:8px 8px 4px;border-top:1px solid #222}
+.vedit-tl-track{display:flex;gap:3px;height:54px;background:#0d0e11;border-radius:8px;padding:4px;overflow-x:auto;touch-action:pan-x}
+.vedit-seg{flex:0 0 auto;height:100%;min-width:26px;background:linear-gradient(135deg,#3a4a3e,#2a3530);border-radius:6px;border:2px solid transparent;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;color:#cfd8d0;font:600 9px 'Inter';overflow:hidden}
+.vedit-seg.sel{border-color:var(--ui-acc,#E45D50)}
+.vedit-seg.fr{background:linear-gradient(135deg,#3a3a4a,#2a2a35)}
+.vedit-seg .del{position:absolute;top:1px;right:2px;font-size:10px;color:#fff;background:rgba(0,0,0,.5);border-radius:4px;width:14px;height:14px;display:none;align-items:center;justify-content:center}
+.vedit-seg.sel .del{display:flex}
+.vedit-bar{flex:0 0 auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--ui-panel,#1c1d22);border-top:1px solid var(--ui-line,#2a2b30)}
+.vedit-bar button{border:1px solid var(--ui-line,#2a2b30);background:var(--ui-panel-2,#26272d);color:var(--ui-text,#eee);border-radius:8px;padding:7px 10px;font:600 11px 'Inter';cursor:pointer}
+.vedit-bar button.on,.vedit-bar button.primary{background:var(--ui-acc,#E45D50);border-color:var(--ui-acc,#E45D50);color:#fff}
+.vedit-sp{display:none;align-items:center;gap:5px;flex-wrap:wrap}
+.vedit-sp.show{display:flex}
+.vedit-sp input[type=range]{width:120px;accent-color:var(--ui-acc,#E45D50)}
+.vedit-sp label{font:600 10px 'Inter';color:var(--ui-dim,#999)}
 .hd-actions .hbtn{padding:7px 10px;font-size:11.5px}
 .hd-actions .hbtn.primary{padding:7px 10px}
 header .logo b{color:var(--ui-acc);font-weight:700}
@@ -500,6 +519,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   <div class="fx-row">
     <button class="fx-chip" id="cxLayer">Слой: выше текста</button>
     <button class="fx-chip" id="cxRound">◯ Круг</button>
+    <button class="fx-chip" id="cxVedit">✂ Монтаж</button>
   </div>
   <div class="fx-bottom">
     <div class="cx-hint">До/после окна — стоп-кадр. Эффект виден в экспорте «✨ Видео».</div>
@@ -558,6 +578,29 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <div class="grow"></div>
     <button id="rtCancel">Отмена</button>
     <button id="rtOk" class="primary">Готово</button>
+  </div>
+</div>
+<div class="vedit-modal" id="veditModal">
+  <div class="vedit-stage" id="veditStage"></div>
+  <div class="vedit-tl">
+    <div style="font:600 9px 'Inter';color:var(--ui-dim,#999);margin-bottom:3px">дорожка ролика — тап: выбрать, тяни: порядок</div>
+    <div class="vedit-tl-track" id="veditTrack"></div>
+  </div>
+  <div class="vedit-bar" id="veditBar">
+    <button id="veCut">✂ Резать</button>
+    <button id="veFreeze">❄ Заморозить</button>
+    <button id="veDel">🗑 Удалить</button>
+    <button id="veSpeedBtn">⏩ Скорость</button>
+    <button id="vePlay">▶</button>
+    <button id="veAdd">＋ Видео</button>
+    <div class="vedit-sp" id="veSpeedPanel">
+      <label id="veSpeedV">1.0×</label>
+      <input type="range" id="veSpeed" min="0.1" max="12" step="0.1" value="1">
+      <button data-sp="1">1</button><button data-sp="2">2</button><button data-sp="3">3</button><button data-sp="4">4</button><button data-sp="6">6</button><button data-sp="12">12</button>
+    </div>
+    <div class="grow"></div>
+    <button id="veCancel">Отмена</button>
+    <button id="veOk" class="primary">Готово</button>
   </div>
 </div>
 <input type="file" id="filepick" accept="image/*" multiple style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
@@ -855,6 +898,7 @@ filepick.addEventListener('change',function(){
   if(pickMode==='vidclip'){var vf=filepick.files[0];pickMode='slide';addVideoClip(vf);return;}
   /* long-press замена: фото/видео в существующий слот, пропорции и масштаб сохраняются */
   if(pickMode==='replace'){var rf=filepick.files[0];var rt=pickTarget;pickMode='slide';pickTarget=null;if(!rt||!rf)return;if(rt.classList.contains('vidclip')){replaceVideo(rt,rf);}else{setPhotoKeep(rt,rf);}return;}
+  if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
   /* массовая заливка: несколько фото → по пустым слотам слайда */
   if(pickMode==='slide'&&filepick.files.length>1&&cur>=0&&slides[cur]){
     var files=Array.prototype.slice.call(filepick.files);
@@ -2178,6 +2222,93 @@ function wireRtCanvas(c){
   var ok=document.getElementById('rtOk');if(ok)ok.addEventListener('click',function(){closeRetouch(true);});
   var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('click',function(){closeRetouch(false);});
 })();
+/* ---- монтажный мод видео: EDL (edit decision list) ---- */
+var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[]};
+function edlGet(vc){
+  var dur=vidClipDuration(vc),id=vc.dataset.vidId;
+  if(vc.dataset.edl){try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length)return a;}catch(_){}}
+  return [{s:0,e:dur,sp:1,fr:0,id:id}];
+}
+function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0);});return t;}
+function openVedit(vc){
+  if(!vc)return;
+  VE.vc=vc;VE.video=vc.querySelector('video');VE.dur=vidClipDuration(vc);VE.edl=edlGet(vc);VE.sel=VE.edl.length-1;VE.added=[];
+  var st=document.getElementById('veditStage');st.innerHTML='';
+  var cl=document.createElement('video');cl.src=VE.video.src;cl.muted=true;cl.setAttribute('playsinline','');cl.style.cssText='max-width:96vw;max-height:58vh;border-radius:8px';
+  st.appendChild(cl);VE.clone=cl;VE.full=edlDur(VE.edl);
+  document.getElementById('veditModal').classList.add('open');
+  document.getElementById('veSpeedPanel').classList.remove('show');
+  veditRender();
+}
+function closeVedit(apply){
+  if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;}
+  if(apply&&VE.vc){
+    if(VE.edl.length===0)VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:VE.vc.dataset.vidId}];
+    VE.vc.dataset.edl=JSON.stringify(VE.edl);VE.vc.dataset.vidIds=JSON.stringify(Array.from(new Set(VE.edl.map(function(s){return s.id;}))));
+    updateFilm();pushHistory();
+  }
+  if(VE.clone){try{VE.clone.pause();VE.clone.removeAttribute('src');VE.clone.load();}catch(_){}VE.clone=null;}
+  VE.vc=null;VE.video=null;VE.edl=[];VE.sel=-1;
+  document.getElementById('veditModal').classList.remove('open');
+}
+function veditRender(){
+  var tr=document.getElementById('veditTrack');tr.innerHTML='';
+  VE.edl.forEach(function(s,i){
+    var d=document.createElement('div');d.className='vedit-seg'+(i===VE.sel?' sel':'')+(s.fr>0?' fr':'');d.dataset.i=i;
+    var lbl=s.sp!==1?(s.sp+'×'):(s.fr>0?('❄'+s.fr.toFixed(1)):'▶');
+    d.textContent=lbl;
+    var del=document.createElement('span');del.className='del';del.textContent='✕';d.appendChild(del);
+    tr.appendChild(d);
+  });
+}
+/* превью: elapsed → {seg, clipTime, id} */
+function edlAt(edl,elapsed){
+  var acc=0;
+  for(var i=0;i<edl.length;i++){var s=edl[i];var seg=((s.e-s.s)/s.sp);if(elapsed<acc+seg+s.fr){var into=elapsed-acc;if(into<seg){return{i:i,clipT:s.s+into*s.sp,id:s.id,fr:false};}else{return{i:i,clipT:s.e,id:s.id,fr:true};}}acc+=seg+s.fr;}
+  var last=edl[edl.length-1];return{i:edl.length-1,clipT:last.e,id:last.id,fr:true};
+}
+function vePlayTick(){
+  if(!VE.playRAF)return;
+  var el=performance.now()-VE.t0;
+  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';return;}
+  var at=edlAt(VE.edl,el);
+  if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
+  try{if(Math.abs(VE.clone.currentTime-at.clipT)>0.08)VE.clone.currentTime=Math.max(0,at.clipT);}catch(_){}
+  if(VE.clone.paused){try{VE.clone.play()['catch'](function(){});}catch(_){}}
+  VE.playRAF=requestAnimationFrame(vePlayTick);
+}
+(function(){
+  /* открыть из панели клипа */
+  var ob=document.getElementById('cxVedit');if(ob)ob.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(vc)openVedit(vc);});
+  /* резать: разделить выбранный сегмент в середине */
+  var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var s=VE.edl[VE.sel];var mid=(s.s+s.e)/2;var n2=JSON.parse(JSON.stringify(s));s.e=mid;n2.s=mid;VE.edl.splice(VE.sel+1,0,n2);VE.full=edlDur(VE.edl);veditRender();});
+  /* заморозить: добавить freeze в конце выбранного */
+  var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
+  /* удалить выбранный */
+  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('click',function(){if(VE.sel<0)return;if(VE.edl.length<=1)return;VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);VE.full=edlDur(VE.edl);veditRender();});
+  /* скорость */
+  var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
+  if(spb)spb.addEventListener('click',function(){spp.classList.toggle('show');});
+  function setSp(v){spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';if(VE.sel>=0&&VE.edl[VE.sel]){VE.edl[VE.sel].sp=v;VE.full=edlDur(VE.edl);veditRender();}}
+  if(sp)sp.addEventListener('input',function(){setSp(+sp.value||1);});
+  document.querySelectorAll('#veSpeedPanel button[data-sp]').forEach(function(b){b.addEventListener('click',function(){sp.value=b.dataset.sp;setSp(+b.dataset.sp);});});
+  /* ▶ превью */
+  var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('click',function(){if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';}else{VE.t0=performance.now();VE.full=edlDur(VE.edl);pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}});
+  /* выбрать сегмент + удалить ✕ */
+  var tr=document.getElementById('veditTrack');
+  tr.addEventListener('click',function(e){var seg=e.target.closest('.vedit-seg');if(!seg)return;if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}else{VE.sel=+seg.dataset.i;}VE.full=edlDur(VE.edl);veditRender();});
+  /* перетаскивание сегментов */
+  var dragI=-1;
+  tr.addEventListener('pointerdown',function(e){var seg=e.target.closest('.vedit-seg');if(!seg||e.target.classList.contains('del'))return;dragI=+seg.dataset.i;seg.setPointerCapture&&seg.setPointerCapture(e.pointerId);});
+  tr.addEventListener('pointermove',function(e){if(dragI<0)return;var over=document.elementFromPoint(e.clientX,e.clientY);var tSeg=over&&over.closest('.vedit-seg');if(tSeg){var j=+tSeg.dataset.i;if(j!==dragI){var m=VE.edl.splice(dragI,1)[0];VE.edl.splice(j,0,m);dragI=j;veditRender();}}});
+  tr.addEventListener('pointerup',function(){dragI=-1;});
+  tr.addEventListener('pointercancel',function(){dragI=-1;});
+  /* ＋ добавить видео */
+  var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('click',function(){pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();});
+  /* готово/отмена */
+  var ok=document.getElementById('veOk');if(ok)ok.addEventListener('click',function(){closeVedit(true);});
+  var ca=document.getElementById('veCancel');if(ca)ca.addEventListener('click',function(){closeVedit(false);});
+})();
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
     var w=540,h=el.classList.contains('f916')?960:675,ES=2;
@@ -2596,7 +2727,8 @@ function serverCompose(el,format,btn){
       var cutColor=vc.dataset.cutColor||'',cutThresh=vc.dataset.cutThresh||'';
       var cutS=vc.dataset.cutS||'',cutE=vc.dataset.cutE||'';
       var cspeed=vc.dataset.cspeed||'';
-      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,cspeed:cspeed,hasAbove:!!ovBlob});
+      var edlRaw=vc.dataset.edl||'';
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,cspeed:cspeed,edl:edlRaw,hasAbove:!!ovBlob});
       var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
       if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
       st('⏳ сборка…');
