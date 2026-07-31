@@ -1286,12 +1286,14 @@ function applyEdlToSlideVideo(vc){
   try{
     var edl=JSON.parse(vc.dataset.edl);
     if(!edl.length)return;
-    v.dataset.edlApplied='1';
+    v.loop=false; /* убираем loop — управляем перемоткой сами */
     var fn=function(){
-      if(!vc.dataset.edl){v.removeEventListener('timeupdate',fn);return;}
+      if(!vc.dataset.edl||!vc.parentNode){v.removeEventListener('timeupdate',fn);return;}
       var ct=v.currentTime;
       try{
         var e2=JSON.parse(vc.dataset.edl);
+        var lastE=e2[e2.length-1].e;
+        if(ct>=lastE-0.03){v.currentTime=e2[0].s;return;} /* свой loop */
         var inSeg=false;
         for(var si=0;si<e2.length;si++){if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05){inSeg=true;break;}}
         if(!inSeg){
@@ -1302,6 +1304,7 @@ function applyEdlToSlideVideo(vc){
     };
     v.addEventListener('timeupdate',fn);
     try{v.currentTime=edl[0].s;}catch(_){}
+    v.play()['catch'](function(){});
   }catch(_){}
 }
 function hydrateVideoClip(vc){
