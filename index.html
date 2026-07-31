@@ -1284,31 +1284,34 @@ function addVideoClip(file){
 function applyEdlToSlideVideo(vc){
   if(!vc||!vc.dataset.edl)return;
   var v=vc.querySelector('video');if(!v)return;
-  try{
-    var edl=JSON.parse(vc.dataset.edl);
-    if(!edl.length)return;
-    alert('Применяем edl: '+edl.length+' сегм, start='+edl[0].s+', end='+edl[edl.length-1].e);
-    v.loop=false;
-    v.removeAttribute('loop');
-    var fn=function(){
-      if(!vc.dataset.edl||!vc.parentNode){v.removeEventListener('timeupdate',fn);return;}
-      var ct=v.currentTime;
-      try{
-        var e2=JSON.parse(vc.dataset.edl);
-        var lastE=e2[e2.length-1].e;
-        if(ct>=lastE-0.05){v.currentTime=e2[0].s;return;}
-        var inSeg=false;
-        for(var si=0;si<e2.length;si++){if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05){inSeg=true;break;}}
-        if(!inSeg){
-          for(var sj=0;sj<e2.length;sj++){if(ct<e2[sj].s){v.currentTime=e2[sj].s;return;}}
-          v.currentTime=e2[0].s;
-        }
-      }catch(_){}
-    };
-    v.addEventListener('timeupdate',fn);
-    try{v.currentTime=edl[0].s;}catch(_){}
-    try{v.play()['catch'](function(){});}catch(_){}
-  }catch(_){}
+  setTimeout(function(){
+    try{
+      var edl=JSON.parse(vc.dataset.edl);
+      if(!edl.length||!vc.parentNode)return;
+      v.pause();
+      v.loop=false;
+      v.removeAttribute('loop');
+      var fn=function(){
+        if(!vc.dataset.edl||!vc.parentNode){v.removeEventListener('timeupdate',fn);return;}
+        var ct=v.currentTime;
+        try{
+          var e2=JSON.parse(vc.dataset.edl);
+          var lastE=e2[e2.length-1].e;
+          if(ct>=lastE-0.05){v.currentTime=e2[0].s;return;}
+          var inSeg=false;
+          for(var si=0;si<e2.length;si++){if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05){inSeg=true;break;}}
+          if(!inSeg){
+            for(var sj=0;sj<e2.length;sj++){if(ct<e2[sj].s){v.currentTime=e2[sj].s;return;}}
+            v.currentTime=e2[0].s;
+          }
+        }catch(_){}
+      };
+      v.addEventListener('timeupdate',fn);
+      v.currentTime=edl[0].s;
+      v.muted=true;
+      v.play()['catch'](function(){});
+    }catch(_){}
+  },200);
 }
 function hydrateVideoClip(vc){
   var id=vc.dataset.vidId;if(!id)return;
