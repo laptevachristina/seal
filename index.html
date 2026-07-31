@@ -162,7 +162,8 @@ em{font-style:italic}
 
 .vidclip{position:absolute;touch-action:none;cursor:move}
 .vidclip video{width:100%;height:100%;object-fit:cover;background:#000;pointer-events:none;display:block;transform-origin:center center;border-radius:14px}
-.vidclip.cround video{border-radius:0;clip-path:circle(closest-side)}
+.vidclip.cround{clip-path:circle(closest-side)}
+.vidclip.cround video{border-radius:0;clip-path:none}
 .vidclip .mv-handle,.vidclip .mv-del,.vidclip .tx-resize,.vidclip .layer-toggle{display:none}
 .vidclip.sel{outline:2px dashed var(--sage);outline-offset:6px}
 .vidclip.sel .mv-handle,.vidclip.sel .mv-del,.vidclip.sel .tx-resize,.vidclip.sel .layer-toggle{display:block}
