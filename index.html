@@ -2339,9 +2339,11 @@ function veUpdateCursor(elapsedSec){
   var cut=document.getElementById('veCut');
   if(cut)cut.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
-    /* позиция реза = где видео остановилось (clone.currentTime) */
     var ct=VE.clone?(VE.clone.currentTime||0):0;
-    if(ct<0.1)return;
+    var dbg='ct='+ct.toFixed(2)+' clone='+(!!VE.clone)+' dur='+VE.dur+' edl.len='+VE.edl.length+' sel='+VE.sel;
+    if(VE.edl[0])dbg+=' seg=['+VE.edl[0].s+'-'+VE.edl[0].e+']';
+    alert(dbg);
+    if(ct<0.1){alert('Видео в начале — нажми ▶, дождись нужного момента, пауза, потом ✂');return;}
     /* найти сегмент содержащий ct и разрезать */
     for(var ci=0;ci<VE.edl.length;ci++){
       var s=VE.edl[ci];
