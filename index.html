@@ -610,6 +610,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </div>
   <div class="vedit-tl">
     <div class="vedit-tl-track" id="veditTrack"><div class="vedit-cursor" id="veCursor"></div></div>
+    <div style="font:600 9px 'Inter';color:#888;padding:2px 0 0;display:flex;justify-content:space-between"><span id="veResult">Результат: 0:00</span><span>кусочков: <span id="veCount">1</span></span></div>
   </div>
   <div class="vedit-sp" id="veSpeedPanel">
     <label id="veSpeedV">1.0×</label>
@@ -2303,6 +2304,12 @@ function veditRender(){
     var del=document.createElement('span');del.className='del';del.textContent='✕';d.appendChild(del);
     tr.appendChild(d);
   });
+  veUpdateResult();
+}
+function veUpdateResult(){
+  var r=document.getElementById('veResult'),c=document.getElementById('veCount');
+  if(r)r.textContent='Результат: '+formatTs(edlDur(VE.edl));
+  if(c)c.textContent=VE.edl.length;
 }
 function formatTs(sec){
   var m=Math.floor(sec/60),s=Math.floor(sec%60);return m+':'+(s<10?'0':'')+s;
@@ -2363,12 +2370,14 @@ function veUpdateCursor(srcTimeSec){
   /* заморозить: добавить freeze в конце выбранного */
   var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
   /* удалить выбранный */
-  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('click',function(e){
+  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
-    if(VE.sel<0){alert('Сначала тапни по куску на дорожке');return;}
-    if(VE.edl.length<=1){alert('Нельзя удалить единственный кусок');return;}
+    if(VE.sel<0)return;
+    if(VE.edl.length<=1)return;
     VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);
     VE.full=edlDur(VE.edl);veditRender();
+    if(VE.clone&&VE.edl[VE.sel]){try{VE.clone.currentTime=VE.edl[VE.sel].s;veUpdateCursor(VE.edl[VE.sel].s);}catch(_){}}
+    veUpdateResult();
   });
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
