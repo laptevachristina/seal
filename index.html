@@ -2336,9 +2336,29 @@ function closeVedit(apply){
   if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;}
   if(apply&&VE.vc){
     if(VE.edl.length===0)VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:VE.vc.dataset.vidId}];
-    VE.vc.dataset.edl=JSON.stringify(VE.edl);VE.vc.dataset.vidIds=JSON.stringify(Array.from(new Set(VE.edl.map(function(s){return s.id;}))));
-    /* применить edl к превью на слайде */
-    applyEdlToSlideVideo(VE.vc);
+    VE.vc.dataset.edl=JSON.stringify(VE.edl);
+    /* применить edl к video на слайде напрямую */
+    var sv=VE.vc.querySelector('video');
+    if(sv&&VE.edl.length){
+      sv.loop=false;sv.removeAttribute('loop');sv.muted=true;
+      var edlRef=VE.edl;
+      var edlFn=function(){
+        if(!VE.vc||!VE.vc.dataset.edl){sv.removeEventListener('timeupdate',edlFn);sv.removeEventListener('seeked',edlFn);return;}
+        var ct=sv.currentTime;
+        var lastE=edlRef[edlRef.length-1].e;
+        if(ct>=lastE-0.1){sv.currentTime=edlRef[0].s;return;}
+        var ok=false;
+        for(var si=0;si<edlRef.length;si++){if(ct>=edlRef[si].s-0.1&&ct<edlRef[si].e+0.1){ok=true;break;}}
+        if(!ok){
+          for(var sj=0;sj<edlRef.length;sj++){if(ct<edlRef[sj].s){sv.currentTime=edlRef[sj].s;return;}}
+          sv.currentTime=edlRef[0].s;
+        }
+      };
+      sv.addEventListener('timeupdate',edlFn);
+      sv.addEventListener('seeked',edlFn);
+      try{sv.currentTime=edlRef[0].s;}catch(_){}
+      sv.play()['catch'](function(){});
+    }
     updateFilm();pushHistory();
   }
   if(VE.clone){try{VE.clone.pause();VE.clone.removeAttribute('src');VE.clone.load();}catch(_){}VE.clone=null;}
