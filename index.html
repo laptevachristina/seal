@@ -1,4 +1,4 @@
-<!--seal-github-v49|vedit-no-multi-video-crash|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v50|vedit-units-seconds|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2244,7 +2244,7 @@ function wireRtCanvas(c){
   var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('pointerup',function(){closeRetouch(false);});
 })();
 /* ---- монтажный мод видео: EDL (edit decision list) ---- */
-var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorMs:0};
+var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorSec:0};
 function edlGet(vc){
   var dur=vidClipDuration(vc),id=vc.dataset.vidId;
   if(vc.dataset.edl){try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length)return a;}catch(_){}}
@@ -2313,22 +2313,22 @@ function vePlayTick(){
   var total=VE.full||VE.dur||1;
   if(ct>=total-0.05||VE.clone.ended){
     VE.playRAF=0;document.getElementById('vePlay').textContent='▶';
-    veUpdateCursor(total*1000);try{VE.clone.pause();}catch(_){}return;
+    veUpdateCursor(total);try{VE.clone.pause();}catch(_){}return;
   }
-  veUpdateCursor(ct*1000);
+  veUpdateCursor(ct);
   VE.playRAF=requestAnimationFrame(vePlayTick);
 }
-function veUpdateCursor(elapsed){
-  VE.cursorMs=elapsed;
+function veUpdateCursor(elapsedSec){
+  VE.cursorSec=elapsedSec;
   var tr=document.getElementById('veditTrack');if(!tr)return;
   var cur=document.getElementById('veCursor');
   var total=VE.full||edlDur(VE.edl)||1;if(total<0.1)total=1;
-  var pct=Math.min(1,Math.max(0,elapsed/total));
+  var pct=Math.min(1,Math.max(0,elapsedSec/total));
   var visW=Math.max(40,tr.clientWidth-6);
   var left=3+visW*pct;
   if(cur)cur.style.left=left+'px';
   var tm=document.getElementById('veTime');
-  if(tm)tm.textContent=formatTs(elapsed)+' / '+formatTs(total);
+  if(tm)tm.textContent=formatTs(elapsedSec)+' / '+formatTs(total);
 }
 (function(){
   /* открыть из панели клипа */
@@ -2339,7 +2339,7 @@ function veUpdateCursor(elapsed){
   var cut=document.getElementById('veCut');if(cut)cut.addEventListener('pointerup',function(){
     var i=VE.sel>=0?VE.sel:0,s=VE.edl[i];if(!s)return;
     var clipT;
-    if(VE.cursorMs>0.1){var at=edlAt(VE.edl,VE.cursorMs);i=at.i;s=VE.edl[i];clipT=at.clipT;}
+    if(VE.cursorSec>0.1){var at=edlAt(VE.edl,VE.cursorSec);i=at.i;s=VE.edl[i];clipT=at.clipT;}
     else{clipT=(s.s+s.e)/2;}
     if(clipT<=s.s+0.05||clipT>=s.e-0.05){clipT=(s.s+s.e)/2;}
     if(clipT<=s.s+0.05)return;
@@ -2365,7 +2365,7 @@ function veUpdateCursor(elapsed){
     } else {
       VE.full=VE.dur||edlDur(VE.edl)||1;
       /* перемотать в позицию курсора (один раз, не постоянно) */
-      if(VE.clone&&VE.cursorMs>100){try{VE.clone.currentTime=VE.cursorMs/1000;}catch(_){}}
+      if(VE.clone&&VE.cursorSec>100){try{VE.clone.currentTime=VE.cursorSec;}catch(_){}}
       try{VE.clone.play()['catch'](function(){});}catch(_){}
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
@@ -2381,8 +2381,8 @@ function veUpdateCursor(elapsed){
     } else {
       /* тап по пустой части дорожки → курсор */
       var r=tr.getBoundingClientRect();var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
-      VE.full=edlDur(VE.edl);VE.cursorMs=pct*VE.full;veUpdateCursor(VE.cursorMs);
-      if(VE.clone){var at=edlAt(VE.edl,VE.cursorMs);try{VE.clone.currentTime=at.clipT;}catch(_){}}
+      VE.full=edlDur(VE.edl);VE.cursorSec=pct*VE.full;veUpdateCursor(VE.cursorSec);
+      if(VE.clone){var at=edlAt(VE.edl,VE.cursorSec);try{VE.clone.currentTime=at.clipT;}catch(_){}}
     }
   });
   /* перетаскивание сегментов */
