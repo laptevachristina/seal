@@ -1,4 +1,4 @@
-<!--seal-github-v53|vedit-cut-always|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v54|vedit-precise-no-fallback|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2339,16 +2339,20 @@ function veUpdateCursor(elapsedSec){
   var cut=document.getElementById('veCut');
   if(cut)cut.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
-    /* позиция реза: clone.currentTime (где видео замерло) или cursorSec или середина */
-    var cutT=0;
-    if(VE.clone&&VE.clone.currentTime>0.05)cutT=VE.clone.currentTime;
-    if(cutT<0.05&&VE.cursorSec>0.05)cutT=VE.cursorSec;
-    var i=VE.sel>=0?VE.sel:0,s=VE.edl[i];
-    if(!s)return;
-    if(cutT<0.05||cutT<=s.s+0.05||cutT>=s.e-0.05){cutT=(s.s+s.e)/2;}
-    var n2=JSON.parse(JSON.stringify(s));s.e=cutT;n2.s=cutT;
-    VE.edl.splice(i+1,0,n2);VE.sel=i;
-    VE.full=edlDur(VE.edl);veditRender();
+    /* позиция реза = где видео остановилось (clone.currentTime) */
+    var ct=VE.clone?(VE.clone.currentTime||0):0;
+    if(ct<0.1)return;
+    /* найти сегмент содержащий ct и разрезать */
+    for(var ci=0;ci<VE.edl.length;ci++){
+      var s=VE.edl[ci];
+      if(ct>s.s+0.05&&ct<s.e-0.05){
+        var n2=JSON.parse(JSON.stringify(s));s.e=ct;n2.s=ct;
+        VE.edl.splice(ci+1,0,n2);VE.sel=ci;
+        VE.full=edlDur(VE.edl);veditRender();
+        veUpdateCursor(ct);
+        return;
+      }
+    }
   });
   /* заморозить: добавить freeze в конце выбранного */
   var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
