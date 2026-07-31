@@ -2382,13 +2382,14 @@ function veUpdateCursor(elapsedSec){
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
   });
-  /* выбрать сегмент + удалить ✕ (тап по пустой дорожке убран — курсор управляется плей/пауза) */
+  /* тап по сегменту → выбрать + перемотать видео в начало сегмента */
   var tr=document.getElementById('veditTrack');
   tr.addEventListener('click',function(e){
     var seg=e.target.closest('.vedit-seg');
     if(!seg)return;
-    if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
-    else{VE.sel=+seg.dataset.i;}
+    var i=+seg.dataset.i,s=VE.edl[i];
+    if(e.target.classList.contains('del')){if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
+    else{VE.sel=i;if(s&&VE.clone){try{VE.clone.currentTime=s.s;veUpdateCursor(s.s);}catch(_){}}}
     VE.full=edlDur(VE.edl);veditRender();
   });
   /* перетаскивание сегментов */
