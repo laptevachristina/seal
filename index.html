@@ -164,6 +164,7 @@ em{font-style:italic}
 .vidclip video{width:100%;height:100%;object-fit:cover;background:#000;pointer-events:none;display:block;transform-origin:center center;border-radius:14px}
 .vidclip.cround{clip-path:circle(closest-side)}
 .vidclip.cround video{border-radius:0;clip-path:none}
+.vidclip.cround.sel .mv-del{top:50%!important;left:50%!important;transform:translate(-50%,-50%);width:30px;height:30px;font-size:16px}
 .vidclip .mv-handle,.vidclip .mv-del,.vidclip .tx-resize,.vidclip .layer-toggle{display:none}
 .vidclip.sel{outline:2px dashed var(--sage);outline-offset:6px}
 .vidclip.sel .mv-handle,.vidclip.sel .mv-del,.vidclip.sel .tx-resize,.vidclip.sel .layer-toggle{display:block}
@@ -2534,7 +2535,9 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     });
     var stickersBelow=[],stickersAbove=[];
     el.querySelectorAll('.sticker').forEach(function(st){
-      var im=st.querySelector('img');if(!im||!im.complete||!im.naturalWidth)return;
+      var im=st.querySelector('img');if(!im)return;
+      if(im._prerendered)im=im._prerendered;
+      else if(!im.complete||!im.naturalWidth)return;
       var a=animState&&animState.get(st);
       var rec={img:im,x:st.offsetLeft,y:st.offsetTop,W:st.offsetWidth,H:st.offsetHeight,
         rot:(parseFloat(st.dataset.rot)||0)*Math.PI/180+(a&&a.rotOffset||0),
@@ -2724,7 +2727,7 @@ function previewApply(el,elapsed,fullMs){
   var anim=animStateAt(items,elapsed,hasSpinningSticker(items),buildTypeSchedule(items),fullMs);
   items.forEach(function(it){
     var a=anim.get(it);
-    if(a&&a.opacity<1)it.style.opacity=String(a.opacity);else it.style.opacity='';
+    if(a&&a.opacity<1)it.style.opacity=String(a.opacity);else if(it.style.opacity&&it.style.opacity!=='1')it.style.opacity='1';
     if(it.classList&&it.classList.contains('sticker')&&a){
       var rot=(parseFloat(it.dataset.rot)||0)+(a.rotOffset?a.rotOffset*180/Math.PI:0);
       var t='rotate('+rot+'deg)';
@@ -3020,6 +3023,15 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         showProgress(avg*prepWeight);
       }).then(function(res){return {v:v,res:res};});
     })).then(function(prepared){
+      /* предрендер стикеров в canvas (фикс мерцания) */
+      el.querySelectorAll('.sticker img').forEach(function(img){
+        if(img.complete&&img.naturalWidth){
+          var c=document.createElement('canvas');
+          c.width=img.naturalWidth;c.height=img.naturalHeight;
+          c.getContext('2d').drawImage(img,0,0);
+          img._prerendered=c;
+        }
+      });
       /* снять muted на время записи — иначе аудио-дорожка пустая (graph получает тишину) */
       var _wasMuted=clipEls.map(function(v){v.muted=false;return true;});
       recorder.start();
