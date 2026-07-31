@@ -2342,8 +2342,12 @@ function vePlayTick(){
   var tl=srcToTimeline(VE.edl,ct);
   var total=edlDur(VE.edl)||1;
   if(tl>=total-0.05||VE.clone.ended){
-    VE.playRAF=0;document.getElementById('vePlay').textContent='▶';
-    veUpdateCursor(total);try{VE.clone.pause();}catch(_){}return;
+    /* loop: перемотать в начало и продолжить */
+    try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
+    VE.t0=performance.now();
+    veUpdateCursor(0);
+    VE.playRAF=requestAnimationFrame(vePlayTick);
+    return;
   }
   veUpdateCursor(tl);
   VE.playRAF=requestAnimationFrame(vePlayTick);
@@ -2357,7 +2361,8 @@ function veUpdateCursor(timelineSec){
   var left=3+visW*pct;
   if(cur)cur.style.left=left+'px';
   var tm=document.getElementById('veTime');
-  if(tm)tm.textContent=formatTs(timelineSec)+' / '+formatTs(total);
+  if(tm){var m1=Math.floor(timelineSec/60),s1=timelineSec-m1*60;var m2=Math.floor(total/60),s2=total-m2*60;
+    tm.textContent=m1+':'+(s1<10?'0':'')+s1.toFixed(1)+' / '+m2+':'+(s2<10?'0':'')+s2.toFixed(1);}
 }
 (function(){
   /* открыть из панели клипа */
