@@ -2361,7 +2361,13 @@ function veUpdateCursor(srcTimeSec){
   /* заморозить: добавить freeze в конце выбранного */
   var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
   /* удалить выбранный */
-  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(){if(VE.sel<0)return;if(VE.edl.length<=1)return;VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);VE.full=edlDur(VE.edl);veditRender();});
+  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    if(VE.sel<0){alert('Сначала тапни по куску на дорожке');return;}
+    if(VE.edl.length<=1){alert('Нельзя удалить единственный кусок');return;}
+    VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);
+    VE.full=edlDur(VE.edl);veditRender();
+  });
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
   if(spb)spb.addEventListener('pointerup',function(){spp.classList.toggle('show');});
