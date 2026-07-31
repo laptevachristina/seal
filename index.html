@@ -218,7 +218,7 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .vedit-stage video{max-width:96vw;max-height:50vh;border-radius:6px}
 /* ▶ прямо под превью */
 .vedit-playrow{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:12px;padding:2px 0 4px;background:#000}
-.vedit-playrow .vpb{width:48px;height:48px;border-radius:50%;background:#fff;border:0;color:#000;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.vedit-playrow .vpb{touch-action:manipulation;width:48px;height:48px;border-radius:50%;background:#fff;border:0;color:#000;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .vedit-playrow .vtime{font:600 11px 'Inter';color:#888}
 /* timeline */
 .vedit-tl{flex:0 0 auto;background:#0d0e11;padding:4px 8px 2px}
@@ -233,7 +233,7 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .vedit-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:3;pointer-events:none;left:3px}
 /* ряд круглых инструментов */
 .vedit-tools{flex:0 0 auto;display:flex;gap:4px;justify-content:center;align-items:flex-start;padding:5px 4px calc(8px + env(safe-area-inset-bottom,0px));background:#0d0e11;overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid #1a1b1f}
-.vedit-tool{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:50px;flex:0 0 auto;background:none;border:0;cursor:pointer}
+.vedit-tool{touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:50px;flex:0 0 auto;background:none;border:0;cursor:pointer}
 .vedit-tool-ic{width:40px;height:40px;border-radius:50%;background:#1e1f24;display:flex;align-items:center;justify-content:center;font-size:16px;color:#e0e0e0;border:1.5px solid transparent}
 .vedit-tool.sel .vedit-tool-ic{border-color:var(--ui-acc,#E45D50);color:var(--ui-acc,#E45D50)}
 .vedit-tool-lbl{font:500 8.5px 'Inter';color:#888;line-height:1}
