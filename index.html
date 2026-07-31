@@ -1334,6 +1334,7 @@ function wireVideoClip(vc){
     if(e.target.closest('.tx-resize')){startResize(e);}
     else if(ids.length===2){var a=pointers[ids[0]],b=pointers[ids[1]];mode='pinch';startDist=Math.hypot(a.x-b.x,a.y-b.y);baseW=vc.offsetWidth;baseH=vc.offsetHeight;}
     else if(vc.classList.contains('cround')){startPanContent(e);}
+    else if(vc.dataset.cround==='1'){startPanContent(e);}
     else{startMove(e);}
     e.preventDefault();e.stopPropagation();
   });
@@ -1903,7 +1904,7 @@ stage.addEventListener('pointerdown',function(e){if(e.target.closest('#veditModa
   stage.addEventListener('pointerdown',function(e){
     if(e.target.closest('#veditModal')||e.target.closest('#retModal'))return;
     if(e.target.closest('.ph-pick,.mv-del,.fr-del,.mv-handle,.tx-resize,.fr-resize,.fr-move,.layer-toggle,.rot-handle,.spin-toggle,.type-toggle'))return;
-    var el=e.target.closest('.photo.has-img, .frame.has-img, .vidclip');
+    var el=e.target.closest('.photo.has-img, .frame.has-img');
     if(!el)return;
     tEl=el;moved=false;sx=e.clientX;sy=e.clientY;
     if(timer)clearTimeout(timer);
