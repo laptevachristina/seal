@@ -1,4 +1,4 @@
-<!--seal-github-v44|vedit-fix-cursor-cut|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v45|vedit-pointerup-cursor-fix|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2239,8 +2239,8 @@ function wireRtCanvas(c){
   var bar=document.getElementById('retBar');if(bar){bar.insertBefore(mv,bar.firstChild);}
   if(mv)mv.addEventListener('click',function(){RT.panMode=!RT.panMode;mv.classList.toggle('on',RT.panMode);mv.textContent=RT.panMode?'✏ Рисовать':'✋ Двигать';RT.panId=null;RT.pointerId=null;RT.last=null;});
   var u=document.getElementById('rtUndo');if(u)u.addEventListener('click',function(){if(RT.hist.length>1){RT.hist.pop();RT.ctx.putImageData(RT.hist[RT.hist.length-1],0,0);}});
-  var ok=document.getElementById('rtOk');if(ok)ok.addEventListener('click',function(){closeRetouch(true);});
-  var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('click',function(){closeRetouch(false);});
+  var ok=document.getElementById('rtOk');if(ok)ok.addEventListener('pointerup',function(){closeRetouch(true);});
+  var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('pointerup',function(){closeRetouch(false);});
 })();
 /* ---- монтажный мод видео: EDL (edit decision list) ---- */
 var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorMs:0};
@@ -2308,13 +2308,14 @@ function edlAt(edl,elapsed){
 }
 function vePlayTick(){
   if(!VE.playRAF)return;
-  if(!VE.clone||!VE.vc){VE.playRAF=0;return;}
   var el=performance.now()-VE.t0;
-  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';veUpdateCursor(VE.full);try{VE.clone.pause();}catch(_){}return;}
+  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';veUpdateCursor(VE.full);if(VE.clone){try{VE.clone.pause();}catch(_){}}return;}
   var at=edlAt(VE.edl,el);
-  if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId&&VE.video?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
-  try{if(Math.abs(VE.clone.currentTime-at.clipT)>0.08)VE.clone.currentTime=Math.max(0,at.clipT);}catch(_){}
-  if(VE.clone.paused){try{VE.clone.play()['catch'](function(){});}catch(_){}}
+  if(VE.clone&&VE.vc){
+    if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId&&VE.video?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
+    try{if(Math.abs(VE.clone.currentTime-at.clipT)>0.08)VE.clone.currentTime=Math.max(0,at.clipT);}catch(_){}
+    if(VE.clone.paused){try{VE.clone.play()['catch'](function(){});}catch(_){}}
+  }
   veUpdateCursor(el);
   VE.playRAF=requestAnimationFrame(vePlayTick);
 }
@@ -2323,11 +2324,10 @@ function veUpdateCursor(elapsed){
   var tr=document.getElementById('veditTrack');if(!tr)return;
   var cur=document.getElementById('veCursor');
   var total=VE.full||edlDur(VE.edl)||1;
-  var pct=Math.min(1,elapsed/total);
-  var contentW=tr.scrollWidth-6;
-  var left=3+contentW*pct;
+  var pct=Math.min(1,Math.max(0,elapsed/total));
+  var visW=tr.clientWidth-6;
+  var left=3+visW*pct;
   if(cur)cur.style.left=left+'px';
-  if(left>tr.scrollLeft+tr.clientWidth-20)tr.scrollLeft=left-tr.clientWidth+40;
   var tm=document.getElementById('veTime');
   if(tm)tm.textContent=formatTs(elapsed)+' / '+formatTs(total);
 }
@@ -2335,9 +2335,9 @@ function veUpdateCursor(elapsed){
   /* открыть из панели клипа */
   var ob=document.getElementById('cxVedit');if(ob)ob.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(vc)openVedit(vc);});
   /* дубликат выбранного сегмента */
-  var dup=document.getElementById('veDup');if(dup)dup.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var copy=JSON.parse(JSON.stringify(VE.edl[VE.sel]));VE.edl.splice(VE.sel+1,0,copy);VE.sel=VE.sel+1;VE.full=edlDur(VE.edl);veditRender();});
+  var dup=document.getElementById('veDup');if(dup)dup.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var copy=JSON.parse(JSON.stringify(VE.edl[VE.sel]));VE.edl.splice(VE.sel+1,0,copy);VE.sel=VE.sel+1;VE.full=edlDur(VE.edl);veditRender();});
   /* резать: разделить в позиции курсора (или середина сегмента если курсор в 0) */
-  var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){
+  var cut=document.getElementById('veCut');if(cut)cut.addEventListener('pointerup',function(){
     var i=VE.sel>=0?VE.sel:0,s=VE.edl[i];if(!s)return;
     var clipT;
     if(VE.cursorMs>0.1){var at=edlAt(VE.edl,VE.cursorMs);i=at.i;s=VE.edl[i];clipT=at.clipT;}
@@ -2348,19 +2348,20 @@ function veUpdateCursor(elapsed){
     VE.full=edlDur(VE.edl);veditRender();
   });
   /* заморозить: добавить freeze в конце выбранного */
-  var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
+  var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
   /* удалить выбранный */
-  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('click',function(){if(VE.sel<0)return;if(VE.edl.length<=1)return;VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);VE.full=edlDur(VE.edl);veditRender();});
+  var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(){if(VE.sel<0)return;if(VE.edl.length<=1)return;VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);VE.full=edlDur(VE.edl);veditRender();});
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
-  if(spb)spb.addEventListener('click',function(){spp.classList.toggle('show');});
+  if(spb)spb.addEventListener('pointerup',function(){spp.classList.toggle('show');});
   function setSp(v){spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';if(VE.sel>=0&&VE.edl[VE.sel]){VE.edl[VE.sel].sp=v;VE.full=edlDur(VE.edl);veditRender();}}
   if(sp)sp.addEventListener('input',function(){setSp(+sp.value||1);});
   document.querySelectorAll('#veSpeedPanel button[data-sp]').forEach(function(b){b.addEventListener('click',function(){sp.value=b.dataset.sp;setSp(+b.dataset.sp);});});
-  /* ▶ превью (под видео) */
-  var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('click',function(){
-    if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';try{VE.clone.pause();}catch(_){}}
-    else{VE.t0=performance.now()-VE.cursorMs;VE.full=edlDur(VE.edl);pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}
+  /* ▶ превью (под видео) — pointerup для iOS */
+  var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('pointerup',function(e){
+    e.preventDefault();e.stopPropagation();
+    if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';if(VE.clone){try{VE.clone.pause();}catch(_){}}}
+    else{VE.t0=performance.now()-(VE.cursorMs||0);VE.full=edlDur(VE.edl)||1;pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}
   });
   /* выбрать сегмент + удалить ✕ + тап по пустой дорожке = курсор */
   var tr=document.getElementById('veditTrack');
@@ -2384,10 +2385,10 @@ function veUpdateCursor(elapsed){
   tr.addEventListener('pointerup',function(){dragI=-1;});
   tr.addEventListener('pointercancel',function(){dragI=-1;});
   /* ＋ добавить видео */
-  var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('click',function(){pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();});
+  var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('pointerup',function(){pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();});
   /* готово/отмена */
-  var ok=document.getElementById('veOk');if(ok)ok.addEventListener('click',function(){closeVedit(true);});
-  var ca=document.getElementById('veCancel');if(ca)ca.addEventListener('click',function(){closeVedit(false);});
+  var ok=document.getElementById('veOk');if(ok)ok.addEventListener('pointerup',function(){closeVedit(true);});
+  var ca=document.getElementById('veCancel');if(ca)ca.addEventListener('pointerup',function(){closeVedit(false);});
 })();
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
