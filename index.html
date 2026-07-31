@@ -2263,9 +2263,14 @@ function openVedit(vc){
   function ready(){
     VE.dur=VE.clone.duration&&isFinite(VE.clone.duration)?VE.clone.duration:0;
     if(VE.dur<0.1)VE.dur=vidClipDuration(vc);
-    VE.edl=edlGet(vc);VE.edl[0].e=VE.dur;VE.sel=0;VE.full=edlDur(VE.edl);
-    veditRender();veUpdateCursor(0);
-    var tm=document.getElementById('veTime');if(tm)tm.textContent='0:00 / '+formatTs(VE.full);
+    VE.edl=edlGet(vc);
+    /* если edl от прошлой сессии — проверить что валиден для этого видео */
+    if(VE.edl[0]&&VE.edl[0].e>VE.dur){VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:vc.dataset.vidId}];}
+    VE.sel=0;VE.full=edlDur(VE.edl);
+    /* clone начинает с первого сегмента */
+    try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
+    veditRender();veUpdateCursor(VE.edl[0].s);
+    var tm=document.getElementById('veTime');if(tm)tm.textContent=formatTs(VE.edl[0].s)+' / '+formatTs(VE.full);
   }
   if(VE.video&&VE.video.src){cl.src=VE.video.src;}
   cl.addEventListener('loadedmetadata',ready);
@@ -2340,10 +2345,7 @@ function veUpdateCursor(elapsedSec){
   if(cut)cut.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
     var ct=VE.clone?(VE.clone.currentTime||0):0;
-    var dbg='ct='+ct.toFixed(2)+' clone='+(!!VE.clone)+' dur='+VE.dur+' edl.len='+VE.edl.length+' sel='+VE.sel;
-    if(VE.edl[0])dbg+=' seg=['+VE.edl[0].s+'-'+VE.edl[0].e+']';
-    alert(dbg);
-    if(ct<0.1){alert('Видео в начале — нажми ▶, дождись нужного момента, пауза, потом ✂');return;}
+    if(ct<0.1)return;
     /* найти сегмент содержащий ct и разрезать */
     for(var ci=0;ci<VE.edl.length;ci++){
       var s=VE.edl[ci];
