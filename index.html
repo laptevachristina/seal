@@ -1282,27 +1282,26 @@ function addVideoClip(file){
 function applyEdlToSlideVideo(vc){
   if(!vc||!vc.dataset.edl)return;
   var v=vc.querySelector('video');if(!v)return;
-  var edl;try{edl=JSON.parse(vc.dataset.edl);}catch(_){return;}
-  if(!edl.length)return;
-  /* без монтажа = один сегмент с полным видео — не трогаем */
-  if(edl.length===1&&edl[0].s===0&&edl[0].sp===1&&edl[0].fr===0)return;
-  if(v._edlBound)return; /* уже привязан */
-  v._edlBound=true;
-  v.addEventListener('timeupdate',function(){
-    if(!vc.dataset.edl)return;
-    var ct=v.currentTime;
-    try{
-      var e2=JSON.parse(vc.dataset.edl);
-      for(var si=0;si<e2.length;si++){
-        if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05)return;
-      }
-      for(var sj=0;sj<e2.length;sj++){
-        if(ct<e2[sj].s){v.currentTime=e2[sj].s;return;}
-      }
-      v.currentTime=e2[0].s;
-    }catch(_){}
-  });
-  v.currentTime=edl[0].s;
+  try{
+    var edl=JSON.parse(vc.dataset.edl);
+    if(!edl.length)return;
+    v.dataset.edlApplied='1';
+    var fn=function(){
+      if(!vc.dataset.edl){v.removeEventListener('timeupdate',fn);return;}
+      var ct=v.currentTime;
+      try{
+        var e2=JSON.parse(vc.dataset.edl);
+        var inSeg=false;
+        for(var si=0;si<e2.length;si++){if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05){inSeg=true;break;}}
+        if(!inSeg){
+          for(var sj=0;sj<e2.length;sj++){if(ct<e2[sj].s){v.currentTime=e2[sj].s;return;}}
+          v.currentTime=e2[0].s;
+        }
+      }catch(_){}
+    };
+    v.addEventListener('timeupdate',fn);
+    try{v.currentTime=edl[0].s;}catch(_){}
+  }catch(_){}
 }
 function hydrateVideoClip(vc){
   var id=vc.dataset.vidId;if(!id)return;
