@@ -1,4 +1,4 @@
-<!--seal-github-v48|vedit-no-stage-capture|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v49|vedit-no-multi-video-crash|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2290,23 +2290,8 @@ function veditRender(){
   VE.edl.forEach(function(s,i){
     var d=document.createElement('div');d.className='vedit-seg'+(i===VE.sel?' sel':'')+(s.fr>0?' fr':'');d.dataset.i=i;
     var segDur=((s.e-s.s)/s.sp+(s.fr||0));
-    d.style.cssText='flex:'+(segDur/totalDur*100)+'.0 0 0%;min-width:24px';
-    /* покадровые миниатюры */
-    var nframes=Math.max(2,Math.min(8,Math.round(segDur/0.5)));
-    for(var f=0;f<nframes;f++){
-      var cv=document.createElement('canvas');cv.width=32;cv.height=40;cv.className='seg-frame';
-      cv.style.cssText='position:absolute;width:'+(100/nframes)+'%;height:100%;left:'+(f/nframes*100)+'%;top:0;object-fit:cover;opacity:.55';
-      d.appendChild(cv);
-      if(VE.video&&s.id===VE.vc.dataset.vidId){
-        (function(canvas,seekT,vid){
-          var tv=document.createElement('video');tv.muted=true;
-          tv.onseeked=function(){try{canvas.getContext('2d').drawImage(tv,0,0,32,40);}catch(_){}};
-          tv.onloadeddata=function(){try{tv.currentTime=seekT;}catch(_){}};
-          tv.src=vid.src;
-        })(cv,s.s+(s.e-s.s)*f/nframes,VE.video);
-      }
-    }
-    var lbl=document.createElement('span');lbl.style.cssText='position:relative;z-index:1';lbl.textContent=s.sp!==1?(s.sp+'×'):(s.fr>0?('❄'):'');
+    d.style.cssText='flex:'+(segDur/totalDur*100).toFixed(1)+' 0 0%;min-width:24px';
+    var lbl=document.createElement('span');lbl.style.cssText='position:relative;z-index:1';lbl.textContent=s.sp!==1?(s.sp+'×'):(s.fr>0?('❄'+s.fr.toFixed(1)):'');
     d.appendChild(lbl);
     var del=document.createElement('span');del.className='del';del.textContent='✕';d.appendChild(del);
     tr.appendChild(d);
