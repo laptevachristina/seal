@@ -227,6 +227,7 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .vedit-seg{flex:0 0 auto;height:100%;min-width:20px;background:linear-gradient(135deg,#3a5a3a,#1f3823);border-radius:5px;border:2px solid transparent;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;color:#d0f0c0;font:700 8px 'Inter';overflow:hidden;touch-action:manipulation;margin-right:1px}
 .vedit-seg:nth-child(odd){background:linear-gradient(135deg,#3a4a2d,#283818)}
 .vedit-seg:nth-child(even){background:linear-gradient(135deg,#2d4a3a,#183828)}
+.vedit-gap{flex:0 0 auto;height:100%;min-width:8px;background:repeating-linear-gradient(45deg,#1a1a1a,#1a1a1a 4px,#222 4px,#222 8px);border-radius:4px;opacity:.6;margin-right:1px}
 .vedit-seg.sel{border-color:var(--ui-acc,#E45D50)}
 .vedit-seg.fr{background:linear-gradient(135deg,#2d2d3a,#1f1f28)}
 .vedit-seg .del{position:absolute;top:0;right:0;font-size:9px;color:#fff;background:rgba(229,93,80,.9);border-radius:0 4px 0 4px;width:15px;height:15px;display:none;align-items:center;justify-content:center;z-index:2}
@@ -2295,7 +2296,14 @@ function veditRender(){
   var cur=document.getElementById('veCursor');
   tr.innerHTML='';tr.appendChild(cur);
   var dur=VE.dur||1;if(dur<0.1)dur=1;
+  var lastEnd=0;
   VE.edl.forEach(function(s,i){
+    /* gap для удалённой части (показать что вырезано) */
+    if(s.s>lastEnd+0.05){
+      var g=document.createElement('div');g.className='vedit-gap';
+      g.style.flex=((s.s-lastEnd)/dur*100).toFixed(1)+' 0 0%';
+      tr.appendChild(g);
+    }
     var d=document.createElement('div');d.className='vedit-seg'+(i===VE.sel?' sel':'')+(s.fr>0?' fr':'');d.dataset.i=i;
     var segW=((s.e-s.s)/dur*100).toFixed(1);
     d.style.cssText='flex:'+segW+' 0 0%;min-width:20px';
@@ -2303,7 +2311,14 @@ function veditRender(){
     d.appendChild(lbl);
     var del=document.createElement('span');del.className='del';del.textContent='✕';d.appendChild(del);
     tr.appendChild(d);
+    lastEnd=s.e;
   });
+  /* gap в конце если есть */
+  if(lastEnd<dur-0.05){
+    var g2=document.createElement('div');g2.className='vedit-gap';
+    g2.style.flex=((dur-lastEnd)/dur*100).toFixed(1)+' 0 0%';
+    tr.appendChild(g2);
+  }
   veUpdateResult();
 }
 function veUpdateResult(){
@@ -2372,11 +2387,9 @@ function veUpdateCursor(srcTimeSec){
   /* удалить выбранный */
   var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
-    alert('DEL: sel='+VE.sel+' кусков='+VE.edl.length);
     if(VE.sel<0||VE.edl.length<=1)return;
     VE.edl.splice(VE.sel,1);VE.sel=0;
     veditRender();veUpdateResult();
-    alert('После: кусков='+VE.edl.length+' результат='+formatTs(edlDur(VE.edl)));
   });
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
