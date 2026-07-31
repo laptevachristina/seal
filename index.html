@@ -2338,12 +2338,13 @@ function closeVedit(apply){
     if(VE.edl.length===0)VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:VE.vc.dataset.vidId}];
     VE.vc.dataset.edl=JSON.stringify(VE.edl);
     /* применить edl к video на слайде напрямую */
-    var sv=VE.vc.querySelector('video');
+    var vcRef=VE.vc;
+    var sv=vcRef.querySelector('video');
     if(sv&&VE.edl.length){
       sv.loop=false;sv.removeAttribute('loop');sv.muted=true;
       var edlRef=VE.edl;
       var edlFn=function(){
-        if(!VE.vc||!VE.vc.dataset.edl){sv.removeEventListener('timeupdate',edlFn);sv.removeEventListener('seeked',edlFn);return;}
+        if(!vcRef.parentNode){sv.removeEventListener('timeupdate',edlFn);sv.removeEventListener('seeked',edlFn);return;}
         var ct=sv.currentTime;
         var lastE=edlRef[edlRef.length-1].e;
         if(ct>=lastE-0.1){sv.currentTime=edlRef[0].s;return;}
