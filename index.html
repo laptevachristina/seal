@@ -1320,9 +1320,10 @@ function wireVideoClip(vc){
       updateFilm();pushHistory();
     });
   }
-  var pointers={},mode=null,sx,sy,bl,bt,baseW,baseH,startDist,downX,downY,moved;
+  var pointers={},mode=null,sx,sy,bl,bt,baseW,baseH,startDist,downX,downY,moved,bfx,bfy;
   function startMove(e){sx=e.clientX;sy=e.clientY;bl=parseFloat(vc.style.left)||0;bt=parseFloat(vc.style.top)||0;mode='move';}
   function startResize(e){sx=e.clientX;sy=e.clientY;baseW=vc.offsetWidth;baseH=vc.offsetHeight;mode='resize';}
+  function startPanContent(e){sx=e.clientX;sy=e.clientY;bfx=parseFloat(vc.dataset.cpanx)||0;bfy=parseFloat(vc.dataset.cpany)||0;mode='pancontent';}
   vc.addEventListener('pointerdown',function(e){
     if(e.target.closest('.mv-del')||e.target.closest('.layer-toggle'))return;
     downX=e.clientX;downY=e.clientY;moved=false;
@@ -1332,16 +1333,22 @@ function wireVideoClip(vc){
     var ids=Object.keys(pointers);
     if(e.target.closest('.tx-resize')){startResize(e);}
     else if(ids.length===2){var a=pointers[ids[0]],b=pointers[ids[1]];mode='pinch';startDist=Math.hypot(a.x-b.x,a.y-b.y);baseW=vc.offsetWidth;baseH=vc.offsetHeight;}
+    else if(vc.classList.contains('cround')){startPanContent(e);}
     else{startMove(e);}
     e.preventDefault();e.stopPropagation();
   });
   vc.addEventListener('pointermove',function(e){
     if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>6)moved=true;
     if(moved){var p=document.getElementById('vidclipfx');if(p&&p.classList.contains('open')&&!vc._col){p.classList.add('collapsed');vc._col=1;}}
-    if(!pointers[e.pointerId]&&mode!=='move'&&mode!=='resize'&&mode!=='pinch')return;
+    if(!pointers[e.pointerId]&&mode!=='move'&&mode!=='resize'&&mode!=='pinch'&&mode!=='pancontent')return;
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var sc=curFitScale||1,ids=Object.keys(pointers);
-    if(mode==='pinch'&&ids.length>=2){
+    if(mode==='pancontent'&&moved){
+      vc.dataset.cpanx=Math.max(-1,Math.min(1,bfx+(e.clientX-sx)/120));
+      vc.dataset.cpany=Math.max(-1,Math.min(1,bfy+(e.clientY-sy)/120));
+      applyVidClipFx(vc);
+    }
+    else if(mode==='pinch'&&ids.length>=2){
       var a=pointers[ids[0]],b=pointers[ids[1]];
       var d=Math.hypot(a.x-b.x,a.y-b.y);
       if(startDist){var ratio=d/startDist;vc.style.width=Math.max(30,baseW*ratio)+'px';vc.style.height=Math.max(30,baseH*ratio)+'px';}
