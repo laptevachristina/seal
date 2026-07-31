@@ -1277,6 +1277,31 @@ function addVideoClip(file){
     updateFilm();pushHistory();
   })['catch'](function(){alert('Не получилось сохранить видео — попробуй файл покороче или полегче.');});
 }
+function applyEdlToSlideVideo(vc){
+  if(!vc||!vc.dataset.edl)return;
+  var v=vc.querySelector('video');if(!v)return;
+  var edl;try{edl=JSON.parse(vc.dataset.edl);}catch(_){return;}
+  if(!edl.length)return;
+  /* без монтажа = один сегмент с полным видео — не трогаем */
+  if(edl.length===1&&edl[0].s===0&&edl[0].sp===1&&edl[0].fr===0)return;
+  if(v._edlBound)return; /* уже привязан */
+  v._edlBound=true;
+  v.addEventListener('timeupdate',function(){
+    if(!vc.dataset.edl)return;
+    var ct=v.currentTime;
+    try{
+      var e2=JSON.parse(vc.dataset.edl);
+      for(var si=0;si<e2.length;si++){
+        if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05)return;
+      }
+      for(var sj=0;sj<e2.length;sj++){
+        if(ct<e2[sj].s){v.currentTime=e2[sj].s;return;}
+      }
+      v.currentTime=e2[0].s;
+    }catch(_){}
+  });
+  v.currentTime=edl[0].s;
+}
 function hydrateVideoClip(vc){
   var id=vc.dataset.vidId;if(!id)return;
   var video=vc.querySelector(':scope>video');if(!video)return;
@@ -1357,9 +1382,8 @@ function wireVideoClip(vc){
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var ids=Object.keys(pointers);
     if(e.target.closest('.tx-resize')){startResize(e);}
+    else if(vc.dataset.cround==='1'&&ids.length<2){startPanContent(e);}
     else if(ids.length===2){var a=pointers[ids[0]],b=pointers[ids[1]];mode='pinch';startDist=Math.hypot(a.x-b.x,a.y-b.y);baseW=vc.offsetWidth;baseH=vc.offsetHeight;}
-    else if(vc.classList.contains('cround')){startPanContent(e);}
-    else if(vc.dataset.cround==='1'){startPanContent(e);}
     else{startMove(e);}
     e.preventDefault();e.stopPropagation();
   });
@@ -2302,6 +2326,8 @@ function closeVedit(apply){
   if(apply&&VE.vc){
     if(VE.edl.length===0)VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:VE.vc.dataset.vidId}];
     VE.vc.dataset.edl=JSON.stringify(VE.edl);VE.vc.dataset.vidIds=JSON.stringify(Array.from(new Set(VE.edl.map(function(s){return s.id;}))));
+    /* применить edl к превью на слайде */
+    applyEdlToSlideVideo(VE.vc);
     updateFilm();pushHistory();
   }
   if(VE.clone){try{VE.clone.pause();VE.clone.removeAttribute('src');VE.clone.load();}catch(_){}VE.clone=null;}
