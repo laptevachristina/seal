@@ -2240,7 +2240,7 @@ function wireRtCanvas(c){
   var ca=document.getElementById('rtCancel');if(ca)ca.addEventListener('pointerup',function(){closeRetouch(false);});
 })();
 /* ---- монтажный мод видео: EDL (edit decision list) ---- */
-var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorSec:0,thumbVideo:null,thumbQueue:[],thumbBusy:false};
+var VE={vc:null,video:null,edl:[],sel:-1,dur:0,clone:null,playRAF:0,t0:0,full:0,added:[],cursorSec:0,thumbVideo:null,thumbQueue:[],thumbBusy:false,playSeg:0};
 function edlGet(vc){
   var dur=vidClipDuration(vc),id=vc.dataset.vidId;
   if(vc.dataset.edl){try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length)return a;}catch(_){}}
@@ -2345,19 +2345,26 @@ function edlAt(edl,elapsed){
 }
 function vePlayTick(){
   if(!VE.playRAF)return;
-  if(!VE.clone){VE.playRAF=0;return;}
+  if(!VE.clone||!VE.edl.length){VE.playRAF=0;return;}
+  var seg=VE.edl[VE.playSeg];
+  if(!seg){VE.playSeg=0;seg=VE.edl[0];if(!seg){VE.playRAF=0;return;}}
   var ct=VE.clone.currentTime||0;
-  var tl=srcToTimeline(VE.edl,ct);
-  var total=edlDur(VE.edl)||1;
-  if(tl>=total-0.05||VE.clone.ended){
-    /* loop: перемотать в начало и продолжить */
-    try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
-    VE.t0=performance.now();
-    veUpdateCursor(0);
+  /* если дошли до конца текущего сегмента → следующий */
+  if(ct>=seg.e-0.05){
+    VE.playSeg++;
+    if(VE.playSeg>=VE.edl.length){
+      /* loop: сначала в начало */
+      VE.playSeg=0;
+    }
+    var nextSeg=VE.edl[VE.playSeg];
+    try{VE.clone.currentTime=nextSeg.s;}catch(_){}
+    veUpdateCursor(srcToTimeline(VE.edl,nextSeg.s));
     VE.playRAF=requestAnimationFrame(vePlayTick);
     return;
   }
-  veUpdateCursor(tl);
+  /* если clone ушёл за пределы сегмента (seek) → вернуть */
+  if(ct<seg.s-0.1){try{VE.clone.currentTime=seg.s;}catch(_){}}
+  veUpdateCursor(srcToTimeline(VE.edl,ct));
   VE.playRAF=requestAnimationFrame(vePlayTick);
 }
 function veUpdateCursor(timelineSec){
@@ -2417,9 +2424,9 @@ function veUpdateCursor(timelineSec){
       cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';
       if(VE.clone){try{VE.clone.pause();}catch(_){}}
     } else {
-      VE.full=VE.dur||edlDur(VE.edl)||1;
-      /* перемотать в позицию курсора (один раз, не постоянно) */
-      if(VE.clone&&VE.cursorSec>100){try{VE.clone.currentTime=VE.cursorSec;}catch(_){}}
+      VE.full=edlDur(VE.edl)||VE.dur||1;
+      VE.playSeg=0;
+      try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
       try{VE.clone.play()['catch'](function(){});}catch(_){}
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
