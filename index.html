@@ -1387,7 +1387,6 @@ function wireVideoClip(vc){
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var ids=Object.keys(pointers);
     if(e.target.closest('.tx-resize')){startResize(e);}
-    else if(vc.dataset.cround==='1'&&ids.length<2){startPanContent(e);}
     else if(ids.length===2){var a=pointers[ids[0]],b=pointers[ids[1]];mode='pinch';startDist=Math.hypot(a.x-b.x,a.y-b.y);baseW=vc.offsetWidth;baseH=vc.offsetHeight;}
     else{startMove(e);}
     e.preventDefault();e.stopPropagation();
