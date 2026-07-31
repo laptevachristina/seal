@@ -2372,12 +2372,11 @@ function veUpdateCursor(srcTimeSec){
   /* удалить выбранный */
   var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
-    if(VE.sel<0)return;
-    if(VE.edl.length<=1)return;
-    VE.edl.splice(VE.sel,1);VE.sel=Math.max(0,VE.sel-1);
-    VE.full=edlDur(VE.edl);veditRender();
-    if(VE.clone&&VE.edl[VE.sel]){try{VE.clone.currentTime=VE.edl[VE.sel].s;veUpdateCursor(VE.edl[VE.sel].s);}catch(_){}}
-    veUpdateResult();
+    alert('DEL: sel='+VE.sel+' кусков='+VE.edl.length);
+    if(VE.sel<0||VE.edl.length<=1)return;
+    VE.edl.splice(VE.sel,1);VE.sel=0;
+    veditRender();veUpdateResult();
+    alert('После: кусков='+VE.edl.length+' результат='+formatTs(edlDur(VE.edl)));
   });
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
