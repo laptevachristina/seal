@@ -1,4 +1,4 @@
-<!--seal-github-v51|vedit-precise-cut|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v52|vedit-play-pause-cut|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2375,20 +2375,14 @@ function veUpdateCursor(elapsedSec){
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
   });
-  /* выбрать сегмент + удалить ✕ + тап по пустой дорожке = курсор */
+  /* выбрать сегмент + удалить ✕ (тап по пустой дорожке убран — курсор управляется плей/пауза) */
   var tr=document.getElementById('veditTrack');
   tr.addEventListener('click',function(e){
     var seg=e.target.closest('.vedit-seg');
-    if(seg){
-      if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
-      else{VE.sel=+seg.dataset.i;}
-      VE.full=edlDur(VE.edl);veditRender();
-    } else {
-      /* тап по пустой части дорожки → курсор */
-      var r=tr.getBoundingClientRect();var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
-      VE.full=edlDur(VE.edl);VE.cursorSec=pct*VE.full;veUpdateCursor(VE.cursorSec);
-      if(VE.clone){var at=edlAt(VE.edl,VE.cursorSec);try{VE.clone.currentTime=at.clipT;}catch(_){}}
-    }
+    if(!seg)return;
+    if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
+    else{VE.sel=+seg.dataset.i;}
+    VE.full=edlDur(VE.edl);veditRender();
   });
   /* перетаскивание сегментов */
   var dragI=-1;
