@@ -1,4 +1,4 @@
-<!--seal-github-v50|vedit-units-seconds|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v51|vedit-precise-cut|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2337,13 +2337,18 @@ function veUpdateCursor(elapsedSec){
   var dup=document.getElementById('veDup');if(dup)dup.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var copy=JSON.parse(JSON.stringify(VE.edl[VE.sel]));VE.edl.splice(VE.sel+1,0,copy);VE.sel=VE.sel+1;VE.full=edlDur(VE.edl);veditRender();});
   /* резать: разделить в позиции курсора (или середина сегмента если курсор в 0) */
   var cut=document.getElementById('veCut');if(cut)cut.addEventListener('pointerup',function(){
-    var i=VE.sel>=0?VE.sel:0,s=VE.edl[i];if(!s)return;
-    var clipT;
-    if(VE.cursorSec>0.1){var at=edlAt(VE.edl,VE.cursorSec);i=at.i;s=VE.edl[i];clipT=at.clipT;}
-    else{clipT=(s.s+s.e)/2;}
-    if(clipT<=s.s+0.05||clipT>=s.e-0.05){clipT=(s.s+s.e)/2;}
-    if(clipT<=s.s+0.05)return;
-    var n2=JSON.parse(JSON.stringify(s));s.e=clipT;n2.s=clipT;VE.edl.splice(i+1,0,n2);VE.sel=i;
+    /* позиция реза = где сейчас видео (clone.currentTime) */
+    var cutT=0;
+    if(VE.clone&&VE.clone.currentTime>0.1)cutT=VE.clone.currentTime;
+    else if(VE.cursorSec>0.1)cutT=VE.cursorSec;
+    if(cutT<0.1)return;
+    /* найти сегмент содержащий cutT */
+    var found=-1;
+    for(var ci=0;ci<VE.edl.length;ci++){var es=VE.edl[ci];if(cutT>=es.s&&cutT<es.e-0.05){found=ci;break;}}
+    if(found<0)return;
+    var s=VE.edl[found];
+    var n2=JSON.parse(JSON.stringify(s));s.e=cutT;n2.s=cutT;
+    VE.edl.splice(found+1,0,n2);VE.sel=found;
     VE.full=edlDur(VE.edl);veditRender();
   });
   /* заморозить: добавить freeze в конце выбранного */
