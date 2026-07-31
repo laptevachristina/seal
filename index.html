@@ -555,7 +555,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="fx-chip" data-stout="fade">Раствор.</button>
     <button class="fx-chip" data-stout="shrink">Сжатие</button>
   </div>
-  <div class="fx-slider"><label>Скорость появления/исчезн. <span id="stInDurV">480</span>мс</label><input type="range" id="stInDur" min="150" max="2000" step="50" value="480"></div>
+  <div class="fx-slider"><label>Скорость появления/исчезн. <span id="stInDurV">480</span>мс</label><input type="range" id="stInDur" min="150" max="5000" step="50" value="1500"></div>
   <div class="fx-slider"><label>Скорость постоянных <span id="stLoopsV">1.0</span>×</label><input type="range" id="stLoops" min="0.3" max="3" step="0.1" value="1"></div>
   <div class="cx-hint">Вырезание фона</div>
   <div class="fx-row"><button class="fx-chip" id="stCutBtn">✂ Вырезать заново</button></div>
@@ -1855,7 +1855,7 @@ document.querySelectorAll('.dd-btn').forEach(function(b){b.addEventListener('cli
   });
   /* скорость появления/исчезновения */
   var id=document.getElementById('stInDur'),idv=document.getElementById('stInDurV');
-  if(id){id.addEventListener('input',function(e){e.stopPropagation();var v=+id.value||480;if(idv)idv.textContent=Math.round(v);var st=targetSticker();if(!st)return;st.dataset.stindur=Math.round(v);updateFilm();pushSoon();});id.addEventListener('click',function(e){e.stopPropagation();});}
+  if(id){id.addEventListener('input',function(e){e.stopPropagation();var v=+id.value||1500;if(idv)idv.textContent=Math.round(v);var st=targetSticker();if(!st)return;st.dataset.stindur=Math.round(v);updateFilm();pushSoon();});id.addEventListener('click',function(e){e.stopPropagation();});}
   /* скорость постоянных */
   var lp=document.getElementById('stLoops'),lpv=document.getElementById('stLoopsV');
   if(lp){lp.addEventListener('input',function(e){e.stopPropagation();var v=+lp.value||1;if(lpv)lpv.textContent=(Math.round(v*10)/10).toFixed(1);var st=targetSticker();if(!st)return;st.dataset.stloops=v;updateFilm();pushSoon();});lp.addEventListener('click',function(e){e.stopPropagation();});}
@@ -2164,7 +2164,7 @@ function syncStickerFxUI(){
     var on=(k==='spin')?(st&&st.dataset.spin==='1'):(st&&st.dataset['st'+k]==='1');
     c.classList.toggle('on',!!on);
   });
-  var inDur=st?(parseFloat(st.dataset.stindur)||480):480;
+  var inDur=st?(parseFloat(st.dataset.stindur)||1500):1500;
   var loops=st?(parseFloat(st.dataset.stloops)||1):1;
   var id=document.getElementById('stInDur'),idv=document.getElementById('stInDurV');
   var lp=document.getElementById('stLoops'),lpv=document.getElementById('stLoopsV');
@@ -2690,7 +2690,7 @@ document.getElementById('exp-all').addEventListener('click',function(){
 });
 
 /* ---- animated GIF export (appear-in animation, current slide only) ---- */
-var ANIM_STAGGER=110,ANIM_DUR=480,SPIN_PERIOD_MS=8000;
+var ANIM_STAGGER=200,ANIM_DUR=1500,SPIN_PERIOD_MS=8000;
 var TYPE_MS_PER_CHAR=95,TYPE_MIN_MS=450,TYPE_MAX_MS=4000,TYPE_GAP_MS=220;
 function getAnimItems(el){return Array.prototype.slice.call(el.querySelectorAll('[data-edit], .frame, [data-photo], .sticker'));}
 function hasSpinningSticker(items){return items.some(function(it){return it.classList&&it.classList.contains('sticker')&&it.dataset.spin==='1';});}
@@ -2717,7 +2717,7 @@ function computeFullMs(el){
   else{
     var fadeEnd=0;
     items.forEach(function(it,i){if(!isTypedText(it))fadeEnd=Math.max(fadeEnd,i*ANIM_STAGGER+ANIM_DUR);});
-    fullMs=Math.max(fadeEnd,typeScheduleEndMs(buildTypeSchedule(items)))+500;
+    fullMs=Math.max(fadeEnd,typeScheduleEndMs(buildTypeSchedule(items)))+3000;
   }
   var vidClipMs=0;
   el.querySelectorAll('.vidclip video').forEach(function(v){
