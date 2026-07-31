@@ -1,4 +1,4 @@
-<!--seal-github-v43|vedit-dup+layout|compose=seal.72.56.9.229.sslip.io-->
+<!--seal-github-v44|vedit-fix-cursor-cut|compose=seal.72.56.9.229.sslip.io-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2308,10 +2308,11 @@ function edlAt(edl,elapsed){
 }
 function vePlayTick(){
   if(!VE.playRAF)return;
+  if(!VE.clone||!VE.vc){VE.playRAF=0;return;}
   var el=performance.now()-VE.t0;
-  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';veUpdateCursor(VE.full);return;}
+  if(el>=VE.full){VE.playRAF=0;document.getElementById('vePlay').textContent='▶';veUpdateCursor(VE.full);try{VE.clone.pause();}catch(_){}return;}
   var at=edlAt(VE.edl,el);
-  if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
+  if(VE.clone._lid!==at.id){var url=VE.added[at.id]||(at.id===VE.vc.dataset.vidId&&VE.video?VE.video.src:null);if(url&&VE.clone.src!==url){VE.clone.src=url;}VE.clone._lid=at.id;}
   try{if(Math.abs(VE.clone.currentTime-at.clipT)>0.08)VE.clone.currentTime=Math.max(0,at.clipT);}catch(_){}
   if(VE.clone.paused){try{VE.clone.play()['catch'](function(){});}catch(_){}}
   veUpdateCursor(el);
@@ -2335,10 +2336,14 @@ function veUpdateCursor(elapsed){
   var ob=document.getElementById('cxVedit');if(ob)ob.addEventListener('click',function(e){e.stopPropagation();var vc=targetVidClip();if(vc)openVedit(vc);});
   /* дубликат выбранного сегмента */
   var dup=document.getElementById('veDup');if(dup)dup.addEventListener('click',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var copy=JSON.parse(JSON.stringify(VE.edl[VE.sel]));VE.edl.splice(VE.sel+1,0,copy);VE.sel=VE.sel+1;VE.full=edlDur(VE.edl);veditRender();});
-  /* резать: разделить в позиции курсора */
+  /* резать: разделить в позиции курсора (или середина сегмента если курсор в 0) */
   var cut=document.getElementById('veCut');if(cut)cut.addEventListener('click',function(){
-    var at=edlAt(VE.edl,VE.cursorMs);var i=at.i,s=VE.edl[i];if(!s)return;
-    var clipT=at.clipT;if(clipT<=s.s+0.05||clipT>=s.e-0.05)return;
+    var i=VE.sel>=0?VE.sel:0,s=VE.edl[i];if(!s)return;
+    var clipT;
+    if(VE.cursorMs>0.1){var at=edlAt(VE.edl,VE.cursorMs);i=at.i;s=VE.edl[i];clipT=at.clipT;}
+    else{clipT=(s.s+s.e)/2;}
+    if(clipT<=s.s+0.05||clipT>=s.e-0.05){clipT=(s.s+s.e)/2;}
+    if(clipT<=s.s+0.05)return;
     var n2=JSON.parse(JSON.stringify(s));s.e=clipT;n2.s=clipT;VE.edl.splice(i+1,0,n2);VE.sel=i;
     VE.full=edlDur(VE.edl);veditRender();
   });
@@ -2357,9 +2362,21 @@ function veUpdateCursor(elapsed){
     if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;pl.textContent='▶';try{VE.clone.pause();}catch(_){}}
     else{VE.t0=performance.now()-VE.cursorMs;VE.full=edlDur(VE.edl);pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);}
   });
-  /* выбрать сегмент + удалить ✕ */
+  /* выбрать сегмент + удалить ✕ + тап по пустой дорожке = курсор */
   var tr=document.getElementById('veditTrack');
-  tr.addEventListener('click',function(e){var seg=e.target.closest('.vedit-seg');if(!seg)return;if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}else{VE.sel=+seg.dataset.i;}VE.full=edlDur(VE.edl);veditRender();});
+  tr.addEventListener('click',function(e){
+    var seg=e.target.closest('.vedit-seg');
+    if(seg){
+      if(e.target.classList.contains('del')){var i=+seg.dataset.i;if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
+      else{VE.sel=+seg.dataset.i;}
+      VE.full=edlDur(VE.edl);veditRender();
+    } else {
+      /* тап по пустой части дорожки → курсор */
+      var r=tr.getBoundingClientRect();var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
+      VE.full=edlDur(VE.edl);VE.cursorMs=pct*VE.full;veUpdateCursor(VE.cursorMs);
+      if(VE.clone){var at=edlAt(VE.edl,VE.cursorMs);try{VE.clone.currentTime=at.clipT;}catch(_){}}
+    }
+  });
   /* перетаскивание сегментов */
   var dragI=-1;
   tr.addEventListener('pointerdown',function(e){var seg=e.target.closest('.vedit-seg');if(!seg||e.target.classList.contains('del'))return;dragI=+seg.dataset.i;seg.setPointerCapture&&seg.setPointerCapture(e.pointerId);});
