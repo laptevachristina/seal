@@ -1284,6 +1284,31 @@ function hydrateVideoClip(vc){
     if(!blob)return;
     var url=URL.createObjectURL(blob);
     video.src=url;
+    /* применить edl (монтаж) к превью на слайде */
+    if(vc.dataset.edl){
+      try{
+        var edl=JSON.parse(vc.dataset.edl);
+        if(edl.length&&!(edl.length===1&&edl[0].s===0&&edl[0].e>=10)){
+          video.addEventListener('timeupdate',function(){
+            if(!vc.dataset.edl)return;
+            var ct=video.currentTime;
+            try{
+              var e2=JSON.parse(vc.dataset.edl);
+              for(var si=0;si<e2.length;si++){
+                if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05)return; /* в сегменте — ок */
+              }
+              /* вне сегментов → найти следующий и перемотать */
+              for(var sj=0;sj<e2.length;sj++){
+                if(ct<e2[sj].s){video.currentTime=e2[sj].s;return;}
+              }
+              /* после последнего → loop к первому */
+              video.currentTime=e2[0].s;
+            }catch(_){}
+          });
+          video.currentTime=edl[0].s;
+        }
+      }catch(_){}
+    }
     video.play()['catch'](function(){});
   })['catch'](function(){});
 }
