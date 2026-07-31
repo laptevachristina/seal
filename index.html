@@ -539,6 +539,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="fx-chip" data-stin="fade">Прояв.</button>
     <button class="fx-chip" data-stin="pop">Выраст.</button>
     <button class="fx-chip" data-stin="slide">Съезд</button>
+    <button class="fx-chip" data-stin="peel">Наклейка</button>
     <button class="fx-chip" data-stin="none">Нет</button>
   </div>
   <div class="cx-hint">Постоянно (можно несколько)</div>
@@ -2810,6 +2811,7 @@ function animStateAt(items,elapsedMs,spinMode,typeSchedule,fullMs){
       if(inType==='fade'){opacity=inE;}
       else if(inType==='pop'){scale=popEase(ti);opacity=Math.min(1,ti*1.5);}
       else if(inType==='slide'){dy=(1-inE)*-70;opacity=inE;}
+      else if(inType==='peel'){var pe=1-Math.pow(1-ti,4);scale=0.15+0.85*pe;opacity=Math.min(1,ti*2);rotOffset=(-30*(1-ti))*Math.PI/180;}
       /* иначе 'none' — сразу виден */
       /* постоянно: вращение */
       if(it.dataset.spin==='1'){rotOffset=(elapsedMs/(SPIN_PERIOD_MS/lp))*2*Math.PI;}
