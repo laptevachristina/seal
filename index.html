@@ -541,6 +541,8 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="fx-chip" data-stin="pop">Выраст.</button>
     <button class="fx-chip" data-stin="slide">Съезд</button>
     <button class="fx-chip" data-stin="peel">Наклейка</button>
+    <button class="fx-chip" data-stin="blur">Размытие</button>
+    <button class="fx-chip" data-stin="drop">Капля</button>
     <button class="fx-chip" data-stin="none">Нет</button>
   </div>
   <div class="cx-hint">Постоянно (можно несколько)</div>
@@ -548,12 +550,17 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <button class="fx-chip tgl" data-stloop="spin">↻ Вращение</button>
     <button class="fx-chip tgl" data-stloop="pulse">Пульс</button>
     <button class="fx-chip tgl" data-stloop="float">Плавание</button>
+    <button class="fx-chip tgl" data-stloop="swing">Качание</button>
+    <button class="fx-chip tgl" data-stloop="glowpulse">Свечо-пульс</button>
+    <button class="fx-chip tgl" data-stloop="tilt3d">Парение 3D</button>
   </div>
   <div class="cx-hint">Исчезновение</div>
   <div class="fx-row" id="stOutChips">
     <button class="fx-chip" data-stout="none">Нет</button>
     <button class="fx-chip" data-stout="fade">Раствор.</button>
     <button class="fx-chip" data-stout="shrink">Сжатие</button>
+    <button class="fx-chip" data-stout="shrinkfade">Таяние</button>
+    <button class="fx-chip" data-stout="spinout">Закрут.</button>
   </div>
   <div class="fx-slider"><label>Скорость появления/исчезн. <span id="stInDurV">480</span>мс</label><input type="range" id="stInDur" min="150" max="5000" step="50" value="1500"></div>
   <div class="fx-slider"><label>Скорость постоянных <span id="stLoopsV">1.0</span>×</label><input type="range" id="stLoops" min="0.3" max="3" step="0.1" value="1"></div>
@@ -2824,7 +2831,7 @@ function previewUpdateLabel(elapsed,fullMs){
 function previewHasContent(el){
   if(!el)return false;
   if(el.querySelector('.vidclip'))return true;
-  return el.querySelectorAll('.sticker').some?Array.prototype.some.call(el.querySelectorAll('.sticker'),function(s){return s.dataset.spin||s.dataset.stin||s.dataset.stout||s.dataset.stpulse||s.dataset.stfloat;}):false;
+  return el.querySelectorAll('.sticker').some?Array.prototype.some.call(el.querySelectorAll('.sticker'),function(s){return s.dataset.spin||s.dataset.stin||s.dataset.stout||s.dataset.stpulse||s.dataset.stfloat||s.dataset.stswing||s.dataset.stglowpulse||s.dataset.sttilt3d;}):false;
 }
 function previewRefreshUI(){
   var bar=document.getElementById('tlBar');
@@ -2856,17 +2863,24 @@ function animStateAt(items,elapsedMs,spinMode,typeSchedule,fullMs){
       else if(inType==='pop'){scale=popEase(ti);opacity=Math.min(1,ti*1.5);}
       else if(inType==='slide'){dy=(1-inE)*-70;opacity=inE;}
       else if(inType==='peel'){var pe=1-Math.pow(1-ti,4);scale=0.15+0.85*pe;opacity=Math.min(1,ti*2);rotOffset=(-30*(1-ti))*Math.PI/180;}
+      else if(inType==='blur'){opacity=ti;scale=1+0.3*(1-ti);}
+      else if(inType==='drop'){var db=Math.sin(ti*Math.PI*0.5);scale=db;opacity=ti;dy=(1-ti)*-120*(1-db*0.5);}
       /* иначе 'none' — сразу виден */
       /* постоянно: вращение */
       if(it.dataset.spin==='1'){rotOffset=(elapsedMs/(SPIN_PERIOD_MS/lp))*2*Math.PI;}
       /* постоянно: пульс / плавание */
       if(it.dataset.stpulse==='1'){scale*=1+0.06*Math.sin(elapsedMs/(520/lp));}
       if(it.dataset.stfloat==='1'){dy+=8*Math.sin(elapsedMs/(620/lp));}
+      if(it.dataset.stswing==='1'){rotOffset+=0.15*Math.sin(elapsedMs/(500/lp));}
+      if(it.dataset.stglowpulse==='1'){scale*=1+0.04*Math.sin(elapsedMs/(450/lp));}
+      if(it.dataset.sttilt3d==='1'){rotOffset+=0.08*Math.sin(elapsedMs/(700/lp));dy+=4*Math.sin(elapsedMs/(900/lp));scale*=1+0.02*Math.sin(elapsedMs/(1100/lp));}
       /* исчезновение в конце */
       if(fullMs&&it.dataset.stout&&it.dataset.stout!=='none'){
         var to=Math.max(0,Math.min(1,(fullMs-elapsedMs)/inDur));
         if(it.dataset.stout==='fade'){opacity*=to;}
         else if(it.dataset.stout==='shrink'){scale*=to;opacity*=to;}
+        else if(it.dataset.stout==='shrinkfade'){scale*=0.5+0.5*to;opacity*=to;}
+        else if(it.dataset.stout==='spinout'){rotOffset+=to*to*4*Math.PI;scale*=to;opacity*=to;}
       }
     }else if(!spinMode){
       var sMs=i*ANIM_STAGGER;
