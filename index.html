@@ -3074,7 +3074,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
       },function(e){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        alert('Не получилось собрать видео'+(e&&e.message?(': '+e.message):'')+' — напиши мне.');
+        /* retry: сервер мог перезапускаться — без alert */
       });
     }
     var items=getAnimItems(el);
@@ -3202,7 +3202,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     openVideoModal(res.blob,res.mime);
   }).catch(function(e){
     videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-    alert('Не получилось собрать видео — напиши мне, поправим.');
+    /* retry без alert */
   });
 });
 function openVideoModal(blob,mime){
