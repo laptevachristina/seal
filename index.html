@@ -2196,7 +2196,7 @@ function openStickerFx(st){
 }
 function closeStickerFx(){var t=document.getElementById('stickerfx');if(t)t.classList.remove('open');}
 /* ---- ретушь фото: heal (лампочка) + clone (штамп) ---- */
-var RT={active:false,el:null,canvas:null,ctx:null,mode:'heal',size:30,hist:[],last:null,blur:null,cloneSrc:null,cloneOff:null,pointerId:null,zoom:1,panX:0,panY:0,panMode:false,panId:null,panStart:null};
+var RT={active:false,el:null,canvas:null,ctx:null,mode:'heal',size:30,hist:[],last:null,blur:null,cloneSrc:null,cloneOff:null,pointerId:null,zoom:1,panX:0,panY:0,panMode:false,panId:null,panStart:null,lastHeal:0,stampData:null,stampR:0,stampReady:false};
 function boxBlur(src,w,h,r){
   var out=new Uint8ClampedArray(src.length),tmp=new Uint8ClampedArray(src.length);
   for(var y=0;y<h;y++){for(var x=0;x<w;x++){var sr=0,sg=0,sb=0,sa=0,n=0;for(var dx=-r;dx<=r;dx++){var xx=x+dx;if(xx<0||xx>=w)continue;var i=(y*w+xx)*4;sr+=src[i];sg+=src[i+1];sb+=src[i+2];sa+=src[i+3];n++;}var oi=(y*w+x)*4;tmp[oi]=sr/n;tmp[oi+1]=sg/n;tmp[oi+2]=sb/n;tmp[oi+3]=sa/n;}}
@@ -2238,30 +2238,66 @@ function closeRetouch(apply){
   RT.active=false;RT.el=null;RT.canvas=null;RT.ctx=null;RT.hist=[];RT.blur=null;
   var m=document.getElementById('retModal');if(m)m.classList.remove('open');
 }
-function rtStampAt(cx,cy){
-  var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
-  if(!RT.cloneOff){RT.cloneSrc={x:cx,y:cy};RT.cloneOff={x:0,y:0};return;}
-  var sx0=cx-RT.cloneOff.x,sy0=cy-RT.cloneOff.y,r=RT.size,srcSnap=RT.ctx.getImageData(0,0,W,H).data;
-  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var tx=cx+xx|0,ty=cy+yy|0;if(tx<0||ty<0||tx>=W||ty>=H)continue;var sxi=sx0+xx|0,syi=sy0+yy|0;if(sxi<0||syi<0||sxi>=W||syi>=H)continue;var di=(ty*W+tx)*4,si=(syi*W+sxi)*4;D[di]=srcSnap[si];D[di+1]=srcSnap[si+1];D[di+2]=srcSnap[si+2];D[di+3]=255;}}
+/* штамп: долгий тап = копировать участок, тап = вставить */
+function rtStampCopy(cx,cy){
+  var W=RT.canvas.width,H=RT.canvas.height,r=RT.size,r2=r*r;
+  RT.stampData=[];RT.stampR=r;
+  var id=RT.ctx.getImageData(0,0,W,H);
+  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){
+    if(xx*xx+yy*yy>r2)continue;
+    var sx=(cx+xx)|0,sy=(cy+yy)|0;
+    if(sx<0||sy<0||sx>=W||sy>=H){RT.stampData.push(null);continue;}
+    var di=(sy*W+sx)*4;
+    RT.stampData.push([id.data[di],id.data[di+1],id.data[di+2]]);
+  }}
+  RT.stampReady=true;
+  /* визуальный кружок-источник */
+  var ind=document.getElementById('rtStampIndicator');
+  if(ind){var rp=rtPosToScreen(cx,cy);ind.style.left=rp.x+'px';ind.style.top=rp.y+'px';ind.style.width=(r*2*RT.zoom)+'px';ind.style.height=(r*2*RT.zoom)+'px';ind.style.display='block';}
+}
+function rtStampPaste(cx,cy){
+  if(!RT.stampReady||!RT.stampData.length)return;
+  var W=RT.canvas.width,H=RT.canvas.height,r=RT.stampR,r2=r*r;
+  var id=RT.ctx.getImageData(0,0,W,H),D=id.data;
+  var idx=0;
+  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++,idx++){
+    if(xx*xx+yy*yy>r2)continue;
+    if(!RT.stampData[idx])continue;
+    var tx=(cx+xx)|0,ty=(cy+yy)|0;
+    if(tx<0||ty<0||tx>=W||ty>=H)continue;
+    var di=(ty*W+tx)*4;
+    var edge=Math.sqrt(xx*xx+yy*yy)/r;
+    var blend=edge>0.7?(1-(edge-0.7)/0.3):1;
+    D[di]=Math.round(D[di]*(1-blend)+RT.stampData[idx][0]*blend);
+    D[di+1]=Math.round(D[di+1]*(1-blend)+RT.stampData[idx][1]*blend);
+    D[di+2]=Math.round(D[di+2]*(1-blend)+RT.stampData[idx][2]*blend);
+    D[di+3]=255;
+  }}
   RT.ctx.putImageData(id,0,0);RT.hist.push(RT.ctx.getImageData(0,0,W,H));if(RT.hist.length>20)RT.hist.shift();
 }
+function rtPosToScreen(cx,cy){
+  var c=RT.canvas,r=c.getBoundingClientRect();
+  var scaleX=r.width/c.width,scaleY=r.height/c.height;
+  var wrap=document.getElementById('rtWrap');
+  var wt=wrap?{x:parseFloat(wrap.style.transform.match(/translate\(([^p]+)/)||[0,0])[1]||0,y:parseFloat(wrap.style.transform.match(/,\s*([^p]+)/)||[0,0])[1]||0,z:parseFloat(wrap.style.transform.match(/scale\(([^)]+)/)||[0,1])[1]||1}:{x:0,y:0,z:1};
+  return{x:(cx*scaleX)*wt.z+wt.x+r.left,y:(cy*scaleY)*wt.z+wt.y+r.top};
+}
 function rtHealAt(cx,cy){
-  if(performance.now()-(RT.lastHeal||0)<70)return;RT.lastHeal=performance.now();
+  if(performance.now()-(RT.lastHeal||0)<60)return;RT.lastHeal=performance.now();
   var W=RT.canvas.width,H=RT.canvas.height,id=RT.ctx.getImageData(0,0,W,H),D=id.data;
-  var r=RT.size;
+  var r=RT.size,r2=r*r;
   var mask=[],inM={};
-  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r*r)continue;var x=(cx+xx)|0,y=(cy+yy)|0;if(x<1||y<1||x>=W-1||y>=H-1)continue;var k=y*W+x;mask.push(k);inM[k]=1;}}
-  if(!mask.length){return;}
-  var filled={},remaining=mask.slice();
-  for(var it=0;it<r+4&&remaining.length;it++){
-    var next=[];
-    for(var mi=0;mi<remaining.length;mi++){
-      var k=remaining[mi],x=k%W,y=(k/W)|0,sR=0,sG=0,sB=0,n=0;
-      for(var dy=-1;dy<=1;dy++){for(var dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;var nk=(y+dy)*W+(x+dx);if(inM[nk]&&!filled[nk])continue;sR+=D[nk*4];sG+=D[nk*4+1];sB+=D[nk*4+2];n++;}}
-      if(n>0){filled[k]=[Math.round(sR/n),Math.round(sG/n),Math.round(sB/n)];}else{next.push(k);}
-    }
-    for(var key in filled){var kk=key|0;D[kk*4]=filled[key][0];D[kk*4+1]=filled[key][1];D[kk*4+2]=filled[key][2];D[kk*4+3]=255;delete inM[kk];}
-    remaining=next;
+  for(var yy=-r;yy<=r;yy++){for(var xx=-r;xx<=r;xx++){if(xx*xx+yy*yy>r2)continue;var x=(cx+xx)|0,y=(cy+yy)|0;if(x<0||y<0||x>=W||y>=H)continue;var k=y*W+x;mask.push(k);inM[k]=1;}}
+  if(!mask.length)return;
+  /* для каждого пикселя маски — найти ближайший немаскированный и скопировать */
+  for(var mi=0;mi<mask.length;mi++){
+    var k=mask[mi],mx=k%W,my=(k/W)|0,bestD=1e9,bestN=-1;
+    for(var sy=-r-1;sy<=r+1;sy++){for(var sx=-r-1;sx<=r+1;sx++){
+      var nx=mx+sx,ny=my+sy;if(nx<0||ny<0||nx>=W||ny>=H)continue;
+      var nk=ny*W+nx;if(inM[nk])continue;
+      var d=sx*sx+sy*sy;if(d<bestD){bestD=d;bestN=nk;}
+    }}
+    if(bestN>=0){D[k*4]=D[bestN*4];D[k*4+1]=D[bestN*4+1];D[k*4+2]=D[bestN*4+2];}
   }
   RT.ctx.putImageData(id,0,0);RT.hist.push(RT.ctx.getImageData(0,0,W,H));if(RT.hist.length>20)RT.hist.shift();
 }
@@ -2269,24 +2305,45 @@ function wireRtCanvas(c){
   function pos(e){var r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*(c.width/r.width),y:(e.clientY-r.top)*(c.height/r.height)};}
   function stroke(x0,y0,x1,y1){
     var dist=Math.hypot(x1-x0,y1-y0),step=Math.max(2,RT.size/3),n=Math.max(1,Math.round(dist/step));
-    for(var i=0;i<=n;i++){var t=i/n,x=x0+(x1-x0)*t,y=y0+(y1-y0)*t;if(RT.mode==='heal')rtHealAt(x|0,y|0);else rtStampAt(x|0,y|0);}
+    for(var i=0;i<=n;i++){var t=i/n,x=x0+(x1-x0)*t,y=y0+(y1-y0)*t;
+      if(RT.mode==='heal')rtHealAt(x|0,y|0);
+      else if(RT.mode==='clone'&&RT.stampReady)rtStampPaste(x|0,y|0);
+    }
   }
   var pointers={},pinchStart=null,baseZoom=1,panStartC=null,panStartPan=null;
+  var lpTimer=null,lpX=0,lpY=0,lpmoved=false;
   c.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var ids=Object.keys(pointers);
     if(ids.length>=2){var a=pointers[ids[0]],b=pointers[ids[1]];pinchStart=Math.hypot(a.x-b.x,a.y-b.y);baseZoom=RT.zoom;panStartC={x:(a.x+b.x)/2,y:(a.y+b.y)/2};panStartPan={x:RT.panX,y:RT.panY};RT.pointerId=null;RT.last=null;RT.panId=null;return;}
     if(RT.panMode){RT.panId=e.pointerId;RT.panStart={x:e.clientX-RT.panX,y:e.clientY-RT.panY};try{c.setPointerCapture(e.pointerId);}catch(_){}return;}
-    try{c.setPointerCapture(e.pointerId);}catch(_){}RT.pointerId=e.pointerId;var p=pos(e);RT.last=p;if(RT.mode==='heal')rtHealAt(p.x|0,p.y|0);else rtStampAt(p.x|0,p.y|0);
+    try{c.setPointerCapture(e.pointerId);}catch(_){}RT.pointerId=e.pointerId;
+    var p=pos(e);lpX=p.x|0;lpY=p.y|0;lpmoved=false;RT.last=p;
+    if(RT.mode==='heal'){rtHealAt(lpX,lpY);}
+    else if(RT.mode==='clone'){
+      if(RT.stampReady){
+        rtStampPaste(lpX,lpY);
+      } else {
+        /* ждём — может долгий тап */
+      }
+      /* долгий тап = копировать участок (обновить источник) */
+      if(lpTimer)clearTimeout(lpTimer);
+      lpTimer=setTimeout(function(){
+        if(!lpmoved&&RT.mode==='clone'){rtStampCopy(lpX,lpY);}
+      },450);
+    }
   },true);
   c.addEventListener('pointermove',function(e){
     if(pointers[e.pointerId])pointers[e.pointerId]={x:e.clientX,y:e.clientY};
     var ids=Object.keys(pointers);
     if(ids.length>=2&&pinchStart){var a=pointers[ids[0]],b=pointers[ids[1]];var d=Math.hypot(a.x-b.x,a.y-b.y);RT.zoom=Math.max(1,Math.min(6,baseZoom*d/pinchStart));var cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;RT.panX=panStartPan.x+(cx-panStartC.x);RT.panY=panStartPan.y+(cy-panStartC.y);rtApplyTransform();var zs=document.getElementById('rtZoom');if(zs)zs.value=RT.zoom;return;}
     if(RT.panMode&&RT.panId===e.pointerId){RT.panX=e.clientX-RT.panStart.x;RT.panY=e.clientY-RT.panStart.y;rtApplyTransform();return;}
-    if(RT.pointerId!==e.pointerId||!RT.last)return;var p=pos(e);stroke(RT.last.x,RT.last.y,p.x,p.y);RT.last=p;
+    if(RT.pointerId!==e.pointerId||!RT.last)return;
+    var p=pos(e);
+    if(Math.abs(p.x-lpX)+Math.abs(p.y-lpY)>10){lpmoved=true;if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}}
+    stroke(RT.last.x,RT.last.y,p.x,p.y);RT.last=p;
   },true);
-  function end(e){delete pointers[e.pointerId];if(Object.keys(pointers).length<2)pinchStart=null;if(RT.panId===e.pointerId)RT.panId=null;if(RT.pointerId===e.pointerId){RT.pointerId=null;RT.last=null;}}
+  function end(e){delete pointers[e.pointerId];if(Object.keys(pointers).length<2)pinchStart=null;if(RT.panId===e.pointerId)RT.panId=null;if(RT.pointerId===e.pointerId){RT.pointerId=null;RT.last=null;}if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}}
   c.addEventListener('pointerup',end,true);
   c.addEventListener('pointercancel',end,true);
 }
