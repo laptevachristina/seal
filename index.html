@@ -3042,12 +3042,29 @@ function serverCompose(el,format,btn){
     st('⏳ сервер…');
     return fetch(v.src).then(function(r){return r.blob();}).then(function(vblob){
       var cutColor=vc.dataset.cutColor||'',cutThresh=vc.dataset.cutThresh||'';
-      var cutS=vc.dataset.cutS||'',cutE=vc.dataset.cutE||'';
-      var cspeed=vc.dataset.cspeed||'';
       var edlRaw=vc.dataset.edl||'';
-      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,cutS:cutS,cutE:cutE,cspeed:cspeed,edl:edlRaw,hasAbove:!!ovBlob});
+      /* маска скругления: PNG w×h с белым прямоугольником со скруглением на чёрном */
+      var isRound=vc.classList.contains('cround');
+      var maskBlob=null;
+      if(rad>0||isRound){
+        var mc=document.createElement('canvas');mc.width=w;mc.height=h;
+        var mx=mc.getContext('2d');mx.fillStyle='#000';mx.fillRect(0,0,w,h);
+        mx.fillStyle='#fff';
+        if(isRound){mx.beginPath();mx.arc(w/2,h/2,Math.min(w,h)/2,0,7);mx.fill();}
+        else{roundRectPath(mx,0,0,w,h,rad);mx.fill();}
+        maskBlob=new Promise(function(res){mc.toBlob(function(b){res(b);},'image/png');});
+      }
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,edl:edlRaw,hasAbove:!!ovBlob,hasMask:!!maskBlob});
       var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
       if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
+      var sendPromise;
+      if(maskBlob){
+        sendPromise=maskBlob.then(function(mb){fd.append('mask',mb,'mask.png');return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});});
+      } else {
+        sendPromise=fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
+      }
+      st('⏳ сборка…');
+      return sendPromise;
       st('⏳ сборка…');
       return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
     }).then(function(r){if(!r.ok)throw new Error('сервер '+r.status);return r.blob();})
