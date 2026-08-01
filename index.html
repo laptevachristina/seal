@@ -2514,22 +2514,39 @@ function veUpdateCursor(timelineSec){
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
   });
-  /* тап по сегменту → выбрать + перемотать видео в начало сегмента */
+  /* тап по сегменту → выбрать + перемотать */
   var tr=document.getElementById('veditTrack');
   tr.addEventListener('click',function(e){
     var seg=e.target.closest('.vedit-seg');
     if(!seg)return;
     var i=+seg.dataset.i,s=VE.edl[i];
     if(e.target.classList.contains('del')){if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
-    else{VE.sel=i;if(s&&VE.clone){try{VE.clone.currentTime=s.s;veUpdateCursor(s.s);}catch(_){}}}
+    else{VE.sel=i;if(s&&VE.clone){try{VE.clone.currentTime=s.s;}catch(_){}}
+      var tl=srcToTimeline(VE.edl,s.s);veUpdateCursor(tl);}
     VE.full=edlDur(VE.edl);veditRender();
   });
-  /* перетаскивание сегментов */
-  var dragI=-1;
-  tr.addEventListener('pointerdown',function(e){var seg=e.target.closest('.vedit-seg');if(!seg||e.target.classList.contains('del'))return;dragI=+seg.dataset.i;seg.setPointerCapture&&seg.setPointerCapture(e.pointerId);});
-  tr.addEventListener('pointermove',function(e){if(dragI<0)return;var over=document.elementFromPoint(e.clientX,e.clientY);var tSeg=over&&over.closest('.vedit-seg');if(tSeg){var j=+tSeg.dataset.i;if(j!==dragI){var m=VE.edl.splice(dragI,1)[0];VE.edl.splice(j,0,m);dragI=j;veditRender();}}});
-  tr.addEventListener('pointerup',function(){dragI=-1;});
-  tr.addEventListener('pointercancel',function(){dragI=-1;});
+  /* SCRUB: тянешь палец по дорожке → видео перематывается */
+  var scrubbing=false;
+  tr.addEventListener('pointerdown',function(e){
+    if(e.target.classList.contains('del'))return;
+    scrubbing=true;try{tr.setPointerCapture(e.pointerId);}catch(_){}
+    doScrub(e);
+  });
+  tr.addEventListener('pointermove',function(e){if(scrubbing)doScrub(e);});
+  tr.addEventListener('pointerup',function(){scrubbing=false;});
+  tr.addEventListener('pointercancel',function(){scrubbing=false;});
+  function doScrub(e){
+    var r=tr.getBoundingClientRect();
+    var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
+    var dur=VE.dur||1;
+    var targetSec=pct*dur;
+    if(VE.clone){try{VE.clone.currentTime=targetSec;}catch(_){}}
+    if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;document.getElementById('vePlay').textContent='▶';}
+    var tl=srcToTimeline(VE.edl,targetSec);
+    veUpdateCursor(tl);
+    var i=0;for(var si=0;si<VE.edl.length;si++){if(targetSec>=VE.edl[si].s&&targetSec<VE.edl[si].e){i=si;break;}}
+    VE.sel=i;veditRender();
+  }
   /* ＋ добавить видео */
   var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('pointerup',function(){pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();});
   /* готово/отмена */
