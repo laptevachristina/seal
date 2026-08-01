@@ -1328,28 +1328,27 @@ function hydrateVideoClip(vc){
     if(!blob)return;
     var url=URL.createObjectURL(blob);
     video.src=url;
-    /* применить edl (монтаж) к превью на слайде */
+    /* применить edl (монтаж) */
     if(vc.dataset.edl){
       try{
         var edl=JSON.parse(vc.dataset.edl);
-        if(edl.length&&!(edl.length===1&&edl[0].s===0&&edl[0].e>=10)){
-          video.addEventListener('timeupdate',function(){
-            if(!vc.dataset.edl)return;
+        if(edl.length){
+          video.loop=false;video.removeAttribute('loop');video.muted=true;
+          var edlFn=function(){
+            if(!vc.parentNode){video.removeEventListener('timeupdate',edlFn);video.removeEventListener('seeked',edlFn);return;}
             var ct=video.currentTime;
-            try{
-              var e2=JSON.parse(vc.dataset.edl);
-              for(var si=0;si<e2.length;si++){
-                if(ct>=e2[si].s-0.05&&ct<e2[si].e+0.05)return; /* в сегменте — ок */
-              }
-              /* вне сегментов → найти следующий и перемотать */
-              for(var sj=0;sj<e2.length;sj++){
-                if(ct<e2[sj].s){video.currentTime=e2[sj].s;return;}
-              }
-              /* после последнего → loop к первому */
-              video.currentTime=e2[0].s;
-            }catch(_){}
-          });
-          video.currentTime=edl[0].s;
+            var lastE=edl[edl.length-1].e;
+            if(ct>=lastE-0.1){video.currentTime=edl[0].s;return;}
+            var ok=false;
+            for(var si=0;si<edl.length;si++){if(ct>=edl[si].s-0.1&&ct<edl[si].e+0.1){ok=true;break;}}
+            if(!ok){
+              for(var sj=0;sj<edl.length;sj++){if(ct<edl[sj].s){video.currentTime=edl[sj].s;return;}}
+              video.currentTime=edl[0].s;
+            }
+          };
+          video.addEventListener('timeupdate',edlFn);
+          video.addEventListener('seeked',edlFn);
+          video.addEventListener('loadedmetadata',function(){video.currentTime=edl[0].s;});
         }
       }catch(_){}
     }
