@@ -1,4 +1,4 @@
-<!--seal-github-v101-->
+<!--seal-github-v102-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -124,6 +124,8 @@ em{font-style:italic}
 .series-grid .tag-num{position:static;text-align:center;font-size:11px;font-weight:600;color:#555;font-family:var(--sans);text-shadow:none;background:transparent;padding:3px 0 0;line-height:1}
 .series-grid .tag-num[contenteditable]{cursor:text;outline:1px dashed rgba(0,0,0,.25);border-radius:2px}
 .series-grid .ph-label{font-size:9px;color:#999;padding-top:20px}
+.series-cell.wide{grid-column:span 3}
+.series-cell.wide .photo{aspect-ratio:3/1}
 .fixed-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.s3{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
@@ -716,11 +718,11 @@ function tpl(type){
   series:(function(){
     var nums=[];for(var i=1;i<=99;i++)nums.push(i);
     for(var i=nums.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=nums[i];nums[i]=nums[j];nums[j]=t;}
+    var ni=0;
+    function cell(wide){var n=nums[ni++];var cls='series-cell'+(wide?' wide':'');return '<div class="'+cls+'"><div class="photo gcell" data-photo><div class="ph-label">'+ni+'</div></div><span class="tag-num" data-edit data-ph="'+n+'">'+n+'</span></div>';}
     var cells='';
-    for(var i=0;i<17;i++){
-      var n=nums[i];
-      cells+='<div class="series-cell"><div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div></div><span class="tag-num" data-edit data-ph="'+n+'">'+n+'</span></div>';
-    }
+    for(var i=0;i<12;i++)cells+=cell(false);
+    cells+=cell(true);
     return '<div class="series-wrap"><div class="series-grid">'+cells+'</div></div>';
   })(),
   cover:
@@ -933,10 +935,18 @@ filepick.addEventListener('change',function(){
   if(pickMode==='slide'&&filepick.files.length>1&&cur>=0&&slides[cur]){
     var files=Array.prototype.slice.call(filepick.files);
     var slots=Array.prototype.slice.call(slides[cur].el.querySelectorAll('[data-photo]:not(.has-img), .frame:not(.has-img)'));
-    files.forEach(function(f,i){if(slots[i])setPhoto(slots[i],f);});
+    files.forEach(function(f,i){
+      if(!slots[i])return;
+      if(f.type&&f.type.indexOf('video')===0){addVideoClip(f);}
+      else{setPhoto(slots[i],f);}
+    });
     pickTarget=null;return;
   }
-  if(pickTarget)setPhoto(pickTarget,filepick.files[0]);
+  if(pickTarget){
+    var ff=filepick.files[0];
+    if(ff&&ff.type&&ff.type.indexOf('video')===0){addVideoClip(ff);}
+    else{setPhoto(pickTarget,ff);}
+  }
 });
 var addStickerBtn=document.getElementById('addStickerBtn');
 if(addStickerBtn)addStickerBtn.addEventListener('click',function(){if(cur<0||!slides[cur])return;pickMode='sticker';filepick.accept='image/*';filepick.value='';filepick.click();});
