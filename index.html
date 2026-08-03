@@ -1,4 +1,4 @@
-<!--seal-github-v118-->
+<!--seal-github-v119-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2670,6 +2670,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     el.style.transform='none';meas.appendChild(el);
     var sr=el.getBoundingClientRect(),photos=[];
     el.querySelectorAll('[data-photo].has-img, .frame.has-img').forEach(function(p){
+      if(window._skipVids&&p.dataset.vidId)return; /* пропуск photo-видео при рендере bg для serverCompose */
       var im=p.querySelector('.ph-img');if(!im||!im.complete)return;
       var imw=im.videoWidth||im.naturalWidth||0,imh=im.videoHeight||im.naturalHeight||0;if(!imw||!imh)return;
       var r=p.getBoundingClientRect(),cs=getComputedStyle(p);
@@ -3067,7 +3068,14 @@ var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
 function serverCompose(el,format,btn){
-  var vc=el.querySelector('.vidclip');var v=vc&&vc.querySelector('video');
+  /* ищем видео: vidclip ИЛИ video в photo-слоте */
+  var vc=el.querySelector('.vidclip');
+  var v=vc?vc.querySelector('video'):null;
+  if(!v){
+    /* ищем video как .ph-img внутри photo-слота */
+    var photoWithVid=el.querySelector('.photo[data-vid-id]');
+    if(photoWithVid){v=photoWithVid.querySelector('video');vc=photoWithVid;}
+  }
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
   var dur=Math.min(30,Math.max(0.5,v.duration));
   var st=function(t){if(btn)btn.textContent=t;};
