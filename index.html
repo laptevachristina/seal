@@ -1,4 +1,4 @@
-<!--seal-github-v108-->
+<!--seal-github-v109-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -109,7 +109,7 @@ em{font-style:italic}
 /* duo: 2 media + подписи + футер */
 .duo-media{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%}
 .duo-cell{display:flex;flex-direction:column;gap:7px;pointer-events:none}
-.duo-cell .photo{aspect-ratio:4/5;width:100%;height:auto;pointer-events:auto}
+.duo-cell .photo{aspect-ratio:4/5;width:100%;height:auto;pointer-events:auto;position:relative;overflow:hidden}
 .duo-cap{pointer-events:auto}
 .duo-cap .h{line-height:1.1}
 .duo-foot{margin-top:auto;padding-top:14px;text-align:center}
@@ -937,22 +937,18 @@ filepick.addEventListener('change',function(){
   if(pickTarget){
     var ff=filepick.files[0];
     if(ff&&ff.type&&ff.type.indexOf('video')===0){
-      /* видео в фото-слот → вставляем video ВНУТРИ слота (как маску) */
+      /* видео в фото-слот → создаём vidclip ВНУТРИ слота (маска + серверный рендер) */
       var slot=pickTarget;
       var vid='v'+Date.now().toString(36);
-      idbPut('vidblob_'+vid,ff);
-      /* убираем img, ставим video */
-      var oldImg=slot.querySelector('.ph-img');if(oldImg)oldImg.remove();
-      var v=document.createElement('video');v.className='ph-img';v.muted=true;v.loop=true;v.autoplay=true;v.setAttribute('playsinline','');v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:center center';
-      slot.appendChild(v);
+      var vc2=document.createElement('div');vc2.className='vidclip';vc2.setAttribute('data-added','');vc2.dataset.vidId=vid;vc2.dataset.layer='above';
+      vc2.style.cssText='position:absolute;inset:0;width:100%;height:100%;z-index:5;border-radius:inherit';
+      vc2.innerHTML='<video muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video><span class="mv-handle"></span><span class="mv-del"></span><span class="tx-resize"></span><span class="layer-toggle"></span>';
+      slot.appendChild(vc2);
       slot.classList.add('has-img');
-      slot.dataset.vidId=vid;
-      /* pan/zoom как у фото */
-      slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;
-      idbGet('vidblob_'+vid).then(function(blob){
-        if(blob){v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});}
+      idbPut('vidblob_'+vid,ff).then(function(){return idbGet('vidblob_'+vid);}).then(function(blob){
+        if(blob){var v=vc2.querySelector('video');v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});}
       });
-      applyTransform(slot);updateFilm();pushHistory();
+      wireVideoClip(vc2);updateFilm();pushHistory();
     }
     else{setPhoto(pickTarget,ff);}
   }
