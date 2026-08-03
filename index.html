@@ -1,4 +1,4 @@
-<!--seal-github-v116-->
+<!--seal-github-v117-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3274,8 +3274,16 @@ function openVideoModal(blob,mime){
   var url=URL.createObjectURL(blob);
   var ext=extFor(mime);
   var top=document.createElement('button');top.className='hbtn primary';top.style.cssText='margin:0 auto 8px;display:block';
-  top.textContent='⬇ Скачать видео';
-  top.addEventListener('click',function(){var a=document.createElement('a');a.href=url;a.download='slide.'+ext;document.body.appendChild(a);a.click();a.remove();});
+  var file=new File([blob],'slide.'+ext,{type:mime||'video/mp4'});
+  var canShare=navigator.canShare&&navigator.canShare({files:[file]});
+  top.textContent=canShare?'⬇ Сохранить в Фото':'⬇ Скачать видео';
+  top.addEventListener('click',function(){
+    if(canShare){
+      navigator.share({files:[file],title:'Видео'}).catch(function(){});
+    } else {
+      var a=document.createElement('a');a.href=url;a.download='slide.'+ext;document.body.appendChild(a);a.click();a.remove();
+    }
+  });
   imgs.appendChild(top);
   var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center';
   var vid=document.createElement('video');vid.src=url;vid.style.maxHeight='68vh';vid.style.maxWidth='92vw';
