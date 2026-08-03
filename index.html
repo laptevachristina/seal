@@ -1,4 +1,4 @@
-<!--seal-github-v111-->
+<!--seal-github-v112-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -905,7 +905,7 @@ function wireGcellMove(p){
 function applyTransform(p){
   var img=p.querySelector('.ph-img');if(!img)return;
   var s=parseFloat(p.dataset.scale)||1,x=parseFloat(p.dataset.x)||0,y=parseFloat(p.dataset.y)||0;
-  var W=p.clientWidth,H=p.clientHeight,nw=img.naturalWidth||img.videoWidth||0,nh=img.naturalHeight||img.videoHeight||0;
+  var W=p.clientWidth,H=p.clientHeight,nw=img.videoWidth||img.naturalWidth||0,nh=img.videoHeight||img.naturalHeight||0;
   var cover=Math.max(W/nw,H/nh),iw=nw*cover*s,ih=nh*cover*s;
   var maxX=Math.max(0,(iw-W)/2),maxY=Math.max(0,(ih-H)/2);
   x=Math.max(-maxX,Math.min(maxX,x));y=Math.max(-maxY,Math.min(maxY,y));
@@ -2658,7 +2658,8 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     el.style.transform='none';meas.appendChild(el);
     var sr=el.getBoundingClientRect(),photos=[];
     el.querySelectorAll('[data-photo].has-img, .frame.has-img').forEach(function(p){
-      var im=p.querySelector('.ph-img');if(!im||!im.complete||!im.naturalWidth)return;
+      var im=p.querySelector('.ph-img');if(!im||!im.complete)return;
+      var imw=im.videoWidth||im.naturalWidth||0,imh=im.videoHeight||im.naturalHeight||0;if(!imw||!imh)return;
       var r=p.getBoundingClientRect(),cs=getComputedStyle(p);
       var a=animState&&animState.get(p);
       photos.push({img:im,x:r.left-sr.left,y:r.top-sr.top,W:r.width,H:r.height,
@@ -2671,7 +2672,8 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     el.querySelectorAll('.sticker').forEach(function(st){
       var im=st.querySelector('img');if(!im)return;
       if(im._prerendered)im=im._prerendered;
-      else if(!im.complete||!im.naturalWidth)return;
+      else if(!im.complete)return;
+      if(!im.videoWidth&&!im.naturalWidth)return;
       var a=animState&&animState.get(st);
       var rec={img:im,x:st.offsetLeft,y:st.offsetTop,W:st.offsetWidth,H:st.offsetHeight,
         rot:(parseFloat(st.dataset.rot)||0)*Math.PI/180+(a&&a.rotOffset||0),
@@ -2725,7 +2727,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         if(!_onlyAbove)
         photos.forEach(function(p){
           ctx.save();ctx.globalAlpha=p.opacity;roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();if(p.fx&&p.fx!=='none'){try{ctx.filter=p.fx;}catch(_){}}
-          var nw=p.img.naturalWidth,nh=p.img.naturalHeight,cover=Math.max(p.W/nw,p.H/nh);
+          var nw=p.img.videoWidth||p.img.naturalWidth||0,nh=p.img.videoHeight||p.img.naturalHeight||0,cover=Math.max(p.W/nw,p.H/nh);
           var dw=nw*cover*p.s,dh=nh*cover*p.s,cx=p.x+p.W/2+p.tx,cy=p.y+p.dy+p.H/2+p.ty;
           ctx.drawImage(p.img,cx-dw/2,cy-dh/2,dw,dh);ctx.restore();
         });
