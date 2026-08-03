@@ -520,7 +520,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <div class="fx-note">Применится к выбранной рамке или к основному фото слайда. Сохраняется в слайд и в экспорт.</div>
     <button class="fx-reset" id="fxReset">Сброс</button>
   </div>
-  <button class="fx-chip" id="fxRetouch" style="margin-top:2px">✦ Ретушь</button>
+  
 </div>
 <div class="vidclipfx dd" id="vidclipfx">
   <div class="fx-title">Видео-клип</div>
@@ -2716,11 +2716,11 @@ function renderSlideCanvas(el,animState,videoFrameMap){
           try{ctx.drawImage(rec.src,dx,dy,dw,dh);}catch(e){}
           ctx.restore();
         }
-        if(!_onlyAbove){stickersBelow.forEach(drawSticker);
+        stickersBelow.forEach(drawSticker);
         vidsBelow.forEach(drawVid);
         ctx.globalAlpha=1;
         ctx.drawImage(overlay,0,0,w,h);
-        vidsAbove.forEach(drawVid);}
+        vidsAbove.forEach(drawVid);
         if(!window._skipStickersAbove)stickersAbove.forEach(drawSticker);
         resolve(c);
       }catch(e){reject(e);}
