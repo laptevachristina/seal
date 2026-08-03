@@ -1,4 +1,4 @@
-<!--seal-github-v110-->
+<!--seal-github-v111-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -440,7 +440,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <button class="hbtn dd-btn" data-dd="swatches">🎨 Фон</button>
       <button class="hbtn dd-btn" data-dd="textcolors">🅰 Цвет</button>
       <button class="hbtn dd-btn" data-dd="photofx">📷 Фото</button>
-      <button class="hbtn" id="addFrameBtn" style="display:none">＋ Рамка</button><span class="btn-grp"><button class="hbtn" id="addStickerBtn">＋ Стикер</button><button class="hbtn" id="addVideoBtn">＋ Видео</button></span>
+      <button class="hbtn" id="addFrameBtn" style="display:none">＋ Рамка</button><span class="btn-grp"><button class="hbtn" id="addStickerBtn">＋ Стикер</button><button class="hbtn" id="bubblePinkBtn" title="Розовая плашка">🩷 Плашка</button><button class="hbtn" id="bubbleOliveBtn" title="Оливковая плашка" style="color:#9BA07E">🫒 Плашка</button><button class="hbtn" id="addVideoBtn">＋ Видео</button></span>
     </div>
     <div class="tl-bar" id="tlBar" style="display:none">
       <button class="hbtn iconbtn" id="tlPlay">▶</button>
@@ -956,6 +956,12 @@ filepick.addEventListener('change',function(){
   }
 });
 var addStickerBtn=document.getElementById('addStickerBtn');
+var bubblePinkUri="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2021000%2029700%22%3E%3Cpath%20fill%3D%22%23F5B2B6%22%20d%3D%22M4748%207458c-1404-251%20-2105-1496%20-1550-2811%20185-439%20475-864%201161-1034l11007%200c1241%20272%201770%201295%201588%203069%20-58%20342%20130%20624%20564%20847%20-645%2090%20-1091-62%20-1340-459%20-375%20280%20-928%20409%20-1659%20388%20-3057%200%20-6314%200%20-9771%200z%22/%3E%3C/svg%3E";
+var bubbleOliveUri="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2021000%2029700%22%3E%3Cpath%20fill%3D%22%239BA07E%22%20d%3D%22M4748%207458c-1404-251%20-2105-1496%20-1550-2811%20185-439%20475-864%201161-1034l11007%200c1241%20272%201770%201295%201588%203069%20-58%20342%20130%20624%20564%20847%20-645%2090%20-1091-62%20-1340-459%20-375%20280%20-928%20409%20-1659%20388%20-3057%200%20-6314%200%20-9771%200z%22/%3E%3C/svg%3E";
+var bpBtn=document.getElementById('bubblePinkBtn');
+if(bpBtn)bpBtn.addEventListener('pointerup',function(){if(cur<0||!slides[cur])return;addSticker(bubblePinkUri);});
+var boBtn=document.getElementById('bubbleOliveBtn');
+if(boBtn)boBtn.addEventListener('pointerup',function(){if(cur<0||!slides[cur])return;addSticker(bubbleOliveUri);});
 if(addStickerBtn)addStickerBtn.addEventListener('click',function(){if(cur<0||!slides[cur])return;pickMode='sticker';filepick.accept='image/*';filepick.value='';filepick.click();});
 var addVideoBtn=document.getElementById('addVideoBtn');
 if(addVideoBtn)addVideoBtn.addEventListener('click',function(){if(cur<0||!slides[cur])return;pickMode='vidclip';filepick.accept='video/*';filepick.value='';filepick.click();});
