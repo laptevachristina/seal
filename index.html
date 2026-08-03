@@ -1,4 +1,4 @@
-<!--seal-github-v121-->
+<!--seal-github-v122|fix:slide-render-many-photos-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2714,6 +2714,11 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     });}
     var origTexts=el.querySelectorAll('[data-edit]');
     var bg=bgColorOf(el),clone=el.cloneNode(true);
+    /* фикс: фото/видео рисуются отдельным canvas-проходом, в SVG-overlay они display:none.
+       Убираем base64-src и кэш ретуши из клона, иначе на 10+ фото data:URL SVG превышает
+       лимит img.src и overlay.onerror роняет весь рендер слайда. */
+    clone.querySelectorAll('.ph-img').forEach(function(im){im.removeAttribute('src');});
+    clone.querySelectorAll('.photo[data-rt-orig],.frame[data-rt-orig]').forEach(function(p){p.removeAttribute('data-rt-orig');});
     if(animState){
       var cloneTexts=clone.querySelectorAll('[data-edit]');
       origTexts.forEach(function(orig,i){
