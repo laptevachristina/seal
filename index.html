@@ -1,4 +1,4 @@
-<!--seal-github-v102-->
+<!--seal-github-v103-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -114,18 +114,17 @@ em{font-style:italic}
 .duo-cap .h{line-height:1.1}
 .duo-foot{margin-top:auto;padding-top:14px;text-align:center}
 /* series: вся серия одним слайдом — пёстрая контактная плёнка */
-.series-wrap{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px 20px 28px;background:#faf7f1;overflow:hidden}
-.series-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:8px 6px;align-content:start}
-.series-cell{display:flex;flex-direction:column;align-items:center}
-.series-grid .photo{width:100%;height:100%;aspect-ratio:1/1;border-radius:0;background:#1a1a1a;position:relative;overflow:hidden;padding:6px 6px 0;box-shadow:0 2px 6px rgba(0,0,0,.18)}
-.series-grid .photo .ph-img{position:absolute;inset:6px 6px 0;width:auto;height:auto;object-fit:cover;max-width:calc(100% - 12px)}
+.series-wrap{position:absolute;inset:0;display:flex;flex-direction:column;padding:14px 16px 10px;background:#f8f5ef;overflow:hidden}
+.series-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;gap:6px;align-content:start}
+.series-cell{display:flex;flex-direction:column;align-items:stretch}
+/* polaroid/instax рамка: белая, низ в 3× толще */
+.series-grid .photo{width:100%;height:100%;aspect-ratio:1/1;border-radius:0;background:#fff;position:relative;overflow:hidden;border:3px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.15);padding-bottom:18px}
+.series-grid .photo .ph-img{position:absolute;top:3px;left:3px;right:3px;bottom:21px;width:auto;height:auto;object-fit:cover;border-radius:0}
 .series-grid .photo.has-img{background:#fff}
 .series-grid .photo.has-img .ph-label{display:none}
-.series-grid .tag-num{position:static;text-align:center;font-size:11px;font-weight:600;color:#555;font-family:var(--sans);text-shadow:none;background:transparent;padding:3px 0 0;line-height:1}
+.series-grid .tag-num{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:10px;font-weight:700;color:#444;font-family:var(--sans);text-shadow:none;background:transparent;padding:0;line-height:1;letter-spacing:.05em}
 .series-grid .tag-num[contenteditable]{cursor:text;outline:1px dashed rgba(0,0,0,.25);border-radius:2px}
-.series-grid .ph-label{font-size:9px;color:#999;padding-top:20px}
-.series-cell.wide{grid-column:span 3}
-.series-cell.wide .photo{aspect-ratio:3/1}
+.series-grid .ph-label{font-size:8px;color:#aaa;padding-top:30%}
 .fixed-grid.g4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.s3{grid-template-columns:1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
@@ -474,7 +473,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="grid4">▦ Сетка 4</button>
         <button data-t="strips3">☰ 3 полосы</button>
         <button data-t="duo">▭ 2 фото</button>
-        <button data-t="series">▦ Серия 17</button>
+        <button data-t="series">▦ Серия 13</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -716,13 +715,11 @@ var stage=document.getElementById('stage');
 function tpl(type){
   var T={
   series:(function(){
-    var nums=[];for(var i=1;i<=99;i++)nums.push(i);
-    for(var i=nums.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=nums[i];nums[i]=nums[j];nums[j]=t;}
-    var ni=0;
-    function cell(wide){var n=nums[ni++];var cls='series-cell'+(wide?' wide':'');return '<div class="'+cls+'"><div class="photo gcell" data-photo><div class="ph-label">'+ni+'</div></div><span class="tag-num" data-edit data-ph="'+n+'">'+n+'</span></div>';}
     var cells='';
-    for(var i=0;i<12;i++)cells+=cell(false);
-    cells+=cell(true);
+    for(var i=0;i<13;i++){
+      var n=1000+Math.floor(Math.random()*9000);
+      cells+='<div class="series-cell"><div class="photo gcell" data-photo><div class="ph-label">'+(i+1)+'</div><span class="tag-num" data-edit data-ph="'+n+'">'+n+'</span></div></div>';
+    }
     return '<div class="series-wrap"><div class="series-grid">'+cells+'</div></div>';
   })(),
   cover:
@@ -813,7 +810,7 @@ function tpl(type){
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы',duo:'2 фото',series:'Серия 17'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',strips3:'3 полосы',duo:'2 фото',series:'Серия 13'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
