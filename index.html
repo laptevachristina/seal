@@ -1,4 +1,4 @@
-<!--seal-github-v107-->
+<!--seal-github-v108-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -905,8 +905,7 @@ function wireGcellMove(p){
 function applyTransform(p){
   var img=p.querySelector('.ph-img');if(!img)return;
   var s=parseFloat(p.dataset.scale)||1,x=parseFloat(p.dataset.x)||0,y=parseFloat(p.dataset.y)||0;
-  var W=p.clientWidth,H=p.clientHeight,nw=img.naturalWidth,nh=img.naturalHeight;
-  if(!W||!H||!nw||!nh){img.style.transform='translate('+x+'px,'+y+'px) scale('+s+')';return;}
+  var W=p.clientWidth,H=p.clientHeight,nw=img.naturalWidth||img.videoWidth||0,nh=img.naturalHeight||img.videoHeight||0;
   var cover=Math.max(W/nw,H/nh),iw=nw*cover*s,ih=nh*cover*s;
   var maxX=Math.max(0,(iw-W)/2),maxY=Math.max(0,(ih-H)/2);
   x=Math.max(-maxX,Math.min(maxX,x));y=Math.max(-maxY,Math.min(maxY,y));
@@ -938,15 +937,22 @@ filepick.addEventListener('change',function(){
   if(pickTarget){
     var ff=filepick.files[0];
     if(ff&&ff.type&&ff.type.indexOf('video')===0){
-      /* видео в фото-слот → создаём vidclip поверх слота */
-      var vc=document.createElement('div');vc.className='vidclip';vc.setAttribute('data-added','');vc.dataset.vidId='v'+Date.now().toString(36);vc.dataset.layer='above';
-      vc.style.cssText='left:'+pickTarget.offsetLeft+'px;top:'+pickTarget.offsetTop+'px;width:'+pickTarget.offsetWidth+'px;height:'+pickTarget.offsetHeight+'px;z-index:30';
-      vc.innerHTML='<video muted loop autoplay playsinline></video><span class="mv-handle"></span><span class="mv-del"></span><span class="tx-resize"></span><span class="layer-toggle"></span>';
-      slides[cur].el.appendChild(vc);
-      idbPut('vidblob_'+vc.dataset.vidId,ff).then(function(){return idbGet('vidblob_'+vc.dataset.vidId);}).then(function(blob){
-        var v=vc.querySelector('video');v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});
+      /* видео в фото-слот → вставляем video ВНУТРИ слота (как маску) */
+      var slot=pickTarget;
+      var vid='v'+Date.now().toString(36);
+      idbPut('vidblob_'+vid,ff);
+      /* убираем img, ставим video */
+      var oldImg=slot.querySelector('.ph-img');if(oldImg)oldImg.remove();
+      var v=document.createElement('video');v.className='ph-img';v.muted=true;v.loop=true;v.autoplay=true;v.setAttribute('playsinline','');v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:center center';
+      slot.appendChild(v);
+      slot.classList.add('has-img');
+      slot.dataset.vidId=vid;
+      /* pan/zoom как у фото */
+      slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;
+      idbGet('vidblob_'+vid).then(function(blob){
+        if(blob){v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});}
       });
-      wireVideoClip(vc);selectVideoClip(vc);updateFilm();pushHistory();
+      applyTransform(slot);updateFilm();pushHistory();
     }
     else{setPhoto(pickTarget,ff);}
   }
