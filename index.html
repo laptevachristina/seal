@@ -1,4 +1,4 @@
-<!--seal-github-v106-->
+<!--seal-github-v107-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -915,7 +915,7 @@ function applyTransform(p){
   img.style.width=iw+'px';img.style.height=ih+'px';img.style.right='auto';img.style.bottom='auto';
   img.style.left=((W-iw)/2+x)+'px';img.style.top=((H-ih)/2+y)+'px';
 }
-function openPick(el){pickMode='slide';pickTarget=el;filepick.accept='image/*';filepick.value='';filepick.click();}
+function openPick(el){pickMode='slide';pickTarget=el;filepick.accept='image/*,video/*';filepick.value='';filepick.click();}
 filepick.addEventListener('change',function(){
   if(!filepick.files[0])return;
   if(pickMode==='grid'){var r=new FileReader();r.onload=function(){feed[gridTarget]=r.result;saveFeed();renderGrid();};r.readAsDataURL(filepick.files[0]);pickMode='slide';return;}
