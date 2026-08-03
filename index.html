@@ -1,4 +1,4 @@
-<!--seal-github-v100-->
+<!--seal-github-v101-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1744,7 +1744,7 @@ function _pushHistoryNow(){
   var snap=serialize();
   if(hist[hpos]===snap)return;
   hist=hist.slice(0,hpos+1);hist.push(snap);
-  if(hist.length>12)hist.shift();
+  if(hist.length>8)hist.shift();
   hpos=hist.length-1;updateUndoUI();saveDeckSoon();
 }
 function pushSoon(){clearTimeout(pushT);pushT=setTimeout(pushHistory,600);}
@@ -2979,7 +2979,7 @@ function extFor(mime){return mime.indexOf('mp4')>=0?'mp4':'webm';}
 /* PRERENDER_FPS ровно равен VIDEO_FPS нарочно: если частота подготовленных кадров клипа не совпадает
    с частотой самой записи, кадры повторяются НЕРАВНОМЕРНО (то 1 раз, то 2) — это само по себе выглядит
    дёргано, отдельно от общей скорости. Одинаковый темп = ровный такт, без этого биения. */
-var PRERENDER_FPS=VIDEO_FPS,PRERENDER_MAX_FRAMES=400;
+var PRERENDER_FPS=VIDEO_FPS,PRERENDER_MAX_FRAMES=150;
 function prerenderClipFrames(video,targetW,targetH,onProgress){
   return new Promise(function(resolve){
     if(!video.duration||!isFinite(video.duration)||!video.videoWidth){resolve({frames:[],fps:PRERENDER_FPS});return;}
