@@ -1,4 +1,4 @@
-<!--seal-github-v120-->
+<!--seal-github-v121-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -973,7 +973,10 @@ if(addStickerBtn)addStickerBtn.addEventListener('click',function(e){
   }
   document.querySelectorAll('.dd.open').forEach(function(d){d.classList.remove('open');});
   var r=addStickerBtn.getBoundingClientRect();m.classList.add('open');
-  m.style.top=(r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(r.left,window.innerWidth-240-8))+'px';
+  var mh=m.offsetHeight||250;
+  var top=r.bottom+6;
+  if(top+mh>window.innerHeight-8){top=Math.max(8,r.top-mh-6);}
+  m.style.top=top+'px';m.style.left=Math.max(8,Math.min(r.left,window.innerWidth-240-8))+'px';
 });
 var addVideoBtn=document.getElementById('addVideoBtn');
 if(addVideoBtn)addVideoBtn.addEventListener('click',function(){if(cur<0||!slides[cur])return;pickMode='vidclip';filepick.accept='video/*';filepick.value='';filepick.click();});
