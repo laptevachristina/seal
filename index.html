@@ -1,4 +1,4 @@
-<!--seal-github-v95-->
+<!--seal-github-v96-->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -49,11 +49,11 @@
 .bottom{justify-content:flex-end}
 
 .kicker{font-family:var(--sans);font-weight:600;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--sage)}
-.h{font-family:var(--serif);font-weight:800;line-height:1.04;letter-spacing:.002em}
+.h{color:inherit;font-family:var(--serif);font-weight:800;line-height:1.04;letter-spacing:.002em}
 .h.big{font-size:56px}
 .h.mid{font-size:44px}
 .sub{font-family:var(--sans);font-weight:500;line-height:1.45;color:#8B7F7A;font-size:19px}
-.body{font-family:var(--sans);font-weight:500;line-height:1.55;font-size:19px}
+.body{color:inherit;font-family:var(--sans);font-weight:500;line-height:1.55;font-size:19px}
 .u{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
 em{font-style:italic}
 
@@ -1554,7 +1554,7 @@ function addTextBlock(slideEl,kind){
   var txt={h:'Заголовок',sub:'Подзаголовок',body:'Текст'}[kind]||'Текст';
   var hEst={h:60,sub:34,body:30}[kind]||30;
   var b=document.createElement('div');b.className=cls;b.setAttribute('data-edit','');b.setAttribute('data-ph',txt);
-  b.setAttribute('data-added','');b.style.position='absolute';b.style.width='auto';b.style.maxWidth='440px';b.style.whiteSpace='nowrap';b.style.fontSize=fs;b.style.zIndex='30';
+  b.setAttribute('data-added','');b.style.position='absolute';b.style.width='420px';b.style.maxWidth='440px';b.style.whiteSpace='normal';b.style.wordBreak='break-word';b.style.fontSize=fs;b.style.zIndex='30';
   var spot=findFreeSpot(slideEl,220,hEst);
   b.style.left=spot.x+'px';b.style.top=spot.y+'px';
   b.textContent=txt;
