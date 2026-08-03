@@ -1,4 +1,4 @@
-<!--seal-github-v104-->
+<!--seal-github-v105-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -118,7 +118,7 @@ em{font-style:italic}
 .series-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:5px}
 .series-cell{display:flex;align-items:stretch}
 .series-grid .photo{width:100%;height:100%;border-radius:0;background:#fff;position:relative;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.15);border:3px solid #fff;border-bottom-width:20px}
-.series-grid .photo .ph-img{position:absolute;top:3px;left:3px;right:3px;bottom:3px;width:auto;height:auto;object-fit:cover}
+.series-grid .photo .ph-img{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover}
 .series-grid .photo.has-img{background:#fff}
 .series-grid .photo.has-img .ph-label{display:none}
 .series-grid .ph-label{font-size:8px;color:#aaa;display:flex;align-items:center;justify-content:center;height:100%}
@@ -937,7 +937,17 @@ filepick.addEventListener('change',function(){
   }
   if(pickTarget){
     var ff=filepick.files[0];
-    if(ff&&ff.type&&ff.type.indexOf('video')===0){addVideoClip(ff);}
+    if(ff&&ff.type&&ff.type.indexOf('video')===0){
+      /* видео в фото-слот → создаём vidclip поверх слота */
+      var vc=document.createElement('div');vc.className='vidclip';vc.setAttribute('data-added','');vc.dataset.vidId='v'+Date.now().toString(36);vc.dataset.layer='above';
+      vc.style.cssText='left:'+pickTarget.offsetLeft+'px;top:'+pickTarget.offsetTop+'px;width:'+pickTarget.offsetWidth+'px;height:'+pickTarget.offsetHeight+'px;z-index:30';
+      vc.innerHTML='<video muted loop autoplay playsinline></video><span class="mv-handle"></span><span class="mv-del"></span><span class="tx-resize"></span><span class="layer-toggle"></span>';
+      slides[cur].el.appendChild(vc);
+      idbPut('vidblob_'+vc.dataset.vidId,ff).then(function(){return idbGet('vidblob_'+vc.dataset.vidId);}).then(function(blob){
+        var v=vc.querySelector('video');v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});
+      });
+      wireVideoClip(vc);selectVideoClip(vc);updateFilm();pushHistory();
+    }
     else{setPhoto(pickTarget,ff);}
   }
 });
