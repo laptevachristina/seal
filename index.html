@@ -1,4 +1,4 @@
-<!--seal-github-v122|fix:slide-render-many-photos-->
+<!--seal-github-v123|diag:video-export-error-reason-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3154,7 +3154,9 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
       },function(e){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        /* retry: сервер мог перезапускаться — без alert */
+        var reason=(e&&(e.message||e.error||e))||'неизвестно';
+        if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
+        alert('Видео не собралось: '+reason);
       });
     }
     var items=getAnimItems(el);
