@@ -1,4 +1,4 @@
-<!--seal-github-v125|serverAnimate:2+-video-frames-->
+<!--seal-github-v126|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2679,9 +2679,11 @@ function renderSlideCanvas(el,animState,videoFrameMap){
       if(window._skipVids&&p.dataset.vidId)return; /* пропуск photo-видео при рендере bg для serverCompose */
       var im=p.querySelector('.ph-img');if(!im||!im.complete)return;
       var imw=im.videoWidth||im.naturalWidth||0,imh=im.videoHeight||im.naturalHeight||0;if(!imw||!imh)return;
+      /* override: для photo-видео при покадровой съёмке (/animate) берём предрендеренный кадр из videoFrameMap */
+      var imOv=(im.tagName==='VIDEO'&&videoFrameMap&&videoFrameMap.get(im))||null;
       var r=p.getBoundingClientRect(),cs=getComputedStyle(p);
       var a=animState&&animState.get(p);
-      photos.push({img:im,x:r.left-sr.left,y:r.top-sr.top,W:r.width,H:r.height,
+      photos.push({img:imOv||im,x:r.left-sr.left,y:r.top-sr.top,W:r.width,H:r.height,
         rad:parseFloat(cs.borderTopLeftRadius)||0,
         s:parseFloat(p.dataset.scale)||1,tx:parseFloat(p.dataset.x)||0,ty:parseFloat(p.dataset.y)||0,
         opacity:a?a.opacity:1,dy:a?a.dy:0,
@@ -2800,7 +2802,7 @@ function serverAnimate(el,btn){
   var w=540,h=el.classList.contains('f916')?960:675,ES=2;
   var fps=12;
   var frameCount=Math.max(1,Math.min(360,Math.ceil(fullMs/1000*fps)));
-  var clipEls=Array.prototype.slice.call(el.querySelectorAll('.vidclip video'));
+  var clipEls=Array.prototype.slice.call(el.querySelectorAll('.vidclip video, .photo[data-vid-id] video'));
   clipEls.forEach(function(v){try{v.pause();}catch(_){}});
   function resumeClips(){clipEls.forEach(function(v){v.play()['catch'](function(){});});}
   function cleanupStickers(){el.querySelectorAll('.sticker img').forEach(function(img){img._prerendered=null;});}
@@ -3227,7 +3229,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var el=slides[cur].el;
     /* серверная покадровая сборка /animate: для 2+ видео-кружков (звук не нужен по
        договорённости) — снимаем раскадровку с анимацией стикеров/текста и шлём на сервер. */
-    var _vidClips=el.querySelectorAll('.vidclip video').length;
+    var _vidClips=el.querySelectorAll('.vidclip video, .photo[data-vid-id] video').length;
     if(_vidClips>=2){
       return serverAnimate(el,btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
