@@ -1,4 +1,4 @@
-<!--seal-github-v123|diag:video-export-error-reason-->
+<!--seal-github-v124|fix:video-aspect-in-slot-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -948,7 +948,10 @@ filepick.addEventListener('change',function(){
       slot.dataset.vidId=vid;
       slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;
       idbGet('vidblob_'+vid).then(function(blob){
-        if(blob){v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});}
+        if(blob){
+          v.onloadedmetadata=function(){applyTransform(slot);};
+          v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});
+        }
       });
       applyTransform(slot);updateFilm();pushHistory();
     }
