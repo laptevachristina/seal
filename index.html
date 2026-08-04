@@ -1,4 +1,4 @@
-<!--seal-github-v124|fix:video-aspect-in-slot-->
+<!--seal-github-v125|serverAnimate:2+-video-frames-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2788,6 +2788,82 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     overlay.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
   });
 }
+/* серверная покадровая сборка /animate: снимаем раскадровку слайда (фон+фото+видео-кадры+
+   анимированные стикеры/текст на момент t) и отправляем на сервер → ffmpeg сшивает в MP4.
+   Звук НЕ передаётся (для 2+ видео по договорённости; для 1 видео — отдельная ветка в /compose). */
+function serverAnimate(el,btn){
+  if(typeof previewReset==='function')previewReset();
+  var items=getAnimItems(el);
+  var spinMode=hasSpinningSticker(items);
+  var typeSchedule=buildTypeSchedule(items);
+  var fullMs=computeFullMs(el);
+  var w=540,h=el.classList.contains('f916')?960:675,ES=2;
+  var fps=12;
+  var frameCount=Math.max(1,Math.min(360,Math.ceil(fullMs/1000*fps)));
+  var clipEls=Array.prototype.slice.call(el.querySelectorAll('.vidclip video'));
+  clipEls.forEach(function(v){try{v.pause();}catch(_){}});
+  function resumeClips(){clipEls.forEach(function(v){v.play()['catch'](function(){});});}
+  function cleanupStickers(){el.querySelectorAll('.sticker img').forEach(function(img){img._prerendered=null;});}
+  function showProgress(frac){if(btn)btn.textContent='⏳ '+Math.round(Math.max(0,Math.min(1,frac))*100)+'%';}
+  showProgress(0.02);
+  return Promise.all(clipEls.map(function(v){
+    var vc=v.closest('.vidclip');
+    var targetW=(vc?vc.offsetWidth:180)*ES,targetH=(vc?vc.offsetHeight:320)*ES;
+    return prerenderClipFrames(v,targetW,targetH).then(function(res){return {v:v,res:res};});
+  })).then(function(prepared){
+    el.querySelectorAll('.sticker img').forEach(function(img){
+      if(img.complete&&img.naturalWidth){var c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);img._prerendered=c;}
+    });
+    var fd=new FormData();var k=0;
+    function nextFrame(){
+      if(k>=frameCount)return Promise.resolve();
+      var elapsed=k*(1000/fps);
+      var anim=animStateAt(items,elapsed,spinMode,typeSchedule,fullMs);
+      var videoFrameMap=new Map();
+      prepared.forEach(function(p){
+        if(!p.res.frames.length)return;
+        var frames=p.res.frames,pfps=p.res.fps,vc=p.v.closest('.vidclip');
+        var dur=p.v.duration||frames.length/pfps;
+        var trimS=parseFloat(vc&&vc.dataset.trimStart),trimE=parseFloat(vc&&vc.dataset.trimEnd);
+        if(isNaN(trimS))trimS=0; if(isNaN(trimE)||trimE>dur)trimE=dur;
+        var playS=parseFloat(vc&&vc.dataset.playStart),playE=parseFloat(vc&&vc.dataset.playEnd);
+        if(isNaN(playS))playS=0; if(isNaN(playE))playE=playS+(trimE-trimS)*1000;
+        var v2=vc&&(vc.dataset.trimStart||vc.dataset.trimEnd||vc.dataset.playStart||vc.dataset.playEnd);
+        var idx;
+        if(!v2){idx=Math.floor((elapsed/1000)*pfps)%frames.length;}
+        else{
+          var t0i=Math.round(trimS*pfps),t1i=Math.min(frames.length-1,Math.round(trimE*pfps));
+          if(elapsed<playS){idx=t0i;}
+          else if(elapsed>playE){idx=t1i;}
+          else{var prog=(elapsed-playS)/Math.max(1,(playE-playS));idx=t0i+Math.round(prog*Math.max(0,(t1i-t0i)));}
+        }
+        var bmp=frames[idx]; if(bmp)videoFrameMap.set(p.v,bmp);
+      });
+      showProgress(0.25+0.55*(k/frameCount));
+      return renderSlideCanvas(el,anim,videoFrameMap).then(function(c){
+        return new Promise(function(res){c.toBlob(function(b){res(b);},'image/jpeg',0.82);});
+      }).then(function(blob){
+        if(blob)fd.append('frame'+k,blob);
+        k++;return nextFrame();
+      });
+    }
+    return nextFrame().then(function(){
+      fd.append('meta',JSON.stringify({fps:fps,width:w,height:h,hasVideo:false,duration:frameCount/fps,frameCount:frameCount}));
+      showProgress(0.9);
+      return fetch(SEAL_SERVER+'/animate',{method:'POST',body:fd});
+    });
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error('server '+(r.status||'')+': '+t.slice(0,160));});
+    return r.blob();
+  }).then(function(blob){
+    resumeClips();cleanupStickers();
+    if(btn)btn.textContent=btn.dataset.oldText||'';
+    return {blob:blob,mime:'video/mp4'};
+  },function(e){
+    resumeClips();cleanupStickers();
+    throw e;
+  });
+}
 function slideToPNG(el){
   if(typeof previewReset==='function')previewReset();
   return renderSlideCanvas(el,null).then(function(c){
@@ -3149,6 +3225,20 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
   var btn=gifBtn,oldText=btn.textContent;btn.disabled=true;btn.textContent='⏳ …';
   document.fonts.ready.then(function(){
     var el=slides[cur].el;
+    /* серверная покадровая сборка /animate: для 2+ видео-кружков (звук не нужен по
+       договорённости) — снимаем раскадровку с анимацией стикеров/текста и шлём на сервер. */
+    var _vidClips=el.querySelectorAll('.vidclip video').length;
+    if(_vidClips>=2){
+      return serverAnimate(el,btn).then(function(r){
+        videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
+        if(r&&r.blob)openVideoModal(r.blob,r.mime);
+      },function(e){
+        videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
+        var reason=(e&&(e.message||e.error||e))||'неизвестно';
+        if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
+        alert('Видео не собралось: '+reason);
+      });
+    }
     /* серверный видео-экспорт: если на слайде есть вставленный видео-клип —
        собираем честный MP4 на сервере (ffmpeg), минуя локальный MediaRecorder. */
     if(el.querySelector('.vidclip video')||el.querySelector('.photo[data-vid-id] video')){
