@@ -1809,7 +1809,7 @@ function applyBg(s){
   var col=COLORS.filter(function(c){return c.k===s.el.dataset.bg;})[0]||COLORS[0];
   if(s.type==='cover'){return;} /* cover = photo */
   var sw=s.el.querySelector('.series-wrap');
-  if(sw){sw.style.background=col.c;s.el.classList.toggle('dark',!!col.dark);return;}
+  if(sw){s.el.dataset.bg=col.k;sw.style.background=col.c;s.el.classList.toggle('dark',!!col.dark);return;}
   var band=s.el.querySelector('.mid-band');
   if(band){band.style.background=col.c;band.classList.toggle('dark',!!col.dark);return;}
   s.el.style.background=col.c;
