@@ -1,4 +1,4 @@
-<!--seal-github-v135|animate-route-fix+photo-video-->
+<!--seal-github-v136|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2952,12 +2952,15 @@ function serverAnimate(el,btn){
       });
     }
     return nextFrame().then(function(){
+      sealDiagStage('frames','снято '+k+'/'+frameCount+' кадров');
       fd.append('meta',JSON.stringify({fps:fps,width:w,height:h,hasVideo:false,duration:frameCount/fps,frameCount:frameCount}));
       showProgress(0.9);
+      sealDiagStage('upload','/animate '+frameCount+' кадров');
       return fetch(SEAL_SERVER+'/animate',{method:'POST',body:fd});
     });
   }).then(function(r){
-    if(!r.ok)return r.text().then(function(t){throw new Error('server '+(r.status||'')+': '+t.slice(0,160));});
+    sealDiagStage('server','HTTP '+(r.status||'?'));
+    if(!r.ok)return r.text().then(function(t){throw new Error('server '+(r.status||'')+': '+t.slice(0,500));});
     return r.blob();
   }).then(function(blob){
     resumeClips();cleanupStickers();
@@ -2982,6 +2985,7 @@ function serverAnimateVid(el,btn){
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
+  sealDiagStage('prepare','видео '+((v.duration||0).toFixed(1))+'с, kind='+kind+', vz='+vz);
   var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
   var kind=vc.classList.contains('photo')?'photo':'vidclip';
   var vz=1,pvx=0,pvy=0;
@@ -3007,13 +3011,16 @@ function serverAnimateVid(el,btn){
     });
   }
   return nextFrame().then(function(){
+    sealDiagStage('frames','снято '+k+'/'+frameCount+' кадров');
     fd.append('meta',JSON.stringify({fps:fps,width:w,height:h,hasVideo:true,duration:frameCount/fps,frameCount:frameCount}));
     fd.append('videoPos',JSON.stringify({x:x,y:y,w:vw,h:vh}));
     fd.append('vparams',JSON.stringify(vparams));
     st('⏳ сервер…');
+    sealDiagStage('upload','/animate '+frameCount+' кадров + видео');
     return fetch(v.src).then(function(r){return r.blob();}).then(function(vb){fd.append('video',vb,'in.mp4');return fetch(SEAL_SERVER+'/animate',{method:'POST',body:fd});});
   }).then(function(r){
-    if(!r.ok)return r.text().then(function(t){throw new Error('server '+(r.status||'')+': '+t.slice(0,160));});
+    sealDiagStage('server','HTTP '+(r.status||'?'));
+    if(!r.ok)return r.text().then(function(t){throw new Error('server '+(r.status||'')+': '+t.slice(0,500));});
     return r.blob();
   }).then(function(blob){
     if(btn)btn.textContent=btn.dataset.oldText||'';
@@ -3304,6 +3311,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
+var SEAL_VER='v136';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3370,12 +3378,42 @@ function serverCompose(el,format,btn){
       return sendPromise;
       st('⏳ сборка…');
       return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
-    }).then(function(r){if(!r.ok)throw new Error('сервер '+r.status);return r.blob();})
+    }).then(function(r){
+      sealDiagStage('server','HTTP '+(r.status||'?')+' ('+(r.headers.get('content-length')||'?')+' байт)');
+      if(!r.ok)return r.text().then(function(t){throw new Error('сервер '+(r.status||'')+': '+t.slice(0,500));});
+      return r.blob();
+    })
       .then(function(b){return {blob:b,mime:'video/mp4'};});
   })['catch'](function(err){reset();throw err;});
 }
 var gifBtn=document.getElementById('exp-gif');
 var videoExportBusy=false;
+/* Диагностика видео-экспорта: накапливает маршрут/параметры/этап, чтобы по тексту
+   ошибки (Кристина шлёт через Варю) быстро вычислить, где упало — на клиенте до fetch
+   или на сервере. Текст alert можно скопировать скрином. */
+window.__sealDiag=null;
+function sealDiagReset(el,vidClips){
+  window.__sealDiag={v:SEAL_VER||'?',route:'?',vidClips:vidClips||0,
+    hasSticker:!!(el&&el.querySelector('.sticker')),
+    hasTypeAnim:!!(el&&el.querySelector('[data-typeAnim="1"]')),
+    hasVidClip:!!(el&&(el.querySelector('.vidclip video')||el.querySelector('.photo[data-vid-id] video'))),
+    stages:[]};
+}
+function sealDiagStage(s,extra){if(window.__sealDiag)window.__sealDiag.stages.push(s+(extra!=null?': '+extra:''));}
+function sealFail(route,e){
+  var d=window.__sealDiag||{};
+  var reason=(e&&(e.message||e.error||e))||'неизвестно';
+  if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
+  var lines=[
+    'Сборка видео не удалась. Скопируй и пришли в Варю:',
+    '— версия: '+(d.v||'?'),
+    '— маршрут: '+(route||d.route||'?'),
+    '— видео-клипов: '+d.vidClips+', стикер: '+(d.hasSticker?'+':'−')+', печать текста: '+(d.hasTypeAnim?'+':'−'),
+    '— причина: '+reason,
+    '— этапы: '+((d.stages&&d.stages.length)?d.stages.join(' → '):'(нет)')
+  ];
+  alert(lines.join('\n'));
+}
 if(gifBtn)gifBtn.addEventListener('click',function(){
   /* защита от повторного тапа, пока идёт пре-рендер/запись — раньше второй тап во время подготовки
      запускал ВТОРОЙ параллельный процесс поверх первого и вешал вкладку (белый экран) */
@@ -3386,10 +3424,12 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
   var btn=gifBtn,oldText=btn.textContent;btn.disabled=true;btn.textContent='⏳ …';
   document.fonts.ready.then(function(){
     var el=slides[cur].el;
+    var _vidClips=el.querySelectorAll('.vidclip video, .photo[data-vid-id] video').length;
+    sealDiagReset(el,_vidClips);
     /* серверная покадровая сборка /animate: для 2+ видео-кружков (звук не нужен по
        договорённости) — снимаем раскадровку с анимацией стикеров/текста и шлём на сервер. */
-    var _vidClips=el.querySelectorAll('.vidclip video, .photo[data-vid-id] video').length;
     if(_vidClips>=2){
+      sealDiagStage('route','serverAnimate (2+ видео)');
       return serverAnimate(el,btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
@@ -3397,34 +3437,32 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
         var reason=(e&&(e.message||e.error||e))||'неизвестно';
         if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
-        alert('Видео не собралось: '+reason);
+        sealFail('serverAnimate (2+ видео)',e);
       });
     }
     /* 1 видео + анимация (стикер с эффектами ИЛИ печатающийся текст) → покадровая анимация
        + видео-дорожка со звуком. Раньше проверяли только .sticker, поэтому слайд
        «1 видео + анимированный текст без стикера» уходил в serverCompose и анимация терялась. */
     if(_vidClips===1 && (el.querySelector('.sticker')||el.querySelector('[data-typeAnim="1"]'))){
+      sealDiagStage('route','serverAnimateVid (1 видео + анимация)');
       return serverAnimateVid(el,btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
       },function(e){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        var reason=(e&&(e.message||e.error||e))||'неизвестно';
-        if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
-        alert('Видео не собралось: '+reason);
+        sealFail('serverAnimateVid (1 видео + анимация)',e);
       });
     }
     /* серверный видео-экспорт: если на слайде есть вставленный видео-клип —
        собираем честный MP4 на сервере (ffmpeg), минуя локальный MediaRecorder. */
     if(el.querySelector('.vidclip video')||el.querySelector('.photo[data-vid-id] video')){
+      sealDiagStage('route','serverCompose (1 видео, без анимации)');
       return serverCompose(el,'mp4',btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
       },function(e){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
-        var reason=(e&&(e.message||e.error||e))||'неизвестно';
-        if(typeof reason!=='string'){try{reason=JSON.stringify(reason)}catch(_){reason=String(reason)}}
-        alert('Видео не собралось: '+reason);
+        sealFail('serverCompose (1 видео, без анимации)',e);
       });
     }
     var items=getAnimItems(el);
