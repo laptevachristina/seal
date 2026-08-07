@@ -1,4 +1,4 @@
-<!--seal-github-v134|animate-route-fix+photo-video-->
+<!--seal-github-v135|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2983,10 +2983,11 @@ function serverAnimateVid(el,btn){
   var v=vc?vc.querySelector('video'):null;
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
   var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
+  var kind=vc.classList.contains('photo')?'photo':'vidclip';
   var vz=1,pvx=0,pvy=0;
-  if(vc.classList.contains('photo')){vz=parseFloat(vc.dataset.scale)||1;pvx=Math.round((parseFloat(vc.dataset.x)||0)*ES);pvy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
+  if(kind==='photo'){vz=parseFloat(vc.dataset.scale)||1;pvx=Math.round((parseFloat(vc.dataset.x)||0)*ES);pvy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
   else{vz=parseFloat(vc.dataset.czoom)||1;pvx=Math.round((parseFloat(vc.dataset.cpanx)||0)*vw*0.45);pvy=Math.round((parseFloat(vc.dataset.cpany)||0)*vh*0.45);}
-  var vparams={vz:vz,vx:pvx,vy:pvy,fx:photoFilterOf(vc)};
+  var vparams={vz:vz,vx:pvx,vy:pvy,kind:kind,fx:photoFilterOf(vc)};
   var st=function(t){if(btn)btn.textContent=t;};
   function showP(frac){if(btn)btn.textContent='⏳ '+Math.round(Math.max(0,Math.min(1,frac))*100)+'%';}
   showP(0.02);
@@ -3399,8 +3400,10 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         alert('Видео не собралось: '+reason);
       });
     }
-    /* 1 видео + анимированные стикеры/текст → покадровая анимация + видео-дорожка со звуком */
-    if(_vidClips===1 && el.querySelector('.sticker')){
+    /* 1 видео + анимация (стикер с эффектами ИЛИ печатающийся текст) → покадровая анимация
+       + видео-дорожка со звуком. Раньше проверяли только .sticker, поэтому слайд
+       «1 видео + анимированный текст без стикера» уходил в serverCompose и анимация терялась. */
+    if(_vidClips===1 && (el.querySelector('.sticker')||el.querySelector('[data-typeAnim="1"]'))){
       return serverAnimateVid(el,btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
         if(r&&r.blob)openVideoModal(r.blob,r.mime);
