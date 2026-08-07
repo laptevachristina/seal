@@ -1,4 +1,4 @@
-<!--seal-github-v136|animate-route-fix+photo-video-->
+<!--seal-github-v137|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2996,10 +2996,14 @@ function serverAnimateVid(el,btn){
   function showP(frac){if(btn)btn.textContent='⏳ '+Math.round(Math.max(0,Math.min(1,frac))*100)+'%';}
   showP(0.02);
   var fd=new FormData(),k=0;
+  var typedEl=items.filter(function(it){return it.hasAttribute&&it.hasAttribute('data-edit')&&it.dataset.typeAnim==='1';})[0]||null;
+  var typedFull=typedEl?(typedEl.textContent||'').length:0;
+  if(typedEl)sealDiagStage('typed','длина='+typedFull+', typeSchedule='+JSON.stringify(typeSchedule.get(typedEl)));
   function nextFrame(){
     if(k>=frameCount)return Promise.resolve();
     var elapsed=k*(1000/fps);
     var anim=animStateAt(items,elapsed,spinMode,typeSchedule,fullMs);
+    if(typedEl&&(k===0||k===frameCount-1)){var _ta=anim.get(typedEl);sealDiagStage('rc@k'+k,(_ta&&_ta.revealChars!=null)?(_ta.revealChars+'/'+typedFull):'no-state');}
     window._skipVids=true;
     return renderSlideCanvas(el,anim,null).then(function(c){
       window._skipVids=false;
@@ -3024,6 +3028,18 @@ function serverAnimateVid(el,btn){
     return r.blob();
   }).then(function(blob){
     if(btn)btn.textContent=btn.dataset.oldText||'';
+    /* ВРЕМЕННАЯ диагностика «бегущий текст + видео»: если на слайде был печатающийся
+       текст — показать расчёт анимации, чтобы понять, печатается ли он в кадрах. */
+    if(typedEl&&window.__sealDiag){
+      var d=window.__sealDiag;
+      setTimeout(function(){
+        alert('Диагностика «бегущий текст + видео» (v136):\n'+
+          '— маршрут: serverAnimateVid\n— длина текста: '+typedFull+'\n'+
+          '— этапы:\n  '+d.stages.join('\n  ')+
+          '\n\nЕсли rc@k0 и rc@kпосл. разные — печать считается, баг в отрисовке. '+
+          'Если оба = полная длина или no-state — анимация не включается. Пришли этот текст.');
+      },50);
+    }
     return {blob:blob,mime:'video/mp4'};
   });
 }
@@ -3311,7 +3327,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v136';
+var SEAL_VER='v137';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
