@@ -1,4 +1,4 @@
-<!--seal-github-v137|animate-route-fix+photo-video-->
+<!--seal-github-v138|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2985,13 +2985,13 @@ function serverAnimateVid(el,btn){
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
-  sealDiagStage('prepare','видео '+((v.duration||0).toFixed(1))+'с, kind='+kind+', vz='+vz);
   var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
   var kind=vc.classList.contains('photo')?'photo':'vidclip';
   var vz=1,pvx=0,pvy=0;
   if(kind==='photo'){vz=parseFloat(vc.dataset.scale)||1;pvx=Math.round((parseFloat(vc.dataset.x)||0)*ES);pvy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
   else{vz=parseFloat(vc.dataset.czoom)||1;pvx=Math.round((parseFloat(vc.dataset.cpanx)||0)*vw*0.45);pvy=Math.round((parseFloat(vc.dataset.cpany)||0)*vh*0.45);}
   var vparams={vz:vz,vx:pvx,vy:pvy,kind:kind,fx:photoFilterOf(vc)};
+  sealDiagStage('prepare','видео '+((v.duration||0).toFixed(1))+'с, kind='+kind+', vz='+vz);
   var st=function(t){if(btn)btn.textContent=t;};
   function showP(frac){if(btn)btn.textContent='⏳ '+Math.round(Math.max(0,Math.min(1,frac))*100)+'%';}
   showP(0.02);
@@ -3327,7 +3327,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v137';
+var SEAL_VER='v138';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
