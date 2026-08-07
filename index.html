@@ -3332,9 +3332,12 @@ function serverCompose(el,format,btn){
     var bgBlob=res.bg,ovBlob=res.ov;
     var ES=2;
     var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),w=Math.round(vc.offsetWidth*ES),h=Math.round(vc.offsetHeight*ES);
-    /* zoom/pan внутри рамки → единые vz,vx,vy в финальных пикселях кадра */
+    /* zoom/pan внутри рамки → единые vz,vx,vy в финальных пикселях кадра.
+       kind: 'photo' (translate→scale, сдвиг не умножается на зум) или 'vidclip'
+       (scale→translate, сдвиг умножается на зум) — сервер их различает. */
+    var kind=vc.classList.contains('photo')?'photo':'vidclip';
     var vz=1,vx=0,vy=0;
-    if(vc.classList.contains('photo')){vz=parseFloat(vc.dataset.scale)||1;vx=Math.round((parseFloat(vc.dataset.x)||0)*ES);vy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
+    if(kind==='photo'){vz=parseFloat(vc.dataset.scale)||1;vx=Math.round((parseFloat(vc.dataset.x)||0)*ES);vy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
     else{vz=parseFloat(vc.dataset.czoom)||1;vx=Math.round((parseFloat(vc.dataset.cpanx)||0)*w*0.45);vy=Math.round((parseFloat(vc.dataset.cpany)||0)*h*0.45);}
     var rad=Math.round((parseFloat(getComputedStyle(vc.querySelector('video')).borderTopLeftRadius)||28)*ES);
     st('⏳ сервер…');
@@ -3353,7 +3356,7 @@ function serverCompose(el,format,btn){
         maskBlob=new Promise(function(res){mc.toBlob(function(b){res(b);},'image/png');});
       }
       var vfx=photoFilterOf(vc);
-      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,edl:edlRaw,hasAbove:!!ovBlob,hasMask:!!maskBlob,fx:vfx,vz:vz,vx:vx,vy:vy});
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,edl:edlRaw,hasAbove:!!ovBlob,hasMask:!!maskBlob,fx:vfx,vz:vz,vx:vx,vy:vy,kind:kind});
       var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
       if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
       var sendPromise;
