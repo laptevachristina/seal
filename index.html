@@ -1,4 +1,4 @@
-<!--seal-github-v144|save-to-gallery-button-rename-->
+<!--seal-github-v145|save-to-gallery-button-rename-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3360,7 +3360,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v144';
+var SEAL_VER='v145';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3491,12 +3491,33 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
       var _op=_vc.offsetParent?String(_vc.offsetParent.className||_vc.offsetParent.tagName).slice(0,28):'null';
       _vposStr='— видео offsetLeft: '+_rawL+','+_rawT+'\n— видео relPos(цепочка): '+_relL+','+(_relT)+'\n— offsetParent: '+_op+'\n— размер: '+Math.round(_vc.offsetWidth*_es)+'x'+Math.round(_vc.offsetHeight*_es)+(Math.abs(_rawL-_relL)>2||Math.abs(_rawT-_relT)>2?'\n⚠ СДВИГ: offsetLeft≠relPos → баг родителя':'');
     }
+    /* ВРЕМЕННЫЙ зонд монтажа/дубликата (v145): показывает, есть ли дубль сегмента EDL,
+       насколько EDL длиннее исходника, и какая длина слайда уйдёт в экспорт. Логику не трогает. */
+    var _edlStr='— EDL: нет (видео не монтировалось)';
+    if(_vc){
+      var _vv=_vc.querySelector('video');
+      var _edlRaw=_vc.dataset.edl||'';
+      if(_edlRaw){
+        try{
+          var _edlParsed=JSON.parse(_edlRaw);
+          var _edlDur=edlDur(_edlParsed);
+          var _vSrcDur=(_vv&&_vv.duration&&isFinite(_vv.duration))?_vv.duration:0;
+          var _fullMsVal=computeFullMs(el);
+          _edlStr='— EDL сегментов: '+_edlParsed.length+'\n'+
+            '— длина EDL (с дублём): '+_edlDur.toFixed(2)+' с\n'+
+            '— исх. длина видео: '+_vSrcDur.toFixed(2)+' с\n'+
+            '— computeFullMs (длина слайда): '+(_fullMsVal/1000).toFixed(2)+' с'+
+            (_edlDur>_vSrcDur+0.05?'\n⚠ ДУБЛЬ: EDL длиннее исх. на '+(_edlDur-_vSrcDur).toFixed(2)+' с → маршрут ниже решит, попадёт ли он в экспорт':'');
+        }catch(_e){_edlStr='— EDL: битый JSON ('+String(_e).slice(0,40)+')';}
+      }
+    }
     setTimeout(function(){
       alert('Зонд маршрута ('+(SEAL_VER||'?')+'):\n'+
         '— видео-клипов: '+_vidClips+'\n'+
         '— стикер: '+(_hasSticker?'да':'нет')+'\n'+
         '— бегущий текст: '+(_hasTypeAnim?'ДА':'нет')+'\n'+
-        _vposStr+'\n\n'+
+        _vposStr+'\n'+
+        _edlStr+'\n\n'+
         'Маршрут: '+((_vidClips>=2)?'serverAnimate (2+ видео)':((_vidClips===1&&(_hasSticker||_hasTypeAnim))?'serverAnimateVid ← правильно':((_vidClips>=1)?'serverCompose ← БЕЗ анимации':'MediaRecorder')))+'\n'+
         'Пришли это окно целиком.');
     },30);
