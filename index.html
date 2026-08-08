@@ -239,6 +239,8 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .vedit-seg .del{position:absolute;top:0;right:0;font-size:9px;color:#fff;background:rgba(229,93,80,.9);border-radius:0 4px 0 4px;width:15px;height:15px;display:none;align-items:center;justify-content:center;z-index:2}
 .vedit-seg.sel .del{display:flex}
 .vedit-seg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+.vedit-seg.grab{transform:translateY(-3px) scale(1.06);box-shadow:0 6px 14px rgba(0,0,0,.6),0 0 0 2px #fff;z-index:5;opacity:1;cursor:grabbing}
+.vedit-seg.grab canvas{opacity:.85}
 .vedit-cursor{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:3;pointer-events:none;left:3px}
 /* ряд круглых инструментов */
 .vedit-tools{flex:0 0 auto;display:flex;gap:4px;justify-content:center;align-items:flex-start;padding:5px 4px calc(8px + env(safe-area-inset-bottom,0px));background:#0d0e11;overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid #1a1b1f}
@@ -2721,22 +2723,64 @@ function veUpdateCursor(timelineSec){
   tr.addEventListener('click',function(e){
     var seg=e.target.closest('.vedit-seg');
     if(!seg)return;
+    if(_veSuppressClick){_veSuppressClick=false;return;}   /* сразу после переноса — не выбирать */
     var i=+seg.dataset.i,s=VE.edl[i];
     if(e.target.classList.contains('del')){if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
     else{VE.sel=i;if(s&&VE.clone){try{VE.clone.currentTime=s.s;}catch(_){}}
       var tl=srcToTimeline(VE.edl,s.s);veUpdateCursor(tl);}
     VE.full=edlDur(VE.edl);veditRender();
   });
-  /* SCRUB: тянешь палец по дорожке → видео перематывается */
-  var scrubbing=false;
+  /* SCRUB + ПЕРЕНОС кусков:
+     короткое ведение пальцем по дорожке → перемотка;
+     долгое удержание (300мс) на куске и ведение влево/вправо → кусок
+     «берётся» и переносится по одному блоку в сторону (пошаговый обмен с соседями). */
+  var scrubbing=false, lpTimer=null, dragGrab=null, _veSuppressClick=false;
   tr.addEventListener('pointerdown',function(e){
     if(e.target.classList.contains('del'))return;
     scrubbing=true;try{tr.setPointerCapture(e.pointerId);}catch(_){}
     doScrub(e);
+    var segEl=e.target.closest('.vedit-seg');
+    if(segEl&&VE.edl.length>1){
+      var gi=+segEl.dataset.i, pid=e.pointerId;
+      dragGrab={i:gi,id:pid,x0:e.clientX,y0:e.clientY,active:false};
+      lpTimer=setTimeout(function(){
+        if(dragGrab&&dragGrab.id===pid){
+          dragGrab.active=true; scrubbing=false;          /* перемотка уступает переносу */
+          VE.sel=dragGrab.i; VE.full=edlDur(VE.edl); veditRender(); markGrab();
+          if(navigator.vibrate)try{navigator.vibrate(15);}catch(_){}
+        }
+      },300);
+    }
   });
-  tr.addEventListener('pointermove',function(e){if(scrubbing)doScrub(e);});
-  tr.addEventListener('pointerup',function(){scrubbing=false;});
-  tr.addEventListener('pointercancel',function(){scrubbing=false;});
+  tr.addEventListener('pointermove',function(e){
+    if(dragGrab&&!dragGrab.active&&dragGrab.id===e.pointerId){
+      if(Math.abs(e.clientX-dragGrab.x0)>8||Math.abs(e.clientY-dragGrab.y0)>8){
+        clearTimeout(lpTimer); dragGrab=null;             /* это перемотка, не перенос */
+      }
+    }
+    if(scrubbing)doScrub(e);
+    if(dragGrab&&dragGrab.active&&dragGrab.id===e.pointerId)doReorder(e);
+  });
+  function endDrag(){
+    if(lpTimer)clearTimeout(lpTimer);
+    if(dragGrab&&dragGrab.active){
+      _veSuppressClick=true;
+      var cur=VE.edl[VE.sel]; if(cur&&VE.clone){try{VE.clone.currentTime=cur.s;}catch(_){}veUpdateCursor(srcToTimeline(VE.edl,cur.s));}
+    }
+    dragGrab=null; scrubbing=false;
+  }
+  tr.addEventListener('pointerup',endDrag);
+  tr.addEventListener('pointercancel',endDrag);
+  function markGrab(){var el=tr.querySelector('.vedit-seg[data-i="'+dragGrab.i+'"]');if(el)el.classList.add('grab');}
+  function doReorder(e){
+    var x=e.clientX, over=-1;
+    tr.querySelectorAll('.vedit-seg').forEach(function(el){var er=el.getBoundingClientRect();if(x>=er.left&&x<=er.right)over=+el.dataset.i;});
+    if(over<0||over===dragGrab.i)return;                  /* нашли соседа под пальцем */
+    var from=dragGrab.i, dir=over>from?1:-1, j=from+dir;  /* шаг = ровно один блок в сторону */
+    var tmp=VE.edl[from]; VE.edl[from]=VE.edl[j]; VE.edl[j]=tmp;
+    dragGrab.i=j; VE.sel=j; VE.full=edlDur(VE.edl); veditRender(); markGrab();
+    if(navigator.vibrate)try{navigator.vibrate(8);}catch(_){}
+  }
   function doScrub(e){
     var r=tr.getBoundingClientRect();
     var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
