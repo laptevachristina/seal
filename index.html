@@ -1,4 +1,4 @@
-<!--seal-github-v139|animate-route-fix+photo-video-->
+<!--seal-github-v140|route-probe-typetext-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3328,7 +3328,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v139';
+var SEAL_VER='v140';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3443,6 +3443,23 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var el=slides[cur].el;
     var _vidClips=el.querySelectorAll('.vidclip video, .photo[data-vid-id] video').length;
     sealDiagReset(el,_vidClips);
+    /* ВРЕМЕННЫЙ зонд маршрутизации (v140): показывает, почему слайд уходит в тот или иной путь. */
+    var _hasSticker=!!el.querySelector('.sticker');
+    var _hasTypeAnim=!!el.querySelector('[data-typeAnim="1"]');
+    var _typeOnN=el.querySelectorAll('.type-on').length;
+    var _editN=el.querySelectorAll('[data-edit]').length;
+    var _typedAttr=Array.prototype.map.call(el.querySelectorAll('[data-edit]'),function(t){return (t.dataset.typeAnim||'0');}).join(',');
+    setTimeout(function(){
+      alert('Зонд маршрута ('+(SEAL_VER||'?')+'):\n'+
+        '— видео-клипов: '+_vidClips+'\n'+
+        '— стикер: '+(_hasSticker?'да':'нет')+'\n'+
+        '— бегущий текст [data-typeAnim=1]: '+(_hasTypeAnim?'ДА':'нет')+'\n'+
+        '— кнопка type-on нажата на: '+_typeOnN+' блоке(ах)\n'+
+        '— всего текст.блоков [data-edit]: '+_editN+'\n'+
+        '— их data-typeAnim: ['+_typedAttr+']\n\n'+
+        'Маршрут: '+((_vidClips>=2)?'serverAnimate (2+ видео)':((_vidClips===1&&(_hasSticker||_hasTypeAnim))?'serverAnimateVid ← правильно':((_vidClips>=1)?'serverCompose ← БЕЗ анимации':'MediaRecorder')))+'\n'+
+        'Пришли это окно целиком.');
+    },30);
     /* серверная покадровая сборка /animate: для 2+ видео-кружков (звук не нужен по
        договорённости) — снимаем раскадровку с анимацией стикеров/текста и шлём на сервер. */
     if(_vidClips>=2){
