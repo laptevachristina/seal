@@ -1,4 +1,4 @@
-<!--seal-github-v138|animate-route-fix+photo-video-->
+<!--seal-github-v139|animate-route-fix+photo-video-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3028,16 +3028,17 @@ function serverAnimateVid(el,btn){
     return r.blob();
   }).then(function(blob){
     if(btn)btn.textContent=btn.dataset.oldText||'';
-    /* ВРЕМЕННАЯ диагностика «бегущий текст + видео»: если на слайде был печатающийся
-       текст — показать расчёт анимации, чтобы понять, печатается ли он в кадрах. */
-    if(typedEl&&window.__sealDiag){
+    /* ВРЕМЕННАЯ диагностика serverAnimateVid: позиция/зум видео + анимация текста.
+       По числам vpos/vparams видно, что разъехалось со превью. */
+    if(window.__sealDiag){
       var d=window.__sealDiag;
       setTimeout(function(){
-        alert('Диагностика «бегущий текст + видео» (v136):\n'+
-          '— маршрут: serverAnimateVid\n— длина текста: '+typedFull+'\n'+
+        alert('Диагностика serverAnimateVid ('+(SEAL_VER||'?')+'):\n'+
+          '— зона видео (vpos): x='+x+' y='+y+' w='+vw+' h='+vh+'\n'+
+          '— vparams: kind='+kind+' vz='+vz+' vx='+pvx+' vy='+pvy+'\n'+
+          '— печать текста: '+(typedEl?('длина '+typedFull):'нет')+'\n'+
           '— этапы:\n  '+d.stages.join('\n  ')+
-          '\n\nЕсли rc@k0 и rc@kпосл. разные — печать считается, баг в отрисовке. '+
-          'Если оба = полная длина или no-state — анимация не включается. Пришли этот текст.');
+          '\n\nПришли этот текст целиком.');
       },50);
     }
     return {blob:blob,mime:'video/mp4'};
@@ -3327,7 +3328,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v138';
+var SEAL_VER='v139';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
