@@ -3690,7 +3690,7 @@ function openVideoModal(blob,mime){
   var vid=document.createElement('video');vid.src=url;vid.style.maxHeight='68vh';vid.style.maxWidth='92vw';
   /* loop=false нарочно: с нативным loop=true iOS Safari на blob-видео (наша запись) не всегда шлёт 'ended' и зависает на
      последнем кадре, так и не перемотавшись — перезапускаем цикл сами, чтобы 'ended' точно срабатывал */
-  vid.autoplay=true;vid.loop=false;vid.muted=true;vid.playsInline=true;vid.controls=true;
+  vid.autoplay=true;vid.loop=false;vid.muted=false;vid.playsInline=true;vid.controls=true;
   function restartLoop(){vid.currentTime=0;vid.play()['catch'](function(){});}
   vid.addEventListener('ended',restartLoop);
   /* подстраховка: если у blob-видео метаданные подпорчены и 'ended' вовсе не приходит — досматриваем по currentTime */
