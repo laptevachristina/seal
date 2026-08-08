@@ -944,7 +944,7 @@ filepick.addEventListener('change',function(){
   if(pickMode==='vidclip'){var vf=filepick.files[0];pickMode='slide';addVideoClip(vf);return;}
   /* long-press замена: фото/видео в существующий слот, пропорции и масштаб сохраняются */
   if(pickMode==='replace'){var rf=filepick.files[0];var rt=pickTarget;pickMode='slide';pickTarget=null;if(!rt||!rf)return;if(rt.classList.contains('vidclip')){replaceVideo(rt,rf);}else{setPhotoKeep(rt,rf);}return;}
-  if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
+  if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;console.log('[SEAL-MULTI] ADD второе видео id='+vid);var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
   /* массовая заливка: несколько фото → по пустым слотам слайда */
   if(pickMode==='slide'&&filepick.files.length>1&&cur>=0&&slides[cur]){
     var files=Array.prototype.slice.call(filepick.files);
@@ -2520,7 +2520,7 @@ function edlGet(vc){
 }
 function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0);});return t;}
 /* url источника по id: основное видео клипа (VE.video) или добавленное (VE.added) */
-function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;return (VE.added&&VE.added[id])||null;}
+function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;var u=(VE.added&&VE.added[id])||null;if(!u){console.log('[SEAL-MULTI] MISS src для id='+id+' added=',VE.added);if(!VE._missAlert){VE._missAlert=1;setTimeout(function(){alert('МАРКЕР: потерян источник видео id='+id+'\n(VE.added пустой — видео «не удерживается»). Сфоткай и скажи, на каком шаге.');VE._missAlert=0;},50);}}return u;}
 /* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%, bw:обесцвечивание%}, 100=нейтрально (bw: 0=цвет) */
 function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,bw=(cc.bw||0)/100,s=((cc.s==null?100:cc.s)/100)*(1-bw);if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
 function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
@@ -2533,6 +2533,7 @@ function veApplySpPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.play
 function openVedit(vc){
   if(!vc)return;
   VE.vc=vc;VE.video=vc.querySelector('video');VE.added=[];
+  console.log('[SEAL-MULTI] OPEN монтаж: vidId клипа='+vc.dataset.vidId+' edl=',vc.dataset.edl);
   var st=document.getElementById('veditStage');st.innerHTML='';
   var cl=document.createElement('video');cl.muted=true;cl.setAttribute('playsinline','');cl.style.cssText='max-width:96vw;max-height:50vh;border-radius:8px';
   st.appendChild(cl);VE.clone=cl;VE.clone._lid=null;
