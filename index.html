@@ -1,4 +1,4 @@
-<!--seal-github-v140|route-probe-typetext-->
+<!--seal-github-v141|fix-typedtext-route-dataset-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3093,6 +3093,15 @@ function hasSpinningSticker(items){return items.some(function(it){return it.clas
 /* only text blocks explicitly marked via the → toggle (data-typeAnim='1') type letter-by-letter, one after another in DOM order;
    everything else (unmarked text, photos, frames, stickers) keeps the old fade-in */
 function isTypedText(it){return !!(it.hasAttribute&&it.hasAttribute('data-edit')&&it.dataset.typeAnim==='1');}
+/* есть ли на слайде хоть один бегущий текст. ВАЖНО: проверяем через dataset.typeAnim,
+   а НЕ через querySelector('[data-typeAnim="1"]') — dataset пишет атрибут как data-type-anim
+   (kebab), и селектор по data-typeAnim его не находит → маршрут видео падал в serverCompose. */
+function hasTypedText(el){
+  if(!el||!el.querySelectorAll)return false;
+  var ts=el.querySelectorAll('[data-edit]');
+  for(var i=0;i<ts.length;i++){if(ts[i].dataset.typeAnim==='1')return true;}
+  return false;
+}
 function buildTypeSchedule(items){
   var t=0,sched=new Map();
   items.forEach(function(it){
@@ -3328,7 +3337,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v140';
+var SEAL_VER='v141';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3412,7 +3421,7 @@ window.__sealDiag=null;
 function sealDiagReset(el,vidClips){
   window.__sealDiag={v:SEAL_VER||'?',route:'?',vidClips:vidClips||0,
     hasSticker:!!(el&&el.querySelector('.sticker')),
-    hasTypeAnim:!!(el&&el.querySelector('[data-typeAnim="1"]')),
+    hasTypeAnim:hasTypedText(el),
     hasVidClip:!!(el&&(el.querySelector('.vidclip video')||el.querySelector('.photo[data-vid-id] video'))),
     stages:[]};
 }
@@ -3445,7 +3454,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     sealDiagReset(el,_vidClips);
     /* ВРЕМЕННЫЙ зонд маршрутизации (v140): показывает, почему слайд уходит в тот или иной путь. */
     var _hasSticker=!!el.querySelector('.sticker');
-    var _hasTypeAnim=!!el.querySelector('[data-typeAnim="1"]');
+    var _hasTypeAnim=hasTypedText(el);
     var _typeOnN=el.querySelectorAll('.type-on').length;
     var _editN=el.querySelectorAll('[data-edit]').length;
     var _typedAttr=Array.prototype.map.call(el.querySelectorAll('[data-edit]'),function(t){return (t.dataset.typeAnim||'0');}).join(',');
@@ -3477,7 +3486,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     /* 1 видео + анимация (стикер с эффектами ИЛИ печатающийся текст) → покадровая анимация
        + видео-дорожка со звуком. Раньше проверяли только .sticker, поэтому слайд
        «1 видео + анимированный текст без стикера» уходил в serverCompose и анимация терялась. */
-    if(_vidClips===1 && (el.querySelector('.sticker')||el.querySelector('[data-typeAnim="1"]'))){
+    if(_vidClips===1 && (el.querySelector('.sticker')||hasTypedText(el))){
       sealDiagStage('route','serverAnimateVid (1 видео + анимация)');
       return serverAnimateVid(el,btn).then(function(r){
         videoExportBusy=false;btn.disabled=false;btn.textContent=oldText;
