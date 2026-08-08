@@ -1,4 +1,4 @@
-<!--seal-github-v143|video-full-duration-max-anim-vid-->
+<!--seal-github-v144|save-to-gallery-button-rename-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -591,7 +591,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <div class="grow"></div>
     <div class="t">Готовые картинки</div>
   </div>
-  <div class="save-note">Нажми <b>«Сохранить в Фото»</b> → в открывшемся окне выбери <b>«Сохранить изображение»</b> (попадёт в галерею). Или задержи палец на картинке → «Сохранить в Фото».</div>
+  <div class="save-note">Нажми <b>«Сохранить в Галерею»</b> → в открывшемся окне выбери <b>«Сохранить изображение»</b> (попадёт в галерею). Или задержи палец на картинке → «Сохранить в Галерею».</div>
   <div class="imgs" id="imgs"></div>
 </div>
 
@@ -3073,13 +3073,13 @@ function openModal(blobs){
   var imgs=document.getElementById('imgs');imgs.innerHTML='';
   var canPhoto=!!(navigator.canShare&&navigator.canShare({files:[new File([blobs[0]],'a.png',{type:'image/png'})]}));
   var top=document.createElement('button');top.className='hbtn primary';top.style.cssText='margin:0 auto 8px;display:block';
-  top.textContent=canPhoto?(blobs.length>1?('⬇ Сохранить все в Фото ('+blobs.length+')'):'⬇ Сохранить в Фото'):(blobs.length>1?('⬇ Скачать все ('+blobs.length+')'):'⬇ Скачать');
+  top.textContent=canPhoto?(blobs.length>1?('⬇ Сохранить всё в Галерею ('+blobs.length+')'):'⬇ Сохранить в Галерею'):(blobs.length>1?('⬇ Скачать все ('+blobs.length+')'):'⬇ Скачать');
   top.addEventListener('click',function(){saveBlobs(blobs);});
   imgs.appendChild(top);
   blobs.forEach(function(blob,i){
     var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:8px;align-items:center';
     var im=document.createElement('img');im.src=URL.createObjectURL(blob);im.style.maxHeight='68vh';im.style.maxWidth='92vw';
-    var b=document.createElement('button');b.className='hbtn';b.textContent=canPhoto?'Сохранить в Фото':'Скачать';
+    var b=document.createElement('button');b.className='hbtn';b.textContent=canPhoto?'Сохранить в Галерею':'Скачать';
     b.addEventListener('click',function(){saveBlobs([blob]);});
     wrap.appendChild(im);wrap.appendChild(b);imgs.appendChild(wrap);
   });
@@ -3360,7 +3360,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v143';
+var SEAL_VER='v144';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3675,7 +3675,7 @@ function openVideoModal(blob,mime){
   var top=document.createElement('button');top.className='hbtn primary';top.style.cssText='margin:0 auto 8px;display:block';
   var file=new File([blob],'slide.'+ext,{type:mime||'video/mp4'});
   var canShare=navigator.canShare&&navigator.canShare({files:[file]});
-  top.textContent=canShare?'⬇ Сохранить в Фото':'⬇ Скачать видео';
+  top.textContent='⬇ Сохранить в Галерею';
   top.addEventListener('click',function(){
     if(canShare){
       navigator.share({files:[file],title:'Видео'}).catch(function(){});
