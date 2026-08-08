@@ -1,4 +1,4 @@
-<!--seal-github-v142|fix-videopos-offsetparent-chain-->
+<!--seal-github-v143|video-full-duration-max-anim-vid-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2981,10 +2981,15 @@ function serverAnimateVid(el,btn){
   var fullMs=computeFullMs(el);
   var w=540,h=el.classList.contains('f916')?960:675,ES=2;
   var fps=12;
-  var frameCount=Math.max(1,Math.min(360,Math.ceil(fullMs/1000*fps)));
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
+  /* длительность финала = max(анимация, видео): после конца анимации кадр статичен
+     в финальном состоянии, видео доигрывает полностью со звуком. cap 30с (как на сервере). */
+  var vidDur=Math.min(30,(v.duration||0));
+  var totalMs=Math.max(fullMs, vidDur*1000);
+  var frameCount=Math.max(1,Math.min(360,Math.ceil(totalMs/1000*fps)));
+  sealDiagStage('dur','аним='+(fullMs/1000).toFixed(1)+'с видео='+vidDur.toFixed(1)+'с → финал '+(totalMs/1000).toFixed(1)+'с ('+frameCount+' кадров)');
   var _rp=sealRelPos(vc,el);
   var x=Math.round(_rp.x*ES),y=Math.round(_rp.y*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
   var _rawL=Math.round(vc.offsetLeft*ES),_rawT=Math.round(vc.offsetTop*ES);
@@ -3006,7 +3011,9 @@ function serverAnimateVid(el,btn){
   function nextFrame(){
     if(k>=frameCount)return Promise.resolve();
     var elapsed=k*(1000/fps);
-    var anim=animStateAt(items,elapsed,spinMode,typeSchedule,fullMs);
+    /* после конца анимации (elapsed>fullMs) берём финальное состояние — кадр статичен,
+       видео продолжает играть. Матим elapsed до fullMs, чтобы perpetual-эффекты тоже затихли. */
+    var anim=animStateAt(items,Math.min(elapsed,fullMs),spinMode,typeSchedule,fullMs);
     if(typedEl&&(k===0||k===frameCount-1)){var _ta=anim.get(typedEl);sealDiagStage('rc@k'+k,(_ta&&_ta.revealChars!=null)?(_ta.revealChars+'/'+typedFull):'no-state');}
     window._skipVids=true;
     return renderSlideCanvas(el,anim,null).then(function(c){
@@ -3353,7 +3360,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v142';
+var SEAL_VER='v143';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
