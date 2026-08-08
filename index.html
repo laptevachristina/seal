@@ -1,4 +1,4 @@
-<!--seal-github-v146|save-to-gallery-button-rename-->
+<!--seal-github-v147|freeze-whole-segment-toggle-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -235,6 +235,7 @@ header .logo{font-family:'Playfair Display',serif;font-weight:700;font-size:19px
 .vedit-seg.sel{border-color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
 .vedit-seg.sel{border-color:var(--ui-acc,#E45D50)}
 .vedit-seg.fr{background:linear-gradient(135deg,#2d2d3a,#1f1f28)}
+.vedit-seg.fz{background:linear-gradient(135deg,#3a4a5a,#1f2f3f);color:#bfe0ff}
 .vedit-seg .del{position:absolute;top:0;right:0;font-size:9px;color:#fff;background:rgba(229,93,80,.9);border-radius:0 4px 0 4px;width:15px;height:15px;display:none;align-items:center;justify-content:center;z-index:2}
 .vedit-seg.sel .del{display:flex}
 .vedit-seg canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
@@ -2578,7 +2579,7 @@ function veditRender(){
   var tl=edlDur(VE.edl)||1;
   VE.thumbQueue=[];
   VE.edl.forEach(function(s,i){
-    var d=document.createElement('div');d.className='vedit-seg'+(i===VE.sel?' sel':'')+(s.fr>0?' fr':'')+(i%2?' alt':'');d.dataset.i=i;
+    var d=document.createElement('div');d.className='vedit-seg'+(i===VE.sel?' sel':'')+(s.fz?' fz':'')+(s.fr>0?' fr':'')+(i%2?' alt':'');d.dataset.i=i;
     var segW=((s.e-s.s)/s.sp/tl*100).toFixed(1);
     d.style.cssText='flex:'+segW+' 0 0%;min-width:18px';
     /* покадровые превью (плёнка) */
@@ -2589,7 +2590,7 @@ function veditRender(){
       d.appendChild(cv);
       VE.thumbQueue.push({cv:cv,seekT:s.s+(s.e-s.s)*(f+0.5)/nf,id:s.id});
     }
-    var lbl=document.createElement('span');lbl.style.cssText='position:relative;z-index:1';lbl.textContent=s.sp!==1?(s.sp+'×'):(s.fr>0?('❄'):'');
+    var lbl=document.createElement('span');lbl.style.cssText='position:relative;z-index:1';var lp=[];if(s.fz)lp.push('❄');if(s.sp!==1)lp.push(s.sp+'×');if(s.fr>0)lp.push('+'+s.fr+'с');lbl.textContent=lp.join(' ');
     d.appendChild(lbl);
     var del=document.createElement('span');del.className='del';del.textContent='✕';d.appendChild(del);
     tr.appendChild(d);
@@ -2685,8 +2686,9 @@ function veUpdateCursor(timelineSec){
       }
     }
   });
-  /* заморозить: добавить freeze в конце выбранного */
-  var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;VE.edl[VE.sel].fr=(VE.edl[VE.sel].fr||0)+1;VE.full=edlDur(VE.edl);veditRender();});
+  /* заморозить: весь выбранный кусок — стоп-кадр без звука (toggle fz).
+     ❄ — маркер на хронографе, в сам кадр не идёт; в экспорте = стоп-кадр. */
+  var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var seg=VE.edl[VE.sel];if(seg.fz){delete seg.fz;}else{seg.fz=1;seg.fr=0;}VE.full=edlDur(VE.edl);veditRender();});
   /* удалить выбранный */
   var dl=document.getElementById('veDel');if(dl)dl.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
@@ -3360,7 +3362,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v146';
+var SEAL_VER='v147';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
