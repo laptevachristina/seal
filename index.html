@@ -646,8 +646,9 @@ header .logo b{color:var(--ui-acc);font-weight:700}
       <button id="veCcSeg" class="on">к выбранному куску</button>
       <button id="veCcAll">ко всему видео</button>
     </div>
-    <div class="vedit-cc-row"><label>Яркость</label><input type="range" id="veCcB" min="0" max="200" step="1" value="100"><span class="vcc-val" id="veCcBv">100</span></div>
+    <div class="vedit-cc-row"><label>Светлее-темнее</label><input type="range" id="veCcB" min="0" max="200" step="1" value="100"><span class="vcc-val" id="veCcBv">100</span></div>
     <div class="vedit-cc-row"><label>Контраст</label><input type="range" id="veCcC" min="0" max="200" step="1" value="100"><span class="vcc-val" id="veCcCv">100</span></div>
+    <div class="vedit-cc-row"><label>Обесцветить</label><input type="range" id="veCcBW" min="0" max="100" step="1" value="0"><span class="vcc-val" id="veCcBWv">0</span></div>
     <div class="vedit-cc-row"><label>Насыщен.</label><input type="range" id="veCcS" min="0" max="200" step="1" value="100"><span class="vcc-val" id="veCcSv">100</span></div>
     <button class="vedit-cc-reset" id="veCcReset">↺ Сбросить</button>
   </div>
@@ -2531,9 +2532,9 @@ function edlGet(vc){
   return [{s:0,e:dur,sp:1,fr:0,id:id}];
 }
 function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0);});return t;}
-/* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%}, 100 = нейтрально */
-function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,s=(cc.s==null?100:cc.s)/100;if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
-function ccNeutral(){return{b:100,c:100,s:100};}
+/* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%, bw:обесцвечивание%}, 100=нейтрально (bw: 0=цвет) */
+function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,bw=(cc.bw||0)/100,s=((cc.s==null?100:cc.s)/100)*(1-bw);if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
+function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
 /* применить ЦК текущего сегмента к превью (VE.clone) */
 function veApplyCcPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.playRAF&&VE.edl[VE.playSeg])?VE.playSeg:(VE.sel>=0?VE.sel:0);var seg=VE.edl[idx];VE.clone.style.filter=ccFilter(seg&&seg.cc);}
 function openVedit(vc){
@@ -2728,32 +2729,34 @@ function veUpdateCursor(timelineSec){
   document.querySelectorAll('#veSpeedPanel button[data-sp]').forEach(function(b){b.addEventListener('click',function(){sp.value=b.dataset.sp;setSp(+b.dataset.sp);});});
   /* цветокоррекция */
   var ccp=document.getElementById('veCcPanel'),ccb=document.getElementById('veCcBtn');
-  var ccbI=document.getElementById('veCcB'),cccI=document.getElementById('veCcC'),ccsI=document.getElementById('veCcS');
-  var ccbV=document.getElementById('veCcBv'),cccV=document.getElementById('veCcCv'),ccsV=document.getElementById('veCcSv');
+  var ccbI=document.getElementById('veCcB'),cccI=document.getElementById('veCcC'),ccsI=document.getElementById('veCcS'),ccbwI=document.getElementById('veCcBW');
+  var ccbV=document.getElementById('veCcBv'),cccV=document.getElementById('veCcCv'),ccsV=document.getElementById('veCcSv'),ccbwV=document.getElementById('veCcBWv');
   var ccSegB=document.getElementById('veCcSeg'),ccAllB=document.getElementById('veCcAll'),ccReset=document.getElementById('veCcReset');
   var ccAll=false; /* false = к выбранному куску, true = ко всему видео */
   function veCcTargets(){return ccAll?VE.edl.slice():(VE.sel>=0&&VE.edl[VE.sel]?[VE.edl[VE.sel]]:[]);}
   /* заполнить слайдеры значениями текущей цели */
   function veCcSync(){
     var seg=VE.sel>=0?VE.edl[VE.sel]:null;var cc=(seg&&seg.cc)||ccNeutral();
-    ccbI.value=cc.b;cccI.value=cc.c;ccsI.value=cc.s;
-    ccbV.textContent=cc.b;cccV.textContent=cc.c;ccsV.textContent=cc.s;
+    ccbI.value=cc.b;cccI.value=cc.c;ccsI.value=cc.s;ccbwI.value=cc.bw||0;
+    ccbV.textContent=cc.b;cccV.textContent=cc.c;ccsV.textContent=cc.s;ccbwV.textContent=cc.bw||0;
     ccSegB.classList.toggle('on',!ccAll);ccAllB.classList.toggle('on',ccAll);
     if(ccb)ccb.classList.toggle('sel',VE.edl.some(function(s){return s.cc&&ccFilter(s.cc);}));
   }
-  function veCcWrite(b,c,s){
-    veCcTargets().forEach(function(seg){seg.cc={b:b,c:c,s:s};});
-    ccbV.textContent=b;cccV.textContent=c;ccsV.textContent=s;
+  function veCcWrite(b,c,s,bw){
+    veCcTargets().forEach(function(seg){seg.cc={b:b,c:c,s:s,bw:bw};});
+    ccbV.textContent=b;cccV.textContent=c;ccsV.textContent=s;ccbwV.textContent=bw;
     veApplyCcPreview();
     if(ccb)ccb.classList.toggle('sel',VE.edl.some(function(g){return g.cc&&ccFilter(g.cc);}));
   }
+  function veCcCur(){return[+ccbI.value,+cccI.value,+ccsI.value,+ccbwI.value];}
   if(ccb)ccb.addEventListener('pointerup',function(){ccp.classList.toggle('show');if(ccp.classList.contains('show')){spp.classList.remove('show');veCcSync();}});
-  if(ccbI)ccbI.addEventListener('input',function(){veCcWrite(+ccbI.value,+cccI.value,+ccsI.value);});
-  if(cccI)cccI.addEventListener('input',function(){veCcWrite(+ccbI.value,+cccI.value,+ccsI.value);});
-  if(ccsI)ccsI.addEventListener('input',function(){veCcWrite(+ccbI.value,+cccI.value,+ccsI.value);});
+  if(ccbI)ccbI.addEventListener('input',function(){veCcWrite.apply(null,veCcCur());});
+  if(cccI)cccI.addEventListener('input',function(){veCcWrite.apply(null,veCcCur());});
+  if(ccsI)ccsI.addEventListener('input',function(){veCcWrite.apply(null,veCcCur());});
+  if(ccbwI)ccbwI.addEventListener('input',function(){veCcWrite.apply(null,veCcCur());});
   if(ccSegB)ccSegB.addEventListener('pointerup',function(){ccAll=false;veCcSync();veApplyCcPreview();});
   if(ccAllB)ccAllB.addEventListener('pointerup',function(){ccAll=true;veCcSync();veApplyCcPreview();});
-  if(ccReset)ccReset.addEventListener('pointerup',function(){ccbI.value=100;cccI.value=100;ccsI.value=100;veCcWrite(100,100,100);});
+  if(ccReset)ccReset.addEventListener('pointerup',function(){ccbI.value=100;cccI.value=100;ccsI.value=100;ccbwI.value=0;veCcWrite(100,100,100,0);});
   /* ▶ превью (под видео) — pointerup для iOS */
   var pl=document.getElementById('vePlay');if(pl)pl.addEventListener('pointerup',function(e){
     e.preventDefault();e.stopPropagation();
