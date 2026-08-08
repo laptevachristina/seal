@@ -2520,7 +2520,7 @@ function edlGet(vc){
 }
 function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0);});return t;}
 /* url источника по id: основное видео клипа (VE.video) или добавленное (VE.added) */
-function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;var u=(VE.added&&VE.added[id])||null;if(!u){console.log('[SEAL-MULTI] MISS src для id='+id+' added=',VE.added);if(!VE._missAlert){VE._missAlert=1;setTimeout(function(){alert('МАРКЕР: потерян источник видео id='+id+'\n(VE.added пустой — видео «не удерживается»). Сфоткай и скажи, на каком шаге.');VE._missAlert=0;},50);}}return u;}
+function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;var u=(VE.added&&VE.added[id])||null;if(!u){console.log('[SEAL-MULTI] MISS src для id='+id+' added=',VE.added);}return u;}
 /* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%, bw:обесцвечивание%}, 100=нейтрально (bw: 0=цвет) */
 function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,bw=(cc.bw||0)/100,s=((cc.s==null?100:cc.s)/100)*(1-bw);if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
 function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
@@ -2539,8 +2539,13 @@ function openVedit(vc){
   st.appendChild(cl);VE.clone=cl;VE.clone._lid=null;
   document.getElementById('veditModal').classList.add('open');
   document.getElementById('veSpeedPanel').classList.remove('show');
-  /* ждём загрузки metadata → потом edl + duration + render */
+  /* ждём загрузки metadata → потом edl + duration + render.
+     Одноразовый: при мульти-источнике clone меняет src во время Play,
+     loadedmetadata срабатывает снова — без флага ready перечитал бы старый
+     edl и перерисовал дорожку без добавленных кусков. */
   function ready(){
+    if(VE.clone&&VE.clone._veReadyDone)return;
+    if(VE.clone)VE.clone._veReadyDone=1;
     VE.dur=VE.clone.duration&&isFinite(VE.clone.duration)?VE.clone.duration:0;
     if(VE.dur<0.1)VE.dur=vidClipDuration(vc);
     VE.edl=edlGet(vc);
