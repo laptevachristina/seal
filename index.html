@@ -2535,6 +2535,9 @@ function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0)
 /* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%, bw:обесцвечивание%}, 100=нейтрально (bw: 0=цвет) */
 function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,bw=(cc.bw||0)/100,s=((cc.s==null?100:cc.s)/100)*(1-bw);if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
 function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
+/* cc первого сегмента edl клипа (только если видео НЕ резали — один сегмент).
+   Для /animate: видео там идёт целиком, поэтому ЦК честно только без порезки. */
+function ccFirstOfVc(vc){if(!vc||!vc.dataset.edl)return null;try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length===1&&a[0].cc)return a[0].cc;}catch(_){}return null;}
 /* применить ЦК текущего сегмента к превью (VE.clone) */
 function veApplyCcPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.playRAF&&VE.edl[VE.playSeg])?VE.playSeg:(VE.sel>=0?VE.sel:0);var seg=VE.edl[idx];VE.clone.style.filter=ccFilter(seg&&seg.cc);}
 function openVedit(vc){
@@ -3100,7 +3103,7 @@ function serverAnimateVid(el,btn){
   var vz=1,pvx=0,pvy=0;
   if(kind==='photo'){vz=parseFloat(vc.dataset.scale)||1;pvx=Math.round((parseFloat(vc.dataset.x)||0)*ES);pvy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
   else{vz=parseFloat(vc.dataset.czoom)||1;pvx=Math.round((parseFloat(vc.dataset.cpanx)||0)*vw*0.45);pvy=Math.round((parseFloat(vc.dataset.cpany)||0)*vh*0.45);}
-  var vparams={vz:vz,vx:pvx,vy:pvy,kind:kind,fx:photoFilterOf(vc)};
+  var vparams={vz:vz,vx:pvx,vy:pvy,kind:kind,fx:photoFilterOf(vc),cc:ccFirstOfVc(vc)};
   sealDiagStage('prepare','видео '+((v.duration||0).toFixed(1))+'с, kind='+kind+', vz='+vz);
   var st=function(t){if(btn)btn.textContent=t;};
   function showP(frac){if(btn)btn.textContent='⏳ '+Math.round(Math.max(0,Math.min(1,frac))*100)+'%';}
