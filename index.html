@@ -1,4 +1,4 @@
-<!--seal-github-v141|fix-typedtext-route-dataset-->
+<!--seal-github-v142|fix-videopos-offsetparent-chain-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2985,7 +2985,11 @@ function serverAnimateVid(el,btn){
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
   if(!v||!v.duration||!isFinite(v.duration))return Promise.reject(new Error('видео не готово'));
-  var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
+  var _rp=sealRelPos(vc,el);
+  var x=Math.round(_rp.x*ES),y=Math.round(_rp.y*ES),vw=Math.round(vc.offsetWidth*ES),vh=Math.round(vc.offsetHeight*ES);
+  var _rawL=Math.round(vc.offsetLeft*ES),_rawT=Math.round(vc.offsetTop*ES);
+  var _opTag=vc.offsetParent?vc.offsetParent.tagName+(vc.offsetParent.className?('.'+String(vc.offsetParent.className).slice(0,24)):''):'null';
+  sealDiagStage('vpos','offsetL='+_rawL+','+_rawT+' | relPos='+x+','+y+' | parent='+_opTag+' | '+vw+'x'+vh);
   var kind=vc.classList.contains('photo')?'photo':'vidclip';
   var vz=1,pvx=0,pvy=0;
   if(kind==='photo'){vz=parseFloat(vc.dataset.scale)||1;pvx=Math.round((parseFloat(vc.dataset.x)||0)*ES);pvy=Math.round((parseFloat(vc.dataset.y)||0)*ES);}
@@ -3101,6 +3105,18 @@ function hasTypedText(el){
   var ts=el.querySelectorAll('[data-edit]');
   for(var i=0;i<ts.length;i++){if(ts[i].dataset.typeAnim==='1')return true;}
   return false;
+}
+/* истинная позиция node относительно root (слайда) по цепочке offsetParent.
+   Простой node.offsetLeft считает позицию относительно ближайшего позиционированного
+   предка — если видео-слот вложен в контейнер, значение будет меньше реального
+   и серверное overlay-видео встанет со сдвигом. Суммируем всю цепочку до root. */
+function sealRelPos(node,root){
+  var nx=0,ny=0,n=node,safe=0;
+  while(n&&n!==root&&n.offsetParent&&safe<20){
+    nx+=n.offsetLeft||0;ny+=n.offsetTop||0;
+    n=n.offsetParent;safe++;
+  }
+  return {x:nx,y:ny};
 }
 function buildTypeSchedule(items){
   var t=0,sched=new Map();
@@ -3337,7 +3353,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v141';
+var SEAL_VER='v142';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3458,14 +3474,22 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var _typeOnN=el.querySelectorAll('.type-on').length;
     var _editN=el.querySelectorAll('[data-edit]').length;
     var _typedAttr=Array.prototype.map.call(el.querySelectorAll('[data-edit]'),function(t){return (t.dataset.typeAnim||'0');}).join(',');
+    /* позиция видео: offsetLeft (старый способ) vs relPos по цепочке offsetParent (новый) */
+    var _vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
+    var _vposStr='— видео: нет слота';
+    if(_vc){
+      var _es=2,_rp=sealRelPos(_vc,el);
+      var _rawL=Math.round(_vc.offsetLeft*_es),_rawT=Math.round(_vc.offsetTop*_es);
+      var _relL=Math.round(_rp.x*_es),_relT=Math.round(_rp.y*_es);
+      var _op=_vc.offsetParent?String(_vc.offsetParent.className||_vc.offsetParent.tagName).slice(0,28):'null';
+      _vposStr='— видео offsetLeft: '+_rawL+','+_rawT+'\n— видео relPos(цепочка): '+_relL+','+(_relT)+'\n— offsetParent: '+_op+'\n— размер: '+Math.round(_vc.offsetWidth*_es)+'x'+Math.round(_vc.offsetHeight*_es)+(Math.abs(_rawL-_relL)>2||Math.abs(_rawT-_relT)>2?'\n⚠ СДВИГ: offsetLeft≠relPos → баг родителя':'');
+    }
     setTimeout(function(){
       alert('Зонд маршрута ('+(SEAL_VER||'?')+'):\n'+
         '— видео-клипов: '+_vidClips+'\n'+
         '— стикер: '+(_hasSticker?'да':'нет')+'\n'+
-        '— бегущий текст [data-typeAnim=1]: '+(_hasTypeAnim?'ДА':'нет')+'\n'+
-        '— кнопка type-on нажата на: '+_typeOnN+' блоке(ах)\n'+
-        '— всего текст.блоков [data-edit]: '+_editN+'\n'+
-        '— их data-typeAnim: ['+_typedAttr+']\n\n'+
+        '— бегущий текст: '+(_hasTypeAnim?'ДА':'нет')+'\n'+
+        _vposStr+'\n\n'+
         'Маршрут: '+((_vidClips>=2)?'serverAnimate (2+ видео)':((_vidClips===1&&(_hasSticker||_hasTypeAnim))?'serverAnimateVid ← правильно':((_vidClips>=1)?'serverCompose ← БЕЗ анимации':'MediaRecorder')))+'\n'+
         'Пришли это окно целиком.');
     },30);
