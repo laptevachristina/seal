@@ -637,6 +637,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
     <div style="font:600 9px 'Inter';color:#888;padding:2px 0 0;display:flex;justify-content:space-between"><span id="veResult">Результат: 0:00</span><span>кусочков: <span id="veCount">1</span></span></div>
   </div>
   <div class="vedit-sp" id="veSpeedPanel">
+    <div class="vedit-cc-mode" style="flex:0 0 100%;margin-bottom:2px">
+      <button id="veSpSeg" class="on">к выбранному куску</button>
+      <button id="veSpAll">ко всему видео</button>
+    </div>
     <label id="veSpeedV">1.0×</label>
     <input type="range" id="veSpeed" min="0.1" max="12" step="0.1" value="1">
     <button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="3">3×</button><button data-sp="4">4×</button><button data-sp="6">6×</button><button data-sp="12">12×</button>
@@ -2540,6 +2544,7 @@ function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
 function ccFirstOfVc(vc){if(!vc||!vc.dataset.edl)return null;try{var a=JSON.parse(vc.dataset.edl);if(Array.isArray(a)&&a.length===1&&a[0].cc)return a[0].cc;}catch(_){}return null;}
 /* применить ЦК текущего сегмента к превью (VE.clone) */
 function veApplyCcPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.playRAF&&VE.edl[VE.playSeg])?VE.playSeg:(VE.sel>=0?VE.sel:0);var seg=VE.edl[idx];VE.clone.style.filter=ccFilter(seg&&seg.cc);}
+function veApplySpPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.playRAF&&VE.edl[VE.playSeg])?VE.playSeg:(VE.sel>=0?VE.sel:0);var seg=VE.edl[idx];if(seg){try{VE.clone.playbackRate=Math.max(0.1,Math.min(16,seg.sp||1));}catch(_){}}}
 function openVedit(vc){
   if(!vc)return;
   VE.vc=vc;VE.video=vc.querySelector('video');VE.added=[];
@@ -2587,12 +2592,12 @@ function closeVedit(apply){
           for(var sj=0;sj<edlRef.length;sj++){if(ct<edlRef[sj].s){sv.currentTime=edlRef[sj].s;cur=sj;break;}}
           if(cur<0){sv.currentTime=edlRef[0].s;cur=0;}
         }
-        if(cur>=0&&sv._veCcI!==cur){sv._veCcI=cur;sv.style.filter=ccFilter(edlRef[cur].cc);}
+        if(cur>=0&&sv._veCcI!==cur){sv._veCcI=cur;sv.style.filter=ccFilter(edlRef[cur].cc);try{sv.playbackRate=Math.max(0.1,Math.min(16,edlRef[cur].sp||1));}catch(_){}}
       };
       sv.addEventListener('timeupdate',edlFn);
       sv.addEventListener('seeked',edlFn);
       try{sv.currentTime=edlRef[0].s;}catch(_){}
-      sv._veCcI=0;sv.style.filter=ccFilter(edlRef[0].cc);
+      sv._veCcI=0;sv.style.filter=ccFilter(edlRef[0].cc);try{sv.playbackRate=Math.max(0.1,Math.min(16,edlRef[0].sp||1));}catch(_){}
       sv.play()['catch'](function(){});
     }
     updateFilm();pushHistory();
@@ -2677,12 +2682,13 @@ function vePlayTick(){
     var nextSeg=VE.edl[VE.playSeg];
     try{VE.clone.currentTime=nextSeg.s;}catch(_){}
     veUpdateCursor(srcToTimeline(VE.edl,nextSeg.s));
-    veApplyCcPreview();
+    veApplyCcPreview();veApplySpPreview();
     VE.playRAF=requestAnimationFrame(vePlayTick);
     return;
   }
   /* если clone ушёл за пределы сегмента (seek) → вернуть */
   if(ct<seg.s-0.1){try{VE.clone.currentTime=seg.s;}catch(_){}}
+  veApplySpPreview();
   veUpdateCursor(srcToTimeline(VE.edl,ct));
   VE.playRAF=requestAnimationFrame(vePlayTick);
 }
@@ -2726,8 +2732,15 @@ function veUpdateCursor(timelineSec){
   var fr=document.getElementById('veFreeze');if(fr)fr.addEventListener('pointerup',function(){if(VE.sel<0||!VE.edl[VE.sel])return;var seg=VE.edl[VE.sel];if(seg.fz){delete seg.fz;}else{seg.fz=1;seg.fr=0;}VE.full=edlDur(VE.edl);veditRender();});
   /* скорость */
   var spb=document.getElementById('veSpeedBtn'),spp=document.getElementById('veSpeedPanel'),sp=document.getElementById('veSpeed'),spv=document.getElementById('veSpeedV');
-  if(spb)spb.addEventListener('pointerup',function(){spp.classList.toggle('show');if(spp.classList.contains('show')&&ccp)ccp.classList.remove('show');});
-  function setSp(v){spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';if(VE.sel>=0&&VE.edl[VE.sel]){VE.edl[VE.sel].sp=v;VE.full=edlDur(VE.edl);veditRender();}}
+  var spSegB=document.getElementById('veSpSeg'),spAllB=document.getElementById('veSpAll');
+  var spAll=false; /* false = к выбранному куску, true = ко всему видео */
+  function veSpTargets(){return spAll?VE.edl.slice():(VE.sel>=0&&VE.edl[VE.sel]?[VE.edl[VE.sel]]:[]);}
+  /* заполнить слайдер значением текущей цели (если у целей разные sp → 1×) */
+  function veSpSync(){var ts=veSpTargets();if(!ts.length)return;var v=ts[0].sp||1;for(var k=1;k<ts.length;k++){if((ts[k].sp||1)!==v){v=1;break;}}sp.value=v;spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';}
+  if(spb)spb.addEventListener('pointerup',function(){spp.classList.toggle('show');if(spp.classList.contains('show')){if(ccp)ccp.classList.remove('show');veSpSync();}});
+  if(spSegB)spSegB.addEventListener('pointerup',function(){spAll=false;spSegB.classList.add('on');spAllB.classList.remove('on');veSpSync();});
+  if(spAllB)spAllB.addEventListener('pointerup',function(){spAll=true;spAllB.classList.add('on');spSegB.classList.remove('on');veSpSync();});
+  function setSp(v){if(!(v>0))v=1;if(v<0.1)v=0.1;if(v>12)v=12;spv.textContent=(Math.round(v*10)/10).toFixed(1)+'×';veSpTargets().forEach(function(seg){seg.sp=v;});VE.full=edlDur(VE.edl);veditRender();veApplySpPreview();}
   if(sp)sp.addEventListener('input',function(){setSp(+sp.value||1);});
   document.querySelectorAll('#veSpeedPanel button[data-sp]').forEach(function(b){b.addEventListener('click',function(){sp.value=b.dataset.sp;setSp(+b.dataset.sp);});});
   /* цветокоррекция */
@@ -2771,6 +2784,7 @@ function veUpdateCursor(timelineSec){
       VE.playSeg=0;
       try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
       try{VE.clone.play()['catch'](function(){});}catch(_){}
+      veApplySpPreview();veApplyCcPreview();
       pl.textContent='⏸';VE.playRAF=requestAnimationFrame(vePlayTick);
     }
   });
@@ -2786,6 +2800,7 @@ function veUpdateCursor(timelineSec){
       var tl=srcToTimeline(VE.edl,s.s);veUpdateCursor(tl);}
     VE.full=edlDur(VE.edl);veditRender();
     if(ccp&&ccp.classList.contains('show'))veCcSync();veApplyCcPreview();
+    if(spp&&spp.classList.contains('show'))veSpSync();veApplySpPreview();
   });
   /* SCRUB + ПЕРЕНОС кусков:
      короткое ведение пальцем по дорожке → перемотка;
