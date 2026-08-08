@@ -1,4 +1,4 @@
-<!--seal-github-v147|freeze-whole-segment-toggle-->
+<!--seal-github-v147-mark|markers-what-runs-build-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2528,12 +2528,14 @@ function openVedit(vc){
     try{VE.clone.currentTime=VE.edl[0].s;}catch(_){}
     veditRender();veUpdateCursor(VE.edl[0].s);
     var tm=document.getElementById('veTime');if(tm)tm.textContent=formatTs(VE.edl[0].s)+' / '+formatTs(VE.full);
+    if(window.__sealMark)__sealMark('🎬 Монтаж открыт','кусочков: '+VE.edl.length+', итог '+formatTs(VE.full));
   }
   if(VE.video&&VE.video.src){cl.src=VE.video.src;}
   cl.addEventListener('loadedmetadata',ready);
   if(cl.readyState>=1)ready();
 }
 function closeVedit(apply){
+  if(window.__sealMark)__sealMark(apply?'✓ ГОТОВО: монтаж сохранён (этап, НЕ сборка)':'✕ Монтаж отменён',apply?('edl → data-edl клипа, кусочков: '+(VE.edl?VE.edl.length:0)):'');
   if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;}
   if(apply&&VE.vc){
     if(VE.edl.length===0)VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:VE.vc.dataset.vidId}];
@@ -2898,6 +2900,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
    анимированные стикеры/текст на момент t) и отправляем на сервер → ffmpeg сшивает в MP4.
    Звук НЕ передаётся (для 2+ видео по договорённости; для 1 видео — отдельная ветка в /compose). */
 function serverAnimate(el,btn){
+  if(window.__sealMark)__sealMark('сервер: /animate старт (2+ видео)','');
   if(typeof previewReset==='function')previewReset();
   var items=getAnimItems(el);
   var spinMode=hasSpinningSticker(items);
@@ -2974,6 +2977,7 @@ function serverAnimate(el,btn){
   });
 }
 function serverAnimateVid(el,btn){
+  if(window.__sealMark)__sealMark('сервер: /animate старт (1 видео + анимация)','');
   /* 1 видео + анимированные стикеры/текст: снимаем кадры анимации БЕЗ видео,
      видео уходит отдельной дорожкой на сервер (/animate) со звуком, fx, zoom/pan. */
   if(typeof previewReset==='function')previewReset();
@@ -3362,11 +3366,30 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v147';
+var SEAL_VER='v147-mark';
+/* === МАРКЕРЫ-ЗОНДЫ (для разбора: что запускает сборку) ===
+   __sealMark(метка, детал) → пишет в консоль с таймштампом + короткий тост сверху.
+   НЕ меняет логику. Чтобы снять — удалить блок до «=== КОНЕЦ МАРКЕРОВ ===». */
+window.__sealT0=performance.now();
+window.__sealMark=function(label,detail){
+  var t=((performance.now()-window.__sealT0)/1000).toFixed(2);
+  var msg='[SeaL '+t+'s] '+label+(detail!=null?(' → '+detail):'');
+  try{console.log('%c'+msg,'color:#b388ff;font-weight:700');}catch(_){}
+  try{
+    var host=document.getElementById('__sealMarkHost')||document.createElement('div');
+    host.id='__sealMarkHost';host.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;font:600 12px Inter,sans-serif';
+    document.body.appendChild(host);
+    var t2=document.createElement('div');t2.textContent=msg;t2.style.cssText='background:'+(/СБОРКА|✨/.test(label)?'#d32f2f':'#2e7d32')+';color:#fff;padding:6px 12px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,.35);max-width:90vw;text-align:center';
+    host.appendChild(t2);
+    setTimeout(function(){if(t2.parentNode)t2.parentNode.removeChild(t2);},3200);
+  }catch(_){}
+};
+/* === КОНЕЦ МАРКЕРОВ (установка) === */
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
 function serverCompose(el,format,btn){
+  if(window.__sealMark)__sealMark('сервер: /compose старт (ffmpeg, честный MP4)','');
   /* ищем видео: vidclip ИЛИ video в photo-слоте */
   var vc=el.querySelector('.vidclip');
   var v=vc?vc.querySelector('video'):null;
@@ -3466,6 +3489,7 @@ function sealFail(route,e){
   alert(lines.join('\n'));
 }
 if(gifBtn)gifBtn.addEventListener('click',function(){
+  if(window.__sealMark)__sealMark('⚡ ✨ Видео → СТАРТ СБОРКИ (это и есть экспорт)','слайд '+(cur+1)+', '+(slides[cur]?slides[cur].el.querySelectorAll('.vidclip video, .photo[data-vid-id] video').length:0)+' видео-клип(ов)');
   /* защита от повторного тапа, пока идёт пре-рендер/запись — раньше второй тап во время подготовки
      запускал ВТОРОЙ параллельный процесс поверх первого и вешал вкладку (белый экран) */
   if(videoExportBusy)return;
@@ -3646,6 +3670,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
   });
 });
 function openVideoModal(blob,mime){
+  if(window.__sealMark)__sealMark('✅ СБОРКА ГОТОВА','показ результата, размер '+(blob?Math.round(blob.size/1024)+'кб':'?'));
   var imgs=document.getElementById('imgs');imgs.innerHTML='';
   var url=URL.createObjectURL(blob);
   var ext=extFor(mime);
