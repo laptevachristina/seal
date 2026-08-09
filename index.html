@@ -3012,6 +3012,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     overlay.onload=function(){
       try{
         var c=document.createElement('canvas');c.width=w*ES;c.height=h*ES;
+        try{window.__qDiag=(window.__qDiag||[]);window.__qDiag.push({canvas:[w*ES,h*ES],svgBase:[w,h],ES:ES});}catch(_){}
         var ctx=c.getContext('2d');ctx.scale(ES,ES);
         var _onlyAbove=!!window._onlyStickersAbove;
         if(!_onlyAbove){ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);}
@@ -3020,6 +3021,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
           ctx.save();ctx.globalAlpha=p.opacity;roundRectPath(ctx,p.x,p.y+p.dy,p.W,p.H,p.rad);ctx.clip();
           var nw=p.img.videoWidth||p.img.naturalWidth||0,nh=p.img.videoHeight||p.img.naturalHeight||0,cover=Math.max(p.W/nw,p.H/nh);
           var dw=nw*cover*p.s,dh=nh*cover*p.s,cx=p.x+p.W/2+p.tx,cy=p.y+p.dy+p.H/2+p.ty;
+          try{if(!window.__qDiagP){window.__qDiagP=true;window.__qDiag.push({photoNw:nw,photoNh:nh,photoDestW:Math.round(dw),photoDestH:Math.round(dh),slotW:Math.round(p.W),slotH:Math.round(p.H),fx:p.fx});}}catch(_){}
           if(p.fx&&p.fx!=='none'&&nw&&nh){
             /* пиксельный фильтр вместо ctx.filter (Сафари не умеет canvas-filter) */
             var oc=document.createElement('canvas');oc.width=Math.max(1,Math.ceil(dw));oc.height=Math.max(1,Math.ceil(dh));
@@ -3223,7 +3225,10 @@ function serverAnimateVid(el,btn){
 function slideToPNG(el){
   if(typeof previewReset==='function')previewReset();
   return renderSlideCanvas(el,null).then(function(c){
-    return new Promise(function(resolve){c.toBlob(function(blob){resolve(blob);},'image/png');});
+    return new Promise(function(resolve){c.toBlob(function(blob){
+      try{var u=URL.createObjectURL(blob);var ti=new Image();ti.onload=function(){(window.__qDiag=window.__qDiag||[]).push({pngW:ti.naturalWidth,pngH:ti.naturalHeight,pngBytes:blob.size});URL.revokeObjectURL(u);resolve(blob);};ti.onerror=function(){URL.revokeObjectURL(u);resolve(blob);};ti.src=u;}
+      catch(e){resolve(blob);}
+    },'image/png');});
   });
 }
 function saveBlobs(blobs){
@@ -3258,7 +3263,11 @@ document.getElementById('exp-all').addEventListener('click',function(){
     var seq=Promise.resolve([]);
     slides.forEach(function(s){seq=seq.then(function(acc){return slideToPNG(s.el).then(function(b){acc.push(b);return acc;});});});
     return seq;
-  }).then(function(blobs){openModal(blobs);}).catch(function(){alert('Не получилось собрать картинки — напиши мне, поправим.');});
+  }).then(function(blobs){openModal(blobs);
+    try{var d=window.__qDiag||[];var lines=d.map(function(x){return Object.keys(x).map(function(k){return k+'='+JSON.stringify(x[k]);}).join('  ');});
+    setTimeout(function(){alert('ЗОНД КАЧЕСТВА (v'+SEAL_VER+'):\n\n'+(lines.join('\n')||'нет данных')+'\n\nЧитаем так:\n• photoNw — реальные пиксели ИСХОДНОГО фото\n• photoDestW — в сколько пикселей его нарисовали\n• pngW — финальный размер скачанного PNG\n• svgBase vs canvas — текст рендерится в svgBase и тянется до canvas');window.__qDiag=[];window.__qDiagP=false;},80);}
+    catch(e){}
+  }).catch(function(){alert('Не получилось собрать картинки — напиши мне, поправим.');});
 });
 
 /* ---- animated GIF export (appear-in animation, current slide only) ---- */
@@ -3525,7 +3534,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v156';
+var SEAL_VER='v157';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
