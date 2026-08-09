@@ -3007,7 +3007,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
     var slidecss=document.getElementById('slidecss').textContent;
     var extra=".ph-empty:before{content:''!important}.ph-label,.fr-label{display:none!important}.ph-pick,.gcell-move,.fr-del,.fr-resize,.fr-move,.mv-handle,.mv-del,.tx-resize,.type-toggle,.snap-guide{display:none!important}.frame{outline:none!important;box-shadow:none!important;background:transparent!important}.photo{background:transparent!important}.ph-img{display:none!important}.slide{background:transparent!important}.series-wrap{background:transparent!important}.series-grid{background:transparent!important}.series-cell{background:transparent!important}[data-edit]{box-shadow:none!important}.sticker{display:none!important}.vidclip{display:none!important}";
     var xml=new XMLSerializer().serializeToString(clone);
-    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><style>'+fontcss+slidecss+extra+'</style><foreignObject x="0" y="0" width="'+w+'" height="'+h+'"><div xmlns="http://www.w3.org/1999/xhtml">'+xml+'</div></foreignObject></svg>';
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(w*ES)+'" height="'+(h*ES)+'"><style>'+fontcss+slidecss+extra+'</style><foreignObject x="0" y="0" width="'+(w*ES)+'" height="'+(h*ES)+'"><div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;transform:scale('+ES+');transform-origin:0 0">'+xml+'</div></foreignObject></svg>';
     var overlay=new Image();
     overlay.onload=function(){
       try{
@@ -3062,7 +3062,7 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         stickersBelow.forEach(drawSticker);
         vidsBelow.forEach(drawVid);
         ctx.globalAlpha=1;
-        ctx.drawImage(overlay,0,0,w,h);
+        ctx.drawImage(overlay,0,0,w,h); /* overlay native w*ES×h*ES, drawn at w×h under ctx.scale(ES) → 1:1 */
         vidsAbove.forEach(drawVid);
         if(!window._skipStickersAbove)stickersAbove.forEach(drawSticker);
         resolve(c);
@@ -3534,7 +3534,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v157';
+var SEAL_VER='v158';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
