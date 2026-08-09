@@ -1,4 +1,4 @@
-<!--seal-github-v150|export-probes-->
+<!--seal-github-v151|probe-srccize-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3519,7 +3519,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v150';
+var SEAL_VER='v151';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3616,8 +3616,9 @@ function serverCompose(el,format,btn){
         var parts={};
         try{var it=fd.keys(),kk;while((kk=it.next())&&!kk.done){var val=fd.get(kk.value);parts[kk.value]=(val&&val.size!=null)?val.size+'б':(typeof val==='string'?val.slice(0,30):'?');}}catch(_){}
         var srcKeys=Object.keys(parts).filter(function(k){return k.indexOf('src_')===0;});
+        var srcList=srcKeys.map(function(k){return k.replace('src_','')+' ('+parts[k]+')';}).join(', ')||'(нет)';
         sealDiagStage('send','video='+(parts.video||'?')+' src='+srcKeys.join(',')+' mainId='+mainId);
-        try{alert('ОТПРАВКА НА СЕРВЕР (v'+SEAL_VER+')\nmainId: '+mainId+'\nисточников в edl: '+_edlIds.length+' ['+_edlIds.join(',')+']\nvideo(основной in.mp4): '+(parts.video||'?')+'\nдоп. видео src_: '+(srcKeys.length?srcKeys.join(','):'(нет)'));}catch(_){}
+        try{alert('ОТПРАВКА НА СЕРВЕР ('+SEAL_VER+')\nmainId: '+mainId+'\nисточников в edl: '+_edlIds.length+' ['+_edlIds.join(',')+']\nvideo(основной in.mp4): '+(parts.video||'?')+'\nдоп. видео: '+srcList);}catch(_){}
         return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
       }
       if(maskBlob){
