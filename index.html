@@ -3573,19 +3573,29 @@ function serverCompose(el,format,btn){
         maskBlob=new Promise(function(res){mc.toBlob(function(b){res(b);},'image/png');});
       }
       var vfx=photoFilterOf(vc);
-      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,edl:edlRaw,hasAbove:!!ovBlob,hasMask:!!maskBlob,fx:vfx,vz:vz,vx:vx,vy:vy,kind:kind});
-      var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');fd.append('meta',meta);
+      var mainId=vc.dataset.vidId||'';
+      var fd=new FormData();fd.append('bg',bgBlob,'bg.png');fd.append('video',vblob,'in.mp4');
+      /* мульти-источник: доп. видео (id≠основного) подгружаем из idb, шлём как src_<id> */
+      var extraP=Promise.resolve();
+      if(edlRaw){
+        try{
+          var _edl=JSON.parse(edlRaw),_ids={};
+          (_edl||[]).forEach(function(sg){if(sg&&sg.id&&String(sg.id)!==String(mainId))_ids[sg.id]=1;});
+          var _extra=Object.keys(_ids);
+          if(_extra.length){extraP=Promise.all(_extra.map(function(sid){return idbGet('vidblob_'+sid).then(function(b){if(b)fd.append('src_'+sid,b,'src_'+sid+'.mp4');});}));}
+        }catch(_){}
+      }
+      var meta=JSON.stringify({x:x,y:y,w:w,h:h,radius:rad,duration:dur,format:format||'mp4',cutColor:cutColor,cutThresh:cutThresh,edl:edlRaw,hasAbove:!!ovBlob,hasMask:!!maskBlob,fx:vfx,vz:vz,vx:vx,vy:vy,kind:kind,mainId:mainId});
+      fd.append('meta',meta);
       if(ovBlob)fd.append('overlay',ovBlob,'overlay.png');
       var sendPromise;
       if(maskBlob){
-        sendPromise=maskBlob.then(function(mb){fd.append('mask',mb,'mask.png');return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});});
+        sendPromise=Promise.all([extraP,maskBlob]).then(function(arr){fd.append('mask',arr[1],'mask.png');return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});});
       } else {
-        sendPromise=fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
+        sendPromise=extraP.then(function(){return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});});
       }
       st('⏳ сборка…');
       return sendPromise;
-      st('⏳ сборка…');
-      return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
     }).then(function(r){
       sealDiagStage('server','HTTP '+(r.status||'?')+' ('+(r.headers.get('content-length')||'?')+' байт)');
       if(!r.ok)return r.text().then(function(t){throw new Error('сервер '+(r.status||'')+': '+t.slice(0,500));});
