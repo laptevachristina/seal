@@ -1,4 +1,4 @@
-<!--seal-github-v152|video-gc-->
+<!--seal-github-v153|montage-probes-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2568,6 +2568,14 @@ function openVedit(vc){
     VE.dur=VE.clone.duration&&isFinite(VE.clone.duration)?VE.clone.duration:0;
     if(VE.dur<0.1)VE.dur=vidClipDuration(vc);
     VE.edl=edlGet(vc);
+    /* ЗОНД: при открытии монтажа показать состав — сколько источников и какие id.
+       Так видно «лишнее» второе видео от прошлой сессии до сборки. */
+    try{
+      var _ids={},_n=VE.edl.length;
+      VE.edl.forEach(function(sg){if(sg&&sg.id)_ids[sg.id]=1;});
+      var _ul=Object.keys(_ids);
+      if(_ul.length>1)alert('Открыт монтаж (v'+SEAL_VER+')\nВ этом слайде '+_n+' кусков, источников: '+_ul.length+'\nid: ['+_ul.join(', ')+']\n\nЕсли тут лишнее видео от прошлой сессии — выдели его клип и удали (✂/🗑), потом Готово.');
+    }catch(_){}
     /* если edl от прошлой сессии — проверить что валиден для этого видео */
     if(VE.edl[0]&&VE.edl[0].e>VE.dur){VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:vc.dataset.vidId}];}
     VE.sel=0;VE.full=edlDur(VE.edl);
@@ -3538,7 +3546,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v152';
+var SEAL_VER='v153';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3994,6 +4002,6 @@ cur=0;render();
 }
 hist=[];hpos=-1;pushHistory();
 /* стартовая чистка: удалить видео-blob'ы, не привязанные ни к одному слайду */
-gcVideoBlobs();
+gcVideoBlobs().then(function(n){try{alert('Стартовая чистка памяти (v'+SEAL_VER+')\nОсиротевших видео стёрто: '+n+'\n\nПривязанные к слайдам видео НЕ тронуты — лишнее убирают в монтаже.');}catch(_){}});
 });
 </script>
