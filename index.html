@@ -2933,7 +2933,7 @@ function veUpdateCursor(timelineSec){
 })();
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
-    var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+    var w=540,h=el.classList.contains('f916')?960:675,ES=4;
     /* measure photos at natural size (works for detached slides too) */
     var meas=document.getElementById('measurer');
     var parent=el.parentNode,next=el.nextSibling,pt=el.style.transform;
@@ -3081,7 +3081,7 @@ function serverAnimate(el,btn){
   var spinMode=hasSpinningSticker(items);
   var typeSchedule=buildTypeSchedule(items);
   var fullMs=computeFullMs(el);
-  var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+  var w=540,h=el.classList.contains('f916')?960:675,ES=4;
   var fps=12;
   var frameCount=Math.max(1,Math.min(360,Math.ceil(fullMs/1000*fps)));
   var clipEls=Array.prototype.slice.call(el.querySelectorAll('.vidclip video, .photo[data-vid-id] video'));
@@ -3159,7 +3159,7 @@ function serverAnimateVid(el,btn){
   var spinMode=hasSpinningSticker(items);
   var typeSchedule=buildTypeSchedule(items);
   var fullMs=computeFullMs(el);
-  var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+  var w=540,h=el.classList.contains('f916')?960:675,ES=4;
   var fps=12;
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
@@ -3534,7 +3534,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v159';
+var SEAL_VER='v160';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3576,7 +3576,7 @@ function serverCompose(el,format,btn){
     return renderSlideCanvas(el,null,null).then(function(c){window._onlyStickersAbove=false;return blob(c);}).then(function(ov){return {bg:bgBlob,ov:ov};});
   }).then(function(res){
     var bgBlob=res.bg,ovBlob=res.ov;
-    var ES=3;
+    var ES=4;
     var x=Math.round(vc.offsetLeft*ES),y=Math.round(vc.offsetTop*ES),w=Math.round(vc.offsetWidth*ES),h=Math.round(vc.offsetHeight*ES);
     /* zoom/pan внутри рамки → единые vz,vx,vy в финальных пикселях кадра.
        kind: 'photo' (translate→scale, сдвиг не умножается на зум) или 'vidclip'
@@ -3735,7 +3735,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var spinMode=hasSpinningSticker(items);
     var typeSchedule=buildTypeSchedule(items);
     var fullMs=computeFullMs(el);
-    var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+    var w=540,h=el.classList.contains('f916')?960:675,ES=4;
     var mime=pickVideoMime();
     var capFn=null;
     var probe=document.createElement('canvas');
