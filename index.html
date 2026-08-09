@@ -1,4 +1,4 @@
-<!--seal-github-v154|vedit-add-guard-->
+<!--seal-github-v155|probes-removed-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2568,14 +2568,8 @@ function openVedit(vc){
     VE.dur=VE.clone.duration&&isFinite(VE.clone.duration)?VE.clone.duration:0;
     if(VE.dur<0.1)VE.dur=vidClipDuration(vc);
     VE.edl=edlGet(vc);
-    /* ЗОНД: при открытии монтажа показать состав — сколько источников и какие id.
-       Так видно «лишнее» второе видео от прошлой сессии до сборки. */
-    try{
-      var _ids={},_n=VE.edl.length;
-      VE.edl.forEach(function(sg){if(sg&&sg.id)_ids[sg.id]=1;});
-      var _ul=Object.keys(_ids);
-      if(_ul.length>1)alert('Открыт монтаж (v'+SEAL_VER+')\nВ этом слайде '+_n+' кусков, источников: '+_ul.length+'\nid: ['+_ul.join(', ')+']\n\nЕсли тут лишнее видео от прошлой сессии — выдели его клип и удали (✂/🗑), потом Готово.');
-    }catch(_){}
+    /* тихий лог состава монтажа (сколько источников) */
+    try{var _ids={};VE.edl.forEach(function(sg){if(sg&&sg.id)_ids[sg.id]=1;});console.log('[SEAL-MULTI] монтаж: кусков='+VE.edl.length+' источников='+Object.keys(_ids).length);}catch(_){}
     /* если edl от прошлой сессии — проверить что валиден для этого видео */
     if(VE.edl[0]&&VE.edl[0].e>VE.dur){VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:vc.dataset.vidId}];}
     VE.sel=0;VE.full=edlDur(VE.edl);
@@ -2935,14 +2929,8 @@ function veUpdateCursor(timelineSec){
   }
   /* ＋ добавить видео */
   var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('pointerup',function(){
-    /* ЗОНД: «＋ Видео» ДОБАВЛЯЕТ второй источник в дорожку монтажа.
-       Это не «заменить» и не «выбрать видео» — клип дописывается в конец.
-       Предупреждаем, пока не нажали выбор файла. */
-    try{
-      var _have=(VE.edl||[]).length,_srcs={};(VE.edl||[]).forEach(function(s){if(s&&s.id)_srcs[s.id]=1;});
-      var _ok=confirm('Кнопка «＋ Видео» (v'+SEAL_VER+')\n\nОна ДОБАВЛЯЕТ второе видео в дорожку монтажа — не заменяет и не выбирает основное.\nСейчас кусков: '+_have+', источников: '+Object.keys(_srcs).length+'.\n\n• Если хочешь ОДНО видео — нажми «Отмена» и просто закрой монтаж (Готово).\n• Если хочешь склеить два ролика — жми «ОК» и выбери файл.');
-      if(!_ok)return;
-    }catch(_){}
+    /* ＋ Видео: добавляет второй источник в дорожку монтажа (не заменяет основной) */
+    console.log('[SEAL-MULTI] ＋Видео: добавление доп. источника в монтаж');
     pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();
   });
   /* готово/отмена */
@@ -3556,7 +3544,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v154';
+var SEAL_VER='v155';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3585,12 +3573,7 @@ function serverCompose(el,format,btn){
   var _edlIds=[],_edlSegs=0;
   try{var _de0=JSON.parse(vc.dataset.edl||'[]');if(Array.isArray(_de0)){_edlSegs=_de0.length;var _mm={};_de0.forEach(function(sg){if(sg&&sg.id){_mm[sg.id]=1;}});_edlIds=Object.keys(_mm);}}catch(_){}
   sealDiagStage('src','v='+SEAL_VER+' mainId='+mainId+' segs='+_edlSegs+' srcIds=['+_edlIds.join(',')+'] vready='+!!vready+' dur='+dur.toFixed(2)+' vsrc='+(v.src?'y':'n')+(vc._veSrc?' _veSrc=y':' _veSrc=n'));
-  /* ЗАЩИТА: если в edl больше одного источника — спросить до сборки.
-     Так лишнее видео (случайно добавленное через ＋Видео) не уедет на сервер молча. */
-  if(_edlIds.length>1){
-    var _go=confirm('В этом ролике '+_edlSegs+' кусков из '+_edlIds.length+' разных видео (v'+SEAL_VER+').\nid: ['+_edlIds.join(', ')+']\n\nСобрать как есть?\n• «ОК» — собрать со всеми видео.\n• «Отмена» — прервать. Открой монтаж слайда, выдели лишний клип, удали (🗑) и нажми Готово.');
-    if(!_go){reset();return Promise.reject(new Error('сборка отменена: источников '+_edlIds.length));}
-  }
+  if(_edlIds.length>1)console.warn('[SEAL-MULTI] сборка: источников '+_edlIds.length+' — '+_edlIds.join(','));
   var st=function(t){if(btn)btn.textContent=t;};
   st('⏳ фон…');
   var hasAbove=!!el.querySelector('.sticker:not([data-layer="below"])');
@@ -3661,7 +3644,6 @@ function serverCompose(el,format,btn){
         var srcKeys=Object.keys(parts).filter(function(k){return k.indexOf('src_')===0;});
         var srcList=srcKeys.map(function(k){return k.replace('src_','')+' ('+parts[k]+')';}).join(', ')||'(нет)';
         sealDiagStage('send','video='+(parts.video||'?')+' src='+srcKeys.join(',')+' mainId='+mainId);
-        try{alert('ОТПРАВКА НА СЕРВЕР ('+SEAL_VER+')\nmainId: '+mainId+'\nисточников в edl: '+_edlIds.length+' ['+_edlIds.join(',')+']\nvideo(основной in.mp4): '+(parts.video||'?')+'\nдоп. видео: '+srcList);}catch(_){}
         return fetch(SEAL_SERVER+'/compose',{method:'POST',body:fd});
       }
       if(maskBlob){
@@ -3676,8 +3658,6 @@ function serverCompose(el,format,btn){
       if(!r.ok)return r.text().then(function(t){throw new Error('сервер '+(r.status||'')+': '+t.slice(0,500));});
       return r.blob();
     }).then(function(b){
-      /* ЗОНД: размер готового ролика + проверка что это mp4 */
-      try{alert('СЕРВЕР ОТВЕТИЛ: HTTP OK\nролик: '+(b?b.size+'б':'?')+' тип='+(b?b.type:'?'));}catch(_){}
       return {blob:b,mime:'video/mp4'};
     });
     });  /* закрытие mainP.then(mainUrl) */
@@ -4018,6 +3998,6 @@ cur=0;render();
 }
 hist=[];hpos=-1;pushHistory();
 /* стартовая чистка: удалить видео-blob'ы, не привязанные ни к одному слайду */
-gcVideoBlobs().then(function(n){try{alert('Стартовая чистка памяти (v'+SEAL_VER+')\nОсиротевших видео стёрто: '+n+'\n\nПривязанные к слайдам видео НЕ тронуты — лишнее убирают в монтаже.');}catch(_){}});
+gcVideoBlobs().then(function(n){if(n)console.log('[GC] стартовая чистка: стёрто осиротевших видео',n);});
 });
 </script>
