@@ -1,4 +1,4 @@
-<!--seal-github-v151|probe-srccize-->
+<!--seal-github-v152|video-gc-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1798,6 +1798,25 @@ var DECK_KEY='deck_'+location.pathname;var _saveT=null,_idbP=null,_dirty=false;
 function idbReady(){if(_idbP)return _idbP;_idbP=new Promise(function(res,rej){try{var r=indexedDB.open('appDB',1);r.onupgradeneeded=function(e){e.target.result.createObjectStore('kv');};r.onsuccess=function(e){res(e.target.result);};r.onerror=function(){rej(r.error);};}catch(e){rej(e);}});return _idbP;}
 function idbPut(k,v){return idbReady().then(function(db){return new Promise(function(res,rej){var t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=function(){res();};t.onerror=function(){rej(t.error);};});});}
 function idbGet(k){return idbReady().then(function(db){return new Promise(function(res,rej){var t=db.transaction('kv','readonly');var q=t.objectStore('kv').get(k);q.onsuccess=function(){res(q.result);};q.onerror=function(){rej(q.error);};});});}
+function idbDel(k){return idbReady().then(function(db){return new Promise(function(res,rej){var t=db.transaction('kv','readwrite');t.objectStore('kv')['delete'](k);t.oncomplete=function(){res();};t.onerror=function(){rej(t.error);};});});}
+function idbKeysPrefix(prefix){return idbReady().then(function(db){return new Promise(function(res,rej){var t=db.transaction('kv','readonly');var out=[];var q=t.objectStore('kv').openKeyCursor(IDBKeyRange.bound(prefix,prefix+'￿'));q.onsuccess=function(){if(q.result){out.push(q.result.key);q.result['continue']();}else res(out);};q.onerror=function(){rej(q.error);};});})['catch'](function(){return [];});}
+/* Сборка мусора: при старте сессии удаляем видео-blob'ы, которые больше не привязаны
+   ни к одному слайду (от удалённых слайдов и прошлых сессий). Без этого старые видео
+   «всплывали» в монтаже — память браузера хранила их вечно. В рамках сессии НЕ чистим,
+   чтобы работал undo (вернуть слайд → видео должно быть на месте). */
+function gcVideoBlobs(){
+  var used={};
+  document.querySelectorAll('.vidclip,.photo[data-vid-id]').forEach(function(vc){
+    var mid=vc.dataset.vidId;if(mid)used[mid]=1;
+    try{var ed=JSON.parse(vc.dataset.edl||'[]');if(Array.isArray(ed))ed.forEach(function(s){if(s&&s.id)used[s.id]=1;});}catch(_){}
+  });
+  return idbKeysPrefix('vidblob_').then(function(keys){
+    var orphans=keys.filter(function(k){return !used[k.substring('vidblob_'.length)];});
+    orphans.forEach(function(k){idbDel(k);});
+    if(orphans.length)console.log('[GC] стёрто осиротевших видео:',orphans.length);
+    return orphans.length;
+  });
+}
 function saveDeck(){_dirty=false;try{idbPut(DECK_KEY,serialize())['catch'](function(){});}catch(e){}}
 function saveDeckSoon(){_dirty=true;if(_saveT)clearTimeout(_saveT);_saveT=setTimeout(saveDeck,400);}
 function loadDeck(){return idbGet(DECK_KEY).then(function(v){if(v){window.__snap=v;restoreState(v);return true;}return false;})['catch'](function(){return false;});}
@@ -3519,7 +3538,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v151';
+var SEAL_VER='v152';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3973,5 +3992,8 @@ addSlide('quote');
 addSlide('collage');
 cur=0;render();
 }
-hist=[];hpos=-1;pushHistory();});
+hist=[];hpos=-1;pushHistory();
+/* стартовая чистка: удалить видео-blob'ы, не привязанные ни к одному слайду */
+gcVideoBlobs();
+});
 </script>
