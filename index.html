@@ -1,4 +1,4 @@
-<!--seal-github-v155|probes-removed-->
+<!--seal-github-v156|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -944,7 +944,7 @@ filepick.addEventListener('change',function(){
   if(pickMode==='vidclip'){var vf=filepick.files[0];pickMode='slide';addVideoClip(vf);return;}
   /* long-press замена: фото/видео в существующий слот, пропорции и масштаб сохраняются */
   if(pickMode==='replace'){var rf=filepick.files[0];var rt=pickTarget;pickMode='slide';pickTarget=null;if(!rt||!rf)return;if(rt.classList.contains('vidclip')){replaceVideo(rt,rf);}else{setPhotoKeep(rt,rf);}return;}
-  if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;console.log('[SEAL-MULTI] ADD второе видео id='+vid);var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
+  if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
   /* массовая заливка: несколько фото → по пустым слотам слайда */
   if(pickMode==='slide'&&filepick.files.length>1&&cur>=0&&slides[cur]){
     var files=Array.prototype.slice.call(filepick.files);
@@ -1813,7 +1813,6 @@ function gcVideoBlobs(){
   return idbKeysPrefix('vidblob_').then(function(keys){
     var orphans=keys.filter(function(k){return !used[k.substring('vidblob_'.length)];});
     orphans.forEach(function(k){idbDel(k);});
-    if(orphans.length)console.log('[GC] стёрто осиротевших видео:',orphans.length);
     return orphans.length;
   });
 }
@@ -2539,7 +2538,7 @@ function edlGet(vc){
 }
 function edlDur(edl){var t=0;edl.forEach(function(s){t+=(s.e-s.s)/s.sp+(s.fr||0);});return t;}
 /* url источника по id: основное видео клипа (VE.video) или добавленное (VE.added) */
-function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;var u=(VE.added&&VE.added[id])||null;if(!u){console.log('[SEAL-MULTI] MISS src для id='+id+' added=',VE.added);}return u;}
+function veSrcOf(id){if(!id)return null;if(VE.vc&&VE.vc.dataset.vidId===id&&VE.video&&VE.video.src)return VE.video.src;return (VE.added&&VE.added[id])||null;}
 /* цветокоррекция: cc = {b:яркость%, c:контраст%, s:насыщенность%, bw:обесцвечивание%}, 100=нейтрально (bw: 0=цвет) */
 function ccFilter(cc){if(!cc)return '';var b=(cc.b==null?100:cc.b)/100,c=(cc.c==null?100:cc.c)/100,bw=(cc.bw||0)/100,s=((cc.s==null?100:cc.s)/100)*(1-bw);if(Math.abs(b-1)<0.005&&Math.abs(c-1)<0.005&&Math.abs(s-1)<0.005)return '';return 'brightness('+b+') contrast('+c+') saturate('+s+')';}
 function ccNeutral(){return{b:100,c:100,s:100,bw:0};}
@@ -2552,7 +2551,6 @@ function veApplySpPreview(){if(!VE.clone||!VE.edl.length)return;var idx=(VE.play
 function openVedit(vc){
   if(!vc)return;
   VE.vc=vc;VE.video=vc.querySelector('video');VE.added=[];
-  console.log('[SEAL-MULTI] OPEN монтаж: vidId клипа='+vc.dataset.vidId+' edl=',vc.dataset.edl);
   var st=document.getElementById('veditStage');st.innerHTML='';
   var cl=document.createElement('video');cl.muted=true;cl.setAttribute('playsinline','');cl.style.cssText='max-width:96vw;max-height:50vh;border-radius:8px';
   st.appendChild(cl);VE.clone=cl;VE.clone._lid=null;
@@ -2568,8 +2566,6 @@ function openVedit(vc){
     VE.dur=VE.clone.duration&&isFinite(VE.clone.duration)?VE.clone.duration:0;
     if(VE.dur<0.1)VE.dur=vidClipDuration(vc);
     VE.edl=edlGet(vc);
-    /* тихий лог состава монтажа (сколько источников) */
-    try{var _ids={};VE.edl.forEach(function(sg){if(sg&&sg.id)_ids[sg.id]=1;});console.log('[SEAL-MULTI] монтаж: кусков='+VE.edl.length+' источников='+Object.keys(_ids).length);}catch(_){}
     /* если edl от прошлой сессии — проверить что валиден для этого видео */
     if(VE.edl[0]&&VE.edl[0].e>VE.dur){VE.edl=[{s:0,e:VE.dur,sp:1,fr:0,id:vc.dataset.vidId}];}
     VE.sel=0;VE.full=edlDur(VE.edl);
@@ -2929,8 +2925,6 @@ function veUpdateCursor(timelineSec){
   }
   /* ＋ добавить видео */
   var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('pointerup',function(){
-    /* ＋ Видео: добавляет второй источник в дорожку монтажа (не заменяет основной) */
-    console.log('[SEAL-MULTI] ＋Видео: добавление доп. источника в монтаж');
     pickMode='vedit';filepick.accept='video/*';filepick.value='';filepick.click();
   });
   /* готово/отмена */
@@ -3223,19 +3217,6 @@ function serverAnimateVid(el,btn){
     return r.blob();
   }).then(function(blob){
     if(btn)btn.textContent=btn.dataset.oldText||'';
-    /* ВРЕМЕННАЯ диагностика serverAnimateVid: позиция/зум видео + анимация текста.
-       По числам vpos/vparams видно, что разъехалось со превью. */
-    if(window.__sealDiag){
-      var d=window.__sealDiag;
-      setTimeout(function(){
-        alert('Диагностика serverAnimateVid ('+(SEAL_VER||'?')+'):\n'+
-          '— зона видео (vpos): x='+x+' y='+y+' w='+vw+' h='+vh+'\n'+
-          '— vparams: kind='+kind+' vz='+vz+' vx='+pvx+' vy='+pvy+'\n'+
-          '— печать текста: '+(typedEl?('длина '+typedFull):'нет')+'\n'+
-          '— этапы:\n  '+d.stages.join('\n  ')+
-          '\n\nПришли этот текст целиком.');
-      },50);
-    }
     return {blob:blob,mime:'video/mp4'};
   });
 }
@@ -3544,7 +3525,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v155';
+var SEAL_VER='v156';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -3573,7 +3554,6 @@ function serverCompose(el,format,btn){
   var _edlIds=[],_edlSegs=0;
   try{var _de0=JSON.parse(vc.dataset.edl||'[]');if(Array.isArray(_de0)){_edlSegs=_de0.length;var _mm={};_de0.forEach(function(sg){if(sg&&sg.id){_mm[sg.id]=1;}});_edlIds=Object.keys(_mm);}}catch(_){}
   sealDiagStage('src','v='+SEAL_VER+' mainId='+mainId+' segs='+_edlSegs+' srcIds=['+_edlIds.join(',')+'] vready='+!!vready+' dur='+dur.toFixed(2)+' vsrc='+(v.src?'y':'n')+(vc._veSrc?' _veSrc=y':' _veSrc=n'));
-  if(_edlIds.length>1)console.warn('[SEAL-MULTI] сборка: источников '+_edlIds.length+' — '+_edlIds.join(','));
   var st=function(t){if(btn)btn.textContent=t;};
   st('⏳ фон…');
   var hasAbove=!!el.querySelector('.sticker:not([data-layer="below"])');
@@ -3998,6 +3978,6 @@ cur=0;render();
 }
 hist=[];hpos=-1;pushHistory();
 /* стартовая чистка: удалить видео-blob'ы, не привязанные ни к одному слайду */
-gcVideoBlobs().then(function(n){if(n)console.log('[GC] стартовая чистка: стёрто осиротевших видео',n);});
+gcVideoBlobs();
 });
 </script>
