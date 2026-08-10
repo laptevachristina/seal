@@ -2643,8 +2643,15 @@ function closeVedit(apply){
   VE.vc=null;VE.video=null;VE.edl=[];VE.sel=-1;
   document.getElementById('veditModal').classList.remove('open');
 }
-function srcToTimeline(edl,srcT){
+/* v165: segIdx — явно указать сегмент-владелец srcT (иначе при мульти первый попавшийся,
+   у кого s..e совпадают по числу, даст позицию не того видео → рассинхрон курсора). */
+function srcToTimeline(edl,srcT,segIdx){
   var acc=0;
+  if(segIdx!=null&&edl[segIdx]){
+    for(var k=0;k<segIdx;k++){var sk=edl[k];acc+=(sk.e-sk.s)/sk.sp+(sk.fr||0);}
+    var cur=edl[segIdx];
+    return acc+(srcT-cur.s)/cur.sp;
+  }
   for(var i=0;i<edl.length;i++){var s=edl[i];if(srcT>=s.s&&srcT<=s.e+0.01){return acc+(srcT-s.s);}acc+=(s.e-s.s)/s.sp+(s.fr||0);}
   return acc;
 }
@@ -2738,7 +2745,7 @@ function vePlayTick(){
     }
     var nextSeg=VE.edl[VE.playSeg];
     if(VE.clone._curSrc===veSrcOf(nextSeg.id)){try{VE.clone.currentTime=nextSeg.s;}catch(_){}}
-    veUpdateCursor(srcToTimeline(VE.edl,nextSeg.s));
+    veUpdateCursor(srcToTimeline(VE.edl,nextSeg.s,VE.playSeg));
     veApplyCcPreview();veApplySpPreview();
     VE.playRAF=requestAnimationFrame(vePlayTick);
     return;
@@ -2746,7 +2753,7 @@ function vePlayTick(){
   /* если clone ушёл за пределы сегмента (seek) → вернуть */
   if(ct<seg.s-0.1){try{VE.clone.currentTime=seg.s;}catch(_){}}
   veApplySpPreview();
-  veUpdateCursor(srcToTimeline(VE.edl,ct));
+  veUpdateCursor(srcToTimeline(VE.edl,ct,VE.playSeg));
   VE.playRAF=requestAnimationFrame(vePlayTick);
 }
 function veUpdateCursor(timelineSec){
@@ -2759,7 +2766,8 @@ function veUpdateCursor(timelineSec){
   if(cur)cur.style.left=left+'px';
   var tm=document.getElementById('veTime');
   if(tm){var m1=Math.floor(timelineSec/60),s1=timelineSec-m1*60;var m2=Math.floor(total/60),s2=total-m2*60;
-    tm.textContent=m1+':'+(s1<10?'0':'')+s1.toFixed(1)+' / '+m2+':'+(s2<10?'0':'')+s2.toFixed(1);}
+    var _at=edlAt(VE.edl,timelineSec);
+    tm.textContent=m1+':'+(s1<10?'0':'')+s1.toFixed(1)+' / '+m2+':'+(s2<10?'0':'')+s2.toFixed(1)+'   [сег '+((_at&&_at.i!=null)?(_at.i+1):1)+'/'+VE.edl.length+']';}
 }
 (function(){
   /* открыть из панели клипа */
@@ -2854,7 +2862,7 @@ function veUpdateCursor(timelineSec){
     var i=+seg.dataset.i,s=VE.edl[i];
     if(e.target.classList.contains('del')){if(VE.edl.length<=1)return;VE.edl.splice(i,1);VE.sel=Math.max(0,i-1);}
     else{VE.sel=i;if(s&&VE.clone){try{VE.clone.currentTime=s.s;}catch(_){}}
-      var tl=srcToTimeline(VE.edl,s.s);veUpdateCursor(tl);}
+      var tl=srcToTimeline(VE.edl,s.s,i);veUpdateCursor(tl);}
     VE.full=edlDur(VE.edl);veditRender();
     if(ccp&&ccp.classList.contains('show'))veCcSync();veApplyCcPreview();
     if(spp&&spp.classList.contains('show'))veSpSync();veApplySpPreview();
@@ -2894,7 +2902,7 @@ function veUpdateCursor(timelineSec){
     if(lpTimer)clearTimeout(lpTimer);
     if(dragGrab&&dragGrab.active){
       _veSuppressClick=true;
-      var cur=VE.edl[VE.sel]; if(cur&&VE.clone){try{VE.clone.currentTime=cur.s;}catch(_){}veUpdateCursor(srcToTimeline(VE.edl,cur.s));}
+      var cur=VE.edl[VE.sel]; if(cur&&VE.clone){try{VE.clone.currentTime=cur.s;}catch(_){}veUpdateCursor(srcToTimeline(VE.edl,cur.s,VE.sel));}
     }
     dragGrab=null; scrubbing=false;
   }
@@ -3541,7 +3549,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v164';
+var SEAL_VER='v165';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
