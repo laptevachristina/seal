@@ -3787,11 +3787,6 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
       });
       /* снять muted на время записи — иначе аудио-дорожка пустая (graph получает тишину) */
       var _wasMuted=clipEls.map(function(v){v.muted=false;return true;});
-      /* ЗОНД чёрного 1-го кадра (проверочный после фикса): при start должно стать ≠0 */
-      var _zB0=-99,_zB1=-99,_zTicked=false;
-      function _zYavg(ctx,w,h){try{var sx=Math.max(0,Math.floor(w/2)-50),sy=Math.max(0,Math.floor(h/2)-50);
-        var d=ctx.getImageData(sx,sy,100,100).data,s=0;for(var i=0;i<d.length;i+=4){s+=(d[i]+d[i+1]+d[i+2])/3;}
-        return Math.round(s/(d.length/4));}catch(e){return -1;}}
       var t0,frameMs=1000/VIDEO_FPS;
       /* защита от зависания: если рендер ОДНОГО кадра почему-то не отвечает — не ждём его вечно
          (раньше именно так выглядело "видео зациклилось на одном кадре" — весь цикл tick() просто
@@ -3837,7 +3832,6 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
         withTimeout(renderSlideCanvas(el,anim,videoFrameMap),1200).then(function(canvas){
           rctx.clearRect(0,0,recCanvas.width,recCanvas.height);
           rctx.drawImage(canvas,0,0);
-          if(!_zTicked){_zTicked=true;_zB1=_zYavg(rctx,recCanvas.width,recCanvas.height);}
           setTimeout(tick,frameMs);
         })['catch'](function(){
           /* зависший/сорвавшийся кадр — не бросаем всю запись, просто пропускаем этот кадр
@@ -3850,7 +3844,6 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
          Качество не трогает — те же пиксели, та же функция, просто на кадр раньше. */
       function startRec(){
         recorder.start();
-        _zB0=_zYavg(rctx,recCanvas.width,recCanvas.height); /* проверка: после фикса ≠0 */
         t0=performance.now();
         tick();
       }
@@ -3861,7 +3854,6 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
           startRec();
         })['catch'](function(){ startRec(); }); /* предрендер сорвался — стартуем как раньше */
       return stopped.then(function(blob){
-        try{setTimeout(function(){alert('ЗОНД ЧЁРНЫЙ:\nпри start='+_zB0+'\n(после фикса должно быть ≠0, было 0)\n1-й кадр='+_zB1);},300);}catch(e){}
         prepared.forEach(function(p){p.res.frames.length=0;}); /* отпускаем ссылки на кадры-canvas'ы, чтобы GC забрал память */
         el.querySelectorAll('.sticker img').forEach(function(img){img._prerendered=null;}); /* сброс предрендера, иначе следующие экспорты потеряют стикеры */
         return {blob:blob,mime:mime};
