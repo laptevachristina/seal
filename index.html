@@ -3787,14 +3787,12 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
       });
       /* снять muted на время записи — иначе аудио-дорожка пустая (graph получает тишину) */
       var _wasMuted=clipEls.map(function(v){v.muted=false;return true;});
-      /* ЗОНД чёрного 1-го кадра: яркость recCanvas в момент recorder.start() и после 1-го drawImage */
+      /* ЗОНД чёрного 1-го кадра (проверочный после фикса): при start должно стать ≠0 */
       var _zB0=-99,_zB1=-99,_zTicked=false;
       function _zYavg(ctx,w,h){try{var sx=Math.max(0,Math.floor(w/2)-50),sy=Math.max(0,Math.floor(h/2)-50);
         var d=ctx.getImageData(sx,sy,100,100).data,s=0;for(var i=0;i<d.length;i+=4){s+=(d[i]+d[i+1]+d[i+2])/3;}
         return Math.round(s/(d.length/4));}catch(e){return -1;}}
-      recorder.start();
-      _zB0=_zYavg(rctx,recCanvas.width,recCanvas.height);
-      var t0=performance.now(),frameMs=1000/VIDEO_FPS;
+      var t0,frameMs=1000/VIDEO_FPS;
       /* защита от зависания: если рендер ОДНОГО кадра почему-то не отвечает — не ждём его вечно
          (раньше именно так выглядело "видео зациклилось на одном кадре" — весь цикл tick() просто
          замирал на зависшем renderSlideCanvas и больше никогда не рисовал следующий кадр) */
@@ -3806,11 +3804,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
                        function(e){if(!settled){settled=true;clearTimeout(timer);rej(e);}});
         });
       }
-      function tick(){
-        var elapsed=performance.now()-t0;
-        if(elapsed>=fullMs||elapsed>fullMs+8000){resumeClips();recorder.stop();return;} /* +8с — жёсткий предохранитель */
-        showProgress(prepWeight+Math.min(1,elapsed/fullMs)*(1-prepWeight));
-        var anim=animStateAt(items,elapsed,spinMode,typeSchedule,fullMs);
+      function buildFrameMap(elapsed){
         var videoFrameMap=new Map();
         prepared.forEach(function(p){
           if(!p.res.frames.length)return;
@@ -3832,6 +3826,14 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
           var bmp=frames[idx];
           if(bmp)videoFrameMap.set(p.v,bmp);
         });
+        return videoFrameMap;
+      }
+      function tick(){
+        var elapsed=performance.now()-t0;
+        if(elapsed>=fullMs||elapsed>fullMs+8000){resumeClips();recorder.stop();return;} /* +8с — жёсткий предохранитель */
+        showProgress(prepWeight+Math.min(1,elapsed/fullMs)*(1-prepWeight));
+        var anim=animStateAt(items,elapsed,spinMode,typeSchedule,fullMs);
+        var videoFrameMap=buildFrameMap(elapsed);
         withTimeout(renderSlideCanvas(el,anim,videoFrameMap),1200).then(function(canvas){
           rctx.clearRect(0,0,recCanvas.width,recCanvas.height);
           rctx.drawImage(canvas,0,0);
@@ -3843,9 +3845,23 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
           setTimeout(tick,frameMs);
         });
       }
-      tick();
+      /* ФИКС чёрного 1-го кадра: рисуем кадр t=0 ДО recorder.start(). Иначе MediaRecorder пишет
+         чёрный кадр, пока ждёт первый асинхронный renderSlideCanvas (зонд подтвердил: start=0).
+         Качество не трогает — те же пиксели, та же функция, просто на кадр раньше. */
+      function startRec(){
+        recorder.start();
+        _zB0=_zYavg(rctx,recCanvas.width,recCanvas.height); /* проверка: после фикса ≠0 */
+        t0=performance.now();
+        tick();
+      }
+      withTimeout(renderSlideCanvas(el,animStateAt(items,0,spinMode,typeSchedule,fullMs),buildFrameMap(0)),1200)
+        .then(function(c0){
+          rctx.clearRect(0,0,recCanvas.width,recCanvas.height);
+          rctx.drawImage(c0,0,0);
+          startRec();
+        })['catch'](function(){ startRec(); }); /* предрендер сорвался — стартуем как раньше */
       return stopped.then(function(blob){
-        try{setTimeout(function(){alert('ЗОНД ЧЁРНЫЙ:\nпри start='+_zB0+'\n1-й кадр='+_zB1+'\n(0=чёрный, ~80=норма)');},300);}catch(e){}
+        try{setTimeout(function(){alert('ЗОНД ЧЁРНЫЙ:\nпри start='+_zB0+'\n(после фикса должно быть ≠0, было 0)\n1-й кадр='+_zB1);},300);}catch(e){}
         prepared.forEach(function(p){p.res.frames.length=0;}); /* отпускаем ссылки на кадры-canvas'ы, чтобы GC забрал память */
         el.querySelectorAll('.sticker img').forEach(function(img){img._prerendered=null;}); /* сброс предрендера, иначе следующие экспорты потеряют стикеры */
         return {blob:blob,mime:mime};
