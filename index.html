@@ -2910,18 +2910,42 @@ function veUpdateCursor(timelineSec){
     dragGrab.i=j; VE.sel=j; VE.full=edlDur(VE.edl); veditRender(); markGrab();
     if(navigator.vibrate)try{navigator.vibrate(8);}catch(_){}
   }
+  /* v163: scrub раньше считал позицию от длительности ОДНОГО источника (VE.dur),
+     а дорожка показывает общую склейку (edlDur) — при двух видео курсор и палец
+     расходились, а сегмент выбирался по числу s/e и всегда первый. Теперь scrub
+     идёт по timeline-координатам (как Play): pct×edlDur → edlAt даёт сегмент,
+     позицию в источнике clipT и id → при смене источника переключаем clone.src. */
+  var _scrubProbeAt=0;
   function doScrub(e){
     var r=tr.getBoundingClientRect();
     var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
-    var dur=VE.dur||1;
-    var targetSec=pct*dur;
-    if(VE.clone){try{VE.clone.currentTime=targetSec;}catch(_){}}
+    var total=edlDur(VE.edl)||VE.dur||1;
+    var timelineSec=pct*total;
+    var at=edlAt(VE.edl,timelineSec);   /* {i,clipT,id,fr} */
+    var seg=VE.edl[at.i];
+    if(VE.clone&&seg){
+      var needSrc=veSrcOf(seg.id);
+      if(needSrc){
+        if(VE.clone._curSrc!==needSrc){
+          VE.clone._curSrc=needSrc;VE.clone._loading=true;
+          VE.clone.onloadedmetadata=function(){VE.clone.onloadedmetadata=null;try{VE.clone.currentTime=at.clipT;}catch(_){}veApplyCcPreview();veApplySpPreview();VE.clone._loading=false;};
+          VE.clone.src=needSrc;
+        }else{
+          try{VE.clone.currentTime=at.clipT;}catch(_){}
+          veApplyCcPreview();veApplySpPreview();
+        }
+      }
+    }
     if(VE.playRAF){cancelAnimationFrame(VE.playRAF);VE.playRAF=0;document.getElementById('vePlay').textContent='▶';}
-    var tl=srcToTimeline(VE.edl,targetSec);
-    veUpdateCursor(tl);
-    var i=0;for(var si=0;si<VE.edl.length;si++){if(targetSec>=VE.edl[si].s&&targetSec<VE.edl[si].e){i=si;break;}}
-    VE.sel=i;veditRender();
-    veApplyCcPreview();
+    VE.sel=at.i;veditRender();
+    veUpdateCursor(timelineSec);
+    /* ЗОНД (временный, v163): не чаще раза в 700мс — что scrub видит при multi */
+    var now=Date.now();
+    if(now-_scrubProbeAt>700){
+      _scrubProbeAt=now;
+      var _ids=[];VE.edl.forEach(function(s){if(_ids.indexOf(s.id)<0)_ids.push(s.id);});
+      try{alert('[ЗОНД scrub v163] палец '+Math.round(pct*100)+'% \u2192 сег '+(at.i+1)+'/'+VE.edl.length+', id='+seg.id+' ('+_ids.length+' источ.), clipT='+at.clipT.toFixed(1)+'с, курсор '+timelineSec.toFixed(1)+'/'+total.toFixed(1)+'с');}catch(_){}
+    }
   }
   /* ＋ добавить видео */
   var ad=document.getElementById('veAdd');if(ad)ad.addEventListener('pointerup',function(){
@@ -3525,7 +3549,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v162';
+var SEAL_VER='v163';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
