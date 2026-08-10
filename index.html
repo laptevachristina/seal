@@ -2780,17 +2780,19 @@ function veUpdateCursor(timelineSec){
     e.preventDefault();e.stopPropagation();
     var ct=VE.clone?(VE.clone.currentTime||0):0;
     if(ct<0.1)return;
-    /* найти сегмент содержащий ct и разрезать */
-    for(var ci=0;ci<VE.edl.length;ci++){
-      var s=VE.edl[ci];
-      if(ct>s.s+0.05&&ct<s.e-0.05){
-        var n2=JSON.parse(JSON.stringify(s));s.e=ct;n2.s=ct;
-        VE.edl.splice(ci+1,0,n2);VE.sel=ci;
-        VE.full=edlDur(VE.edl);veditRender();
-        veUpdateCursor(ct);
-        return;
-      }
-    }
+    /* v166: найти сегмент ТЕКУЩЕГО источника (что на мониторе = clone._curSrc),
+       содержащий ct. При мульти у двух видео s/e совпадают по числу → иначе режется
+       чужой (первый) кусок. Fallback на старый поиск — для одного источника. */
+    var curSrc=VE.clone&&VE.clone._curSrc;var ci=-1;
+    for(var k=0;k<VE.edl.length;k++){var seg=VE.edl[k];
+      if(curSrc&&veSrcOf(seg.id)===curSrc&&ct>seg.s+0.05&&ct<seg.e-0.05){ci=k;break;}}
+    if(ci<0){for(var k2=0;k2<VE.edl.length;k2++){var s2=VE.edl[k2];if(ct>s2.s+0.05&&ct<s2.e-0.05){ci=k2;break;}}}
+    if(ci<0)return;
+    var s=VE.edl[ci];
+    var n2=JSON.parse(JSON.stringify(s));s.e=ct;n2.s=ct;
+    VE.edl.splice(ci+1,0,n2);VE.sel=ci;
+    VE.full=edlDur(VE.edl);veditRender();
+    veUpdateCursor(srcToTimeline(VE.edl,ct,ci));
   });
   /* заморозить: весь выбранный кусок — стоп-кадр без звука (toggle fz).
      ❄ — маркер на хронографе, в сам кадр не идёт; в экспорте = стоп-кадр. */
@@ -3549,7 +3551,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v165';
+var SEAL_VER='v166';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
