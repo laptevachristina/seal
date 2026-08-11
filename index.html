@@ -1,4 +1,4 @@
-<!--seal-github-v170|photo-downscale+zond-->
+<!--seal-github-v171|photo-downscale|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3009,7 +3009,6 @@ function renderSlideCanvas(el,animState,videoFrameMap){
        экспорт не стартовал. На обычных слайдах (≤8) всё как было — MAX-качество.
        Текст/раскладка/скругления не страдают: ES главного canvas прежний. */
     var PHOTO_HEAVY=photos.length>8,PHOTO_CAP=PHOTO_HEAVY?1.5:ES;
-    if(typeof window.__zond==='function')window.__zond('▶ render: '+photos.length+' фото, potolok='+(PHOTO_HEAVY?'ВКЛ':'выкл'));/*ZOND*/
     var stickersBelow=[],stickersAbove=[];
     el.querySelectorAll('.sticker').forEach(function(st){
       var im=st.querySelector('img');if(!im)return;
@@ -3128,7 +3127,6 @@ function renderSlideCanvas(el,animState,videoFrameMap){
         ctx.drawImage(overlay,0,0,w,h); /* overlay native w*ES×h*ES, drawn at w×h under ctx.scale(ES) → 1:1 */
         vidsAbove.forEach(drawVid);
         if(!window._skipStickersAbove)stickersAbove.forEach(drawSticker);
-        if(typeof window.__zond==='function')window.__zond('✓ render OK '+photos.length+' фото');/*ZOND*/
         resolve(c);
       }catch(e){reject(e);}
     };
@@ -3322,9 +3320,9 @@ document.getElementById('exp-all').addEventListener('click',function(){
   if(!slides.length)return;
   document.fonts.ready.then(function(){
     var seq=Promise.resolve([]);
-    slides.forEach(function(s,i){seq=seq.then(function(acc){if(typeof window.__zond==='function')window.__zond('⏳ экспорт слайд '+(i+1)+'/'+slides.length+': '+s.el.querySelectorAll('[data-photo].has-img,.frame.has-img').length+' фото');/*ZOND*/return slideToPNG(s.el).then(function(b){if(typeof window.__zond==='function')window.__zond('✓ слайд '+(i+1)+' OK');acc.push(b);return acc;});});});
+    slides.forEach(function(s,i){seq=seq.then(function(acc){return slideToPNG(s.el).then(function(b){acc.push(b);return acc;});});});
     return seq;
-  }).then(function(blobs){if(typeof window.__zond==='function')window.__zond('🎉 экспорт готов: '+blobs.length+' слайдов');openModal(blobs);}).catch(function(e){alert('УПАЛО на экспорте.\n\nПоследние этапы:\n'+(window.__zondHist||[]).slice(-10).join('\n')+'\n\n'+((e&&e.message)||'без сообщения'));});
+  }).then(function(blobs){openModal(blobs);})['catch'](function(e){});
 });
 
 /* ---- animated GIF export (appear-in animation, current slide only) ---- */
@@ -3591,7 +3589,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v170';
+var SEAL_VER='v171';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
@@ -4061,15 +4059,5 @@ cur=0;render();
 hist=[];hpos=-1;pushHistory();
 /* стартовая чистка: удалить видео-blob'ы, не привязанные ни к одному слайду */
 gcVideoBlobs();
-/* ===== ДИАГНОСТИЧЕСКИЙ ЗОНД (временный, снимать скриптом по маркеру ZOND) ===== */
-(function(){/*ZOND*/
-  var d=document.createElement('div');d.id='zexp';
-  d.style.cssText='position:fixed;top:8px;right:8px;z-index:2147483647;background:rgba(0,0,0,.84);color:#39FF14;font:11px/1.4 Menlo,monospace;padding:6px 8px;border-radius:7px;max-width:64vw;max-height:46vh;overflow:hidden;white-space:pre-wrap;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,.4)';
-  document.body.appendChild(d);
-  window.__zondHist=[];
-  window.__zond=function(s){var line=s;line=window.__zondHist.push(line);window.__zondHist=window.__zondHist.slice(-40);var e=document.getElementById('zexp');if(e)e.textContent=window.__zondHist.slice(-6).join('\n');};
-  window.__zond('зонд старт v'+(typeof SEAL_VER!=='undefined'?SEAL_VER:'?'));
-  setInterval(function(){try{if(typeof cur==='undefined'||!window.slides||!slides[cur]||!slides[cur].el)return;var el=slides[cur].el;var n=el.querySelectorAll('[data-photo].has-img,.frame.has-img').length;window.__zond('слайд '+(cur+1)+'/'+slides.length+' · фото '+n+(n>8?' · ПОТОЛОК ВКЛ':' · max'));}catch(_){}},700);
-})();
 });
 </script>
