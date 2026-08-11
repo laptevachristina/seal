@@ -1,4 +1,4 @@
-<!--seal-github-v169z|zond-->
+<!--seal-github-v170|photo-downscale+zond-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1506,14 +1506,37 @@ function wireVideoClip(vc){
   vc.addEventListener('pointerup',up);vc.addEventListener('pointercancel',up);
 }
 
+/* Даунскейл огромных фото при загрузке в слот. Слот ~270px в UI, главный canvas
+   до 1620px (ES=3). Исходник 3213px держит в памяти полный растр — на 13 фото
+   Safari падает по OOM ещё в превью. Ограничиваем ~1600px по длинной стороне:
+   памяти в ~4× меньше, видимое качество не страдает даже на MAX. */
+function downscalePhotoSrc(dataURL){
+  return new Promise(function(resolve){
+    try{
+      var im=new Image();
+      im.onload=function(){
+        var w=im.naturalWidth,h=im.naturalHeight,maxDim=1600;
+        if(!w||!h||(w<=maxDim&&h<=maxDim)){resolve(dataURL);return;}
+        var sc=maxDim/Math.max(w,h),nw=Math.round(w*sc),nh=Math.round(h*sc);
+        var c=document.createElement('canvas');c.width=nw;c.height=nh;
+        c.getContext('2d').drawImage(im,0,0,nw,nh);
+        resolve(c.toDataURL('image/jpeg',0.92));
+      };
+      im.onerror=function(){resolve(dataURL);};
+      im.src=dataURL;
+    }catch(e){resolve(dataURL);}
+  });
+}
 function setPhoto(slot,file){
   var r=new FileReader();
   r.onload=function(){
-    var img=slot.querySelector('.ph-img');
-    img.src=r.result;img.style.display='block';
-    slot.classList.add('has-img');
-    slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);applyPhotoFx(slot);
-    updateFilm();pushHistory();
+    downscalePhotoSrc(r.result).then(function(src){
+      var img=slot.querySelector('.ph-img');
+      img.src=src;img.style.display='block';
+      slot.classList.add('has-img');
+      slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);applyPhotoFx(slot);
+      updateFilm();pushHistory();
+    });
   };
   r.readAsDataURL(file);
 }
@@ -1521,12 +1544,14 @@ function setPhoto(slot,file){
 function setPhotoKeep(slot,file){
   var r=new FileReader();
   r.onload=function(){
-    var img=slot.querySelector('.ph-img');
-    img.src=r.result;img.style.display='block';
-    slot.classList.add('has-img');
-    /* сохраняем scale/x/y — не сбрасываем */
-    applyTransform(slot);applyPhotoFx(slot);
-    updateFilm();pushHistory();
+    downscalePhotoSrc(r.result).then(function(src){
+      var img=slot.querySelector('.ph-img');
+      img.src=src;img.style.display='block';
+      slot.classList.add('has-img');
+      /* сохраняем scale/x/y — не сбраываем */
+      applyTransform(slot);applyPhotoFx(slot);
+      updateFilm();pushHistory();
+    });
   };
   r.readAsDataURL(file);
 }
@@ -3566,7 +3591,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v169z';
+var SEAL_VER='v170';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
