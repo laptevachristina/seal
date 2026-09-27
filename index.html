@@ -1,4 +1,4 @@
-<!--seal-github-v176|storyboard-fullgrid|clean-->
+<!--seal-github-v177|grid-square-corners|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -129,7 +129,7 @@ em{font-style:italic}
 /* ---- бланки раскадровки: фирменные шрифты + сетки кадров вплотную ---- */
 .bhead{position:absolute;left:0;right:0;top:44px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 36px;pointer-events:none;z-index:2}
 .bnext{position:absolute;left:0;right:0;bottom:32px;text-align:center}
-.fixed-grid.sb .gcell{border-radius:0}
+.fixed-grid .gcell{border-radius:0}
 .fixed-grid.smid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr}
 .fixed-grid.smid .r-t,.fixed-grid.smid .r-b{grid-column:span 2}
 .btag{position:absolute;top:0;left:0;z-index:3;padding:5px 10px;background:rgba(244,238,224,.8);color:var(--graphite);font-family:var(--sans);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
@@ -848,25 +848,25 @@ function tpl(type){
     '<div class="photo" data-photo style="position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:62%;aspect-ratio:1;border-radius:50%"><div class="ph-label">нажми — фото</div></div>'+
     '<div class="bnext sub" data-edit data-ph="Призыв">листай, чтобы узнать →</div>',
   blank2:
-    '<div class="fixed-grid d2 sb">'+
+    '<div class="fixed-grid d2">'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
     '</div>',
   blank3:
-    '<div class="fixed-grid s3 sb">'+
+    '<div class="fixed-grid s3">'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">кадр деталей</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">макрокадр</div></div>'+
     '</div>',
   blankMid:
-    '<div class="fixed-grid smid sb">'+
+    '<div class="fixed-grid smid">'+
       '<div class="photo gcell r-t" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">кадр деталей</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
       '<div class="photo gcell r-b" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">макрокадр</div></div>'+
     '</div>',
   blank4:
-    '<div class="fixed-grid g4 sb">'+
+    '<div class="fixed-grid g4">'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">пейзаж</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">крупный план</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
@@ -3656,7 +3656,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v176';
+var SEAL_VER='v177';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
