@@ -1,4 +1,4 @@
-<!--seal-github-v171|photo-downscale|clean-->
+<!--seal-github-v172|mass-upload-queue|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -959,38 +959,26 @@ filepick.addEventListener('change',function(){
   /* long-press замена: фото/видео в существующий слот, пропорции и масштаб сохраняются */
   if(pickMode==='replace'){var rf=filepick.files[0];var rt=pickTarget;pickMode='slide';pickTarget=null;if(!rt||!rf)return;if(rt.classList.contains('vidclip')){replaceVideo(rt,rf);}else{setPhotoKeep(rt,rf);}return;}
   if(pickMode==='vedit'){var vf2=filepick.files[0];pickMode='slide';if(!vf2||!VE.vc)return;var vid='v'+Date.now().toString(36);idbPut('vidblob_'+vid,vf2);var vurl=URL.createObjectURL(vf2);VE.added[vid]=vurl;var tv=document.createElement('video');tv.onloadedmetadata=function(){VE.edl.push({s:0,e:tv.duration||3,sp:1,fr:0,id:vid});VE.sel=VE.edl.length-1;VE.full=edlDur(VE.edl);veditRender();};tv.src=vurl;return;}
-  /* массовая заливка: несколько фото → по пустым слотам слайда */
+  /* массовая заливка: несколько фото → по пустым слотам слайда.
+     v172: очередь — одно фото за раз (параллельный декод шести больших фото
+     ронял Safari, часть слотов молча оставалась пустой — особенно в сетках);
+     первым заполняется тапнутый слот; видео встаёт в слот, а не плавающим клипом */
   if(pickMode==='slide'&&filepick.files.length>1&&cur>=0&&slides[cur]){
     var files=Array.prototype.slice.call(filepick.files);
-    var slots=Array.prototype.slice.call(slides[cur].el.querySelectorAll('[data-photo]:not(.has-img), .frame:not(.has-img)'));
-    files.forEach(function(f,i){
-      if(!slots[i])return;
-      if(f.type&&f.type.indexOf('video')===0){addVideoClip(f);}
-      else{setPhoto(slots[i],f);}
-    });
+    var order=Array.prototype.slice.call(slides[cur].el.querySelectorAll('[data-photo]:not(.has-img), .frame:not(.has-img)'));
+    if(pickTarget){order=order.filter(function(s){return s!==pickTarget;});order.unshift(pickTarget);}
+    var fi=0;
+    (function next(){
+      var f=files[fi++];if(!f)return;
+      var slot=order.shift();if(!slot)return;
+      if(f.type&&f.type.indexOf('video')===0){setSlotVideo(slot,f);next();}
+      else{setPhoto(slot,f,next);}
+    })();
     pickTarget=null;return;
   }
   if(pickTarget){
     var ff=filepick.files[0];
-    if(ff&&ff.type&&ff.type.indexOf('video')===0){
-      /* видео в фото-слот → video как .ph-img ВНУТРИ слота (маска + pan/zoom) */
-      var slot=pickTarget;
-      var vid='v'+Date.now().toString(36);
-      idbPut('vidblob_'+vid,ff);
-      var oldImg=slot.querySelector('.ph-img');if(oldImg)oldImg.remove();
-      var v=document.createElement('video');v.className='ph-img';v.muted=true;v.loop=true;v.autoplay=true;v.setAttribute('playsinline','');v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:center center';
-      slot.appendChild(v);
-      slot.classList.add('has-img');
-      slot.dataset.vidId=vid;
-      slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;
-      idbGet('vidblob_'+vid).then(function(blob){
-        if(blob){
-          v.onloadedmetadata=function(){applyTransform(slot);applyPhotoFx(slot);};
-          v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});
-        }
-      });
-      applyTransform(slot);updateFilm();pushHistory();
-    }
+    if(ff&&ff.type&&ff.type.indexOf('video')===0){setSlotVideo(pickTarget,ff);}
     else{setPhoto(pickTarget,ff);}
   }
 });
@@ -1541,18 +1529,40 @@ function downscalePhotoSrc(dataURL){
     }catch(e){resolve(dataURL);}
   });
 }
-function setPhoto(slot,file){
+function setPhoto(slot,file,done){
   var r=new FileReader();
   r.onload=function(){
     downscalePhotoSrc(r.result).then(function(src){
       var img=slot.querySelector('.ph-img');
-      img.src=src;img.style.display='block';
+      if(img){img.src=src;img.style.display='block';}
       slot.classList.add('has-img');
       slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;applyTransform(slot);applyPhotoFx(slot);
       updateFilm();pushHistory();
-    });
+    })['catch'](function(){/* декод не удался — слот остаётся пустым, очередь идёт дальше */})
+      .then(function(){if(done)done();});
   };
+  r.onerror=function(){if(done)done();};
   r.readAsDataURL(file);
+}
+/* видео в фото-слот → video как .ph-img ВНУТРИ слота (маска + pan/zoom) */
+var _vidN=0;
+function setSlotVideo(slot,ff){
+  if(!slot||!ff)return;
+  var vid='v'+Date.now().toString(36)+'_'+(_vidN++);
+  idbPut('vidblob_'+vid,ff);
+  var oldImg=slot.querySelector('.ph-img');if(oldImg)oldImg.remove();
+  var v=document.createElement('video');v.className='ph-img';v.muted=true;v.loop=true;v.autoplay=true;v.setAttribute('playsinline','');v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transform-origin:center center';
+  slot.appendChild(v);
+  slot.classList.add('has-img');
+  slot.dataset.vidId=vid;
+  slot.dataset.scale=1;slot.dataset.x=0;slot.dataset.y=0;
+  idbGet('vidblob_'+vid).then(function(blob){
+    if(blob){
+      v.onloadedmetadata=function(){applyTransform(slot);applyPhotoFx(slot);};
+      v.src=URL.createObjectURL(blob);v.play()['catch'](function(){});
+    }
+  });
+  applyTransform(slot);updateFilm();pushHistory();
 }
 /* long-press замена фото/видео с сохранением пропорций и масштаба */
 function setPhotoKeep(slot,file){
@@ -3603,7 +3613,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v171';
+var SEAL_VER='v172';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
