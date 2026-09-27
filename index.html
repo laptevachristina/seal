@@ -1,4 +1,4 @@
-<!--seal-github-v172|mass-upload-queue|clean-->
+<!--seal-github-v173|blank-sets|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -127,6 +127,17 @@ em{font-style:italic}
 .fixed-grid.d2{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.g6{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
+/* ---- бланки серии: подписи-памятка + сетки фото ---- */
+.bhead{position:absolute;left:0;right:0;top:44px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 36px;pointer-events:none;z-index:2}
+.bnum{font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.34em;text-indent:.34em;color:inherit}
+.bt{font-family:var(--sans);font-weight:300;text-transform:uppercase;letter-spacing:.15em;font-size:36px;line-height:1.2;margin-top:26px;color:inherit}
+.bs{font-family:var(--sans);font-weight:400;font-size:16px;letter-spacing:.1em;opacity:.72;margin-top:10px;color:inherit}
+.bnext{position:absolute;left:0;right:0;bottom:32px;text-align:center;font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.24em;text-indent:.24em;color:inherit}
+.bgrid{position:absolute;left:34px;right:34px;top:31%;bottom:10.5%;display:grid;gap:6px}
+.bgrid.c2{grid-template-columns:1fr 1fr}
+.bgrid.c3{grid-template-columns:repeat(3,1fr)}
+.bgrid.c4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.bgrid .photo{border-radius:0}
 .mid-band{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);min-height:20%;display:flex;align-items:center;justify-content:center;padding:22px;z-index:2;text-align:center;color:var(--graphite)}
 .mid-band.dark{color:var(--milk)}
 .frame{position:absolute;overflow:hidden;border-radius:14px;background:var(--slot);cursor:move;touch-action:none;box-shadow:0 2px 12px rgba(0,0,0,.10)}
@@ -488,7 +499,11 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="strips3">☰ 3 полосы</button>
         <button data-t="duo">☰ 2 полосы</button>
         <button data-t="series">▦ Серия 13</button>
-        <button data-t="blankNum">◍ Бланк серии</button>
+        <button data-t="blankT">◍ Титул серии</button>
+        <button data-t="blank1">◍ Бланк · 1 фото</button>
+        <button data-t="blank2">◍ Бланк · 2 фото</button>
+        <button data-t="blank3">◍ Бланк · 3 фото</button>
+        <button data-t="blank4">◍ Бланк · 4 фото</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -710,8 +725,7 @@ var COLORS=[
   {k:'white', c:'#FFFFFF', name:'Белый'},
   {k:'graphite',c:'#31353A',name:'Графит', dark:true},
   {k:'sage',  c:'#9BA07E', name:'Шалфей'},
-  {k:'blush', c:'#E7D3CE', name:'Бледно-розовый'},
-  {k:'coffee',c:'#30201B', name:'Кофе', dark:true}
+  {k:'blush', c:'#E7D3CE', name:'Бледно-розовый'}
 ];
 /* выбор цвета текста */
 (function(){
@@ -830,25 +844,56 @@ function tpl(type){
     '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>',
   duo:
     '<div class="fixed-grid d2"><div class="photo gcell" data-photo><div class="ph-label">фото или видео 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото или видео 2</div></div></div>',
-  blankNum:
-    '<div class="pad" style="padding:46px 40px 0;align-items:center;text-align:center">'+
-      '<div data-edit data-ph="Номер слайда" style="font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.34em;text-indent:.34em;opacity:.92">3 / 10</div>'+
-      '<div class="h" data-edit data-ph="Заголовок" style="font-family:var(--sans);font-weight:300;text-transform:uppercase;letter-spacing:.15em;font-size:38px;line-height:1.18;margin-top:30px">крупная деталь</div>'+
-      '<div data-edit data-ph="Подпись под заголовком" style="font-family:var(--sans);font-weight:400;font-size:16px;letter-spacing:.1em;opacity:.75;margin-top:10px">в центре внимания</div>'+
+  blankT:
+    '<div class="bhead">'+
+      '<div class="bt" data-edit data-ph="Серия" style="font-size:40px">10 способов</div>'+
+      '<div class="bs" data-edit data-ph="О чём серия" style="max-width:400px;line-height:1.5">о том, как носить однотонный тотал-лук так, чтобы не выглядеть скучно</div>'+
     '</div>'+
-    '<div class="photo" data-photo style="position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:63%;aspect-ratio:1;border-radius:50%"><div class="ph-label">нажми — фото в круге</div></div>'+
-    '<div data-edit data-ph="Подпись внизу" style="position:absolute;left:0;right:0;bottom:32px;text-align:center;font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.24em;text-indent:.24em;opacity:.92">далее →</div>'
+    '<div class="photo" data-photo style="position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:62%;aspect-ratio:1;border-radius:50%"><div class="ph-label">нажми — фото</div></div>'+
+    '<div class="bnext" data-edit data-ph="Призыв">листай, чтобы узнать →</div>',
+  blank1:
+    '<div class="bhead">'+
+      '<div class="bnum" data-edit data-ph="Номер слайда">1 / 10</div>'+
+      '<div class="bt" data-edit data-ph="Заголовок">крупная деталь</div>'+
+      '<div class="bs" data-edit data-ph="Подпись">в центре внимания</div>'+
+    '</div>'+
+    '<div class="photo" data-photo style="position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);width:80%;height:47%"><div class="ph-label">нажми — фото</div></div>'+
+    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+  blank2:
+    '<div class="bhead">'+
+      '<div class="bnum" data-edit data-ph="Номер слайда">2 / 10</div>'+
+      '<div class="bt" data-edit data-ph="Заголовок">объёмный верх</div>'+
+      '<div class="bs" data-edit data-ph="Подпись">в объёме</div>'+
+    '</div>'+
+    '<div class="bgrid c2"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div></div>'+
+    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+  blank3:
+    '<div class="bhead">'+
+      '<div class="bnum" data-edit data-ph="Номер слайда">3 / 10</div>'+
+      '<div class="bt" data-edit data-ph="Заголовок">игра фактов</div>'+
+      '<div class="bs" data-edit data-ph="Подпись">в фактуре и плотности</div>'+
+    '</div>'+
+    '<div class="bgrid c3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>'+
+    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+  blank4:
+    '<div class="bhead">'+
+      '<div class="bnum" data-edit data-ph="Номер слайда">4 / 10</div>'+
+      '<div class="bt" data-edit data-ph="Заголовок">заголовок</div>'+
+      '<div class="bs" data-edit data-ph="Подпись">подпись</div>'+
+    '</div>'+
+    '<div class="bgrid c4"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 4</div></div></div>'+
+    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankNum:'Бланк серии'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankT:'Титул серии',blank1:'Бланк 1 фото',blank2:'Бланк 2 фото',blank3:'Бланк 3 фото',blank4:'Бланк 4 фото'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
   var el=document.createElement('div');
   var wide=(f916!==undefined?f916:format==='916');
   el.className='slide'+(wide?' f916':'');
-  el.dataset.type=type;el.dataset.bg=bg||(type==='blankNum'?'coffee':'milk');
+  el.dataset.type=type;el.dataset.bg=bg||'milk';
   if(html!==undefined){
     el.innerHTML=html;
   }else{
@@ -3613,7 +3658,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v172';
+var SEAL_VER='v173';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
