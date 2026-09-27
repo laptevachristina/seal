@@ -1,4 +1,4 @@
-<!--seal-github-v174|fast-delete|clean-->
+<!--seal-github-v175|storyboard-blanks|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -127,17 +127,18 @@ em{font-style:italic}
 .fixed-grid.d2{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
 .fixed-grid.g6{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1fr}
 .gcell{border-radius:0}
-/* ---- бланки серии: подписи-памятка + сетки фото ---- */
+/* ---- бланки раскадровки: фирменные шрифты + сетки кадров вплотную ---- */
 .bhead{position:absolute;left:0;right:0;top:44px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 36px;pointer-events:none;z-index:2}
-.bnum{font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.34em;text-indent:.34em;color:inherit}
-.bt{font-family:var(--sans);font-weight:300;text-transform:uppercase;letter-spacing:.15em;font-size:36px;line-height:1.2;margin-top:26px;color:inherit}
-.bs{font-family:var(--sans);font-weight:400;font-size:16px;letter-spacing:.1em;opacity:.72;margin-top:10px;color:inherit}
-.bnext{position:absolute;left:0;right:0;bottom:32px;text-align:center;font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.24em;text-indent:.24em;color:inherit}
-.bgrid{position:absolute;left:34px;right:34px;top:31%;bottom:10.5%;display:grid;gap:6px}
+.bnext{position:absolute;left:0;right:0;bottom:32px;text-align:center}
+.bgrid{position:absolute;left:34px;right:34px;top:31%;bottom:10.5%;display:grid;gap:0}
 .bgrid.c2{grid-template-columns:1fr 1fr}
 .bgrid.c3{grid-template-columns:repeat(3,1fr)}
 .bgrid.c4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.bgrid.mid{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr}
+.bgrid.mid .c-l,.bgrid.mid .c-r{grid-row:span 2}
 .bgrid .photo{border-radius:0}
+.btag{position:absolute;top:0;left:0;z-index:3;padding:5px 10px;background:rgba(244,238,224,.8);color:var(--graphite);font-family:var(--sans);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+.slide.dark .btag{background:rgba(0,0,0,.5);color:var(--milk)}
 .mid-band{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);min-height:20%;display:flex;align-items:center;justify-content:center;padding:22px;z-index:2;text-align:center;color:var(--graphite)}
 .mid-band.dark{color:var(--milk)}
 .frame{position:absolute;overflow:hidden;border-radius:14px;background:var(--slot);cursor:move;touch-action:none;box-shadow:0 2px 12px rgba(0,0,0,.10)}
@@ -500,10 +501,10 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="duo">☰ 2 полосы</button>
         <button data-t="series">▦ Серия 13</button>
         <button data-t="blankT">◍ Титул серии</button>
-        <button data-t="blank1">◍ Бланк · 1 фото</button>
-        <button data-t="blank2">◍ Бланк · 2 фото</button>
-        <button data-t="blank3">◍ Бланк · 3 фото</button>
-        <button data-t="blank4">◍ Бланк · 4 фото</button>
+        <button data-t="blank2">◍ Бланк · 2 кадра</button>
+        <button data-t="blank3">◍ Бланк · 3 кадра</button>
+        <button data-t="blankMid">◍ Бланк · 3+2 кадра</button>
+        <button data-t="blank4">◍ Бланк · 4 кадра</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -846,47 +847,48 @@ function tpl(type){
     '<div class="fixed-grid d2"><div class="photo gcell" data-photo><div class="ph-label">фото или видео 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото или видео 2</div></div></div>',
   blankT:
     '<div class="bhead">'+
-      '<div class="bt" data-edit data-ph="Серия" style="font-size:40px">10 способов</div>'+
-      '<div class="bs" data-edit data-ph="О чём серия" style="max-width:400px;line-height:1.5">о том, как носить однотонный тотал-лук так, чтобы не выглядеть скучно</div>'+
+      '<div class="h big" data-edit data-ph="Заголовок" style="margin:0">10 способов</div>'+
+      '<div class="sub" data-edit data-ph="Подзаголовок" style="margin-top:14px;max-width:420px">о том, как носить однотонный тотал-лук так, чтобы не выглядеть скучно</div>'+
     '</div>'+
     '<div class="photo" data-photo style="position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:62%;aspect-ratio:1;border-radius:50%"><div class="ph-label">нажми — фото</div></div>'+
-    '<div class="bnext" data-edit data-ph="Призыв">листай, чтобы узнать →</div>',
-  blank1:
-    '<div class="bhead">'+
-      '<div class="bnum" data-edit data-ph="Номер слайда">1 / 10</div>'+
-      '<div class="bt" data-edit data-ph="Заголовок">крупная деталь</div>'+
-      '<div class="bs" data-edit data-ph="Подпись">в центре внимания</div>'+
-    '</div>'+
-    '<div class="photo" data-photo style="position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);width:80%;height:47%"><div class="ph-label">нажми — фото</div></div>'+
-    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+    '<div class="bnext sub" data-edit data-ph="Призыв">листай, чтобы узнать →</div>',
   blank2:
-    '<div class="bhead">'+
-      '<div class="bnum" data-edit data-ph="Номер слайда">2 / 10</div>'+
-      '<div class="bt" data-edit data-ph="Заголовок">объёмный верх</div>'+
-      '<div class="bs" data-edit data-ph="Подпись">в объёме</div>'+
+    '<div class="bhead"><div class="kicker" data-edit data-ph="Номер слайда">2 / 10</div></div>'+
+    '<div class="bgrid c2">'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
     '</div>'+
-    '<div class="bgrid c2"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div></div>'+
-    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+    '<div class="bnext sub" data-edit data-ph="Призыв">далее →</div>',
   blank3:
-    '<div class="bhead">'+
-      '<div class="bnum" data-edit data-ph="Номер слайда">3 / 10</div>'+
-      '<div class="bt" data-edit data-ph="Заголовок">игра фактов</div>'+
-      '<div class="bs" data-edit data-ph="Подпись">в фактуре и плотности</div>'+
+    '<div class="bhead"><div class="kicker" data-edit data-ph="Номер слайда">3 / 10</div></div>'+
+    '<div class="bgrid c3">'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">кадр деталей</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">макрокадр</div></div>'+
     '</div>'+
-    '<div class="bgrid c3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>'+
-    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>',
+    '<div class="bnext sub" data-edit data-ph="Призыв">далее →</div>',
+  blankMid:
+    '<div class="bhead"><div class="kicker" data-edit data-ph="Номер слайда">4 / 10</div></div>'+
+    '<div class="bgrid mid">'+
+      '<div class="photo gcell c-l" data-photo><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">кадр деталей</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
+      '<div class="photo gcell c-r" data-photo><div class="btag" data-edit data-ph="Метка кадра">макрокадр</div></div>'+
+    '</div>'+
+    '<div class="bnext sub" data-edit data-ph="Призыв">далее →</div>',
   blank4:
-    '<div class="bhead">'+
-      '<div class="bnum" data-edit data-ph="Номер слайда">4 / 10</div>'+
-      '<div class="bt" data-edit data-ph="Заголовок">заголовок</div>'+
-      '<div class="bs" data-edit data-ph="Подпись">подпись</div>'+
+    '<div class="bhead"><div class="kicker" data-edit data-ph="Номер слайда">5 / 10</div></div>'+
+    '<div class="bgrid c4">'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">пейзаж</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">крупный план</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
+      '<div class="photo gcell" data-photo><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
     '</div>'+
-    '<div class="bgrid c4"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 4</div></div></div>'+
-    '<div class="bnext" data-edit data-ph="Призыв">далее →</div>'
+    '<div class="bnext sub" data-edit data-ph="Призыв">далее →</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankT:'Титул серии',blank1:'Бланк 1 фото',blank2:'Бланк 2 фото',blank3:'Бланк 3 фото',blank4:'Бланк 4 фото'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankT:'Титул серии',blank2:'Бланк 2 кадра',blank3:'Бланк 3 кадра',blankMid:'Бланк 3+2 кадра',blank4:'Бланк 4 кадра'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
@@ -1657,7 +1659,7 @@ function wirePanZoom(p){
   var pointers={},startX,startY,baseX,baseY,startDist,baseScale,downX,downY,moved;
   p.addEventListener('pointerdown',function(e){
     downX=e.clientX;downY=e.clientY;moved=false;
-    if(e.target.closest('.ph-pick,.gcell-move'))return;   // pick/move handled by their own handlers
+    if(e.target.closest('.ph-pick,.gcell-move,.btag'))return;   // pick/move/label handled by their own handlers
     if(!p.classList.contains('has-img'))return;           // empty → wait for tap
     try{p.setPointerCapture(e.pointerId);}catch(_){}
     pointers[e.pointerId]={x:e.clientX,y:e.clientY};
@@ -1685,7 +1687,8 @@ function wirePanZoom(p){
     if(ids.length===1){var pt=pointers[ids[0]];startX=pt.x;startY=pt.y;baseX=parseFloat(p.dataset.x)||0;baseY=parseFloat(p.dataset.y)||0;}
     else if(ids.length===0){p.style.cursor='grab';updateFilm();if(moved)pushHistory();}
     if(!moved){                                           // it was a tap
-      if(e.target.closest('.ph-pick')||!p.classList.contains('has-img'))openPick(p);
+      if(e.target.closest('.ph-pick,.btag'))return;
+      if(!p.classList.contains('has-img'))openPick(p);
       else if(p.dataset.vidId){selectPhotoSlot(p);openPhotoFxPanel();}
     }
   });
@@ -2169,7 +2172,7 @@ stage.addEventListener('pointerdown',function(e){if(e.target.closest('#veditModa
   var timer=null,moved=false,sx,sy,tEl;
   stage.addEventListener('pointerdown',function(e){
     if(e.target.closest('#veditModal')||e.target.closest('#retModal'))return;
-    if(e.target.closest('.ph-pick,.mv-del,.fr-del,.mv-handle,.tx-resize,.fr-resize,.fr-move,.layer-toggle,.rot-handle,.spin-toggle,.type-toggle'))return;
+    if(e.target.closest('.ph-pick,.btag,.mv-del,.fr-del,.mv-handle,.tx-resize,.fr-resize,.fr-move,.layer-toggle,.rot-handle,.spin-toggle,.type-toggle'))return;
     var el=e.target.closest('.photo.has-img, .frame.has-img');
     if(!el)return;
     tEl=el;moved=false;sx=e.clientX;sy=e.clientY;
@@ -3666,7 +3669,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v174';
+var SEAL_VER='v175';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
