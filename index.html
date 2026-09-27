@@ -1,4 +1,4 @@
-<!--seal-github-v173|blank-sets|clean-->
+<!--seal-github-v174|fast-delete|clean-->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -386,7 +386,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .chip.f916{height:82px}
 .chip.on{border-color:var(--ui-acc)}
 .chip .mini{position:absolute;inset:0;transform-origin:top left}
-.chip .del{position:absolute;top:2px;right:3px;z-index:2;color:#fff;background:rgba(0,0,0,.45);border-radius:6px;width:18px;height:18px;font-size:12px;display:grid;place-items:center}
+.chip .del{position:absolute;top:0;right:0;z-index:2;color:#fff;background:rgba(0,0,0,.45);border-radius:7px;width:24px;height:24px;font-size:14px;display:grid;place-items:center}
 .chip .idx{position:absolute;bottom:2px;left:4px;z-index:2;color:#fff;font:700 10px 'Inter';text-shadow:0 1px 2px rgba(0,0,0,.7)}
 
 .hint{color:var(--ui-dim);font-size:12.5px;line-height:1.5;padding:0 14px 18px}
@@ -1910,22 +1910,30 @@ function gcVideoBlobs(){
     return orphans.length;
   });
 }
-function saveDeck(){_dirty=false;try{idbPut(DECK_KEY,serialize())['catch'](function(){});}catch(e){}}
-function saveDeckSoon(){_dirty=true;if(_saveT)clearTimeout(_saveT);_saveT=setTimeout(saveDeck,400);}
+function saveDeck(pre){_dirty=false;try{idbPut(DECK_KEY,pre||serialize())['catch'](function(){});}catch(e){}}
+function saveDeckSoon(){_dirty=true;if(_saveT)clearTimeout(_saveT);_saveT=setTimeout(function(){saveDeck();},400);}
 function loadDeck(){return idbGet(DECK_KEY).then(function(v){if(v){window.__snap=v;restoreState(v);return true;}return false;})['catch'](function(){return false;});}
 var _phTimer=null;
 function _flushHistory(){if(_phTimer){clearTimeout(_phTimer);_phTimer=null;_pushHistoryNow();}}
 function pushHistory(){if(_phTimer)clearTimeout(_phTimer);_phTimer=setTimeout(function(){_phTimer=null;_pushHistoryNow();},220);}
+/* дешёвая подпись снапшота: сравниваем без тяжёлых html (тип, фон, формат, длина html) */
+function _snapSig(a){return a.format+'|'+a.cur+'|'+a.slides.map(function(x){return x.type+'~'+x.bg+'~'+x.f916+'~'+x.html.length;}).join(';');}
 function _pushHistoryNow(){
-  var snap=serialize();
-  if(hist[hpos]===snap)return;
-  hist=hist.slice(0,hpos+1);hist.push(snap);
-  if(hist.length>8)hist.shift();
-  hpos=hist.length-1;updateUndoUI();saveDeckSoon();
+  /* v174: тяжёлые колоды (много фото) тормозили каждое удаление: два полных
+     JSON-снимка и восемь копий в памяти. Теперь: одна строка на операцию,
+     в hist — распарсенные объекты (undo без пересборки строки), длина истории
+     зависит от веса колоды */
+  var str=serialize();var arr;try{arr=JSON.parse(str);}catch(e){return;}
+  var top=hist[hpos];
+  if(top&&_snapSig(top)===_snapSig(arr)){saveDeckSoon();return;}
+  hist=hist.slice(0,hpos+1);hist.push(arr);
+  var cap=str.length>12000000?2:(str.length>4000000?3:8);
+  while(hist.length>cap)hist.shift();
+  hpos=hist.length-1;updateUndoUI();saveDeck(str);
 }
 function pushSoon(){clearTimeout(pushT);pushT=setTimeout(pushHistory,600);}
 function restoreState(snap){
-  var st=JSON.parse(snap);
+  var st=(typeof snap==='string')?JSON.parse(snap):snap;
   format=st.format;
   document.querySelectorAll('#fmt button').forEach(function(x){x.classList.toggle('on',x.dataset.f===format);});
   slides=st.slides.map(function(d){return{type:d.type,el:makeSlide(d.type,d.bg,d.html,d.f916)};});
@@ -3658,7 +3666,7 @@ function prerenderClipFrames(video,targetW,targetH,onProgress){
   });
 }
 var SEAL_SERVER='https://seal.72.56.9.229.sslip.io';
-var SEAL_VER='v173';
+var SEAL_VER='v174';
 /* серверная склейка видео-слайда: рендерим фон канвасом (без видео-кружка), берём ролик + координаты,
    отправляем на /compose → сервер ffmpeg накладывает видео со скруглением + звук → честный MP4.
    Без MediaRecorder — айфон не виснет, видео не дёргается. Локальный путь (ниже) остаётся фолбэком. */
