@@ -488,6 +488,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="strips3">☰ 3 полосы</button>
         <button data-t="duo">☰ 2 полосы</button>
         <button data-t="series">▦ Серия 13</button>
+        <button data-t="blankNum">◍ Бланк серии</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -709,7 +710,8 @@ var COLORS=[
   {k:'white', c:'#FFFFFF', name:'Белый'},
   {k:'graphite',c:'#31353A',name:'Графит', dark:true},
   {k:'sage',  c:'#9BA07E', name:'Шалфей'},
-  {k:'blush', c:'#E7D3CE', name:'Бледно-розовый'}
+  {k:'blush', c:'#E7D3CE', name:'Бледно-розовый'},
+  {k:'coffee',c:'#30201B', name:'Кофе', dark:true}
 ];
 /* выбор цвета текста */
 (function(){
@@ -827,18 +829,26 @@ function tpl(type){
   strips3:
     '<div class="fixed-grid s3"><div class="photo gcell" data-photo><div class="ph-label">фото 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 2</div></div><div class="photo gcell" data-photo><div class="ph-label">фото 3</div></div></div>',
   duo:
-    '<div class="fixed-grid d2"><div class="photo gcell" data-photo><div class="ph-label">фото или видео 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото или видео 2</div></div></div>'
+    '<div class="fixed-grid d2"><div class="photo gcell" data-photo><div class="ph-label">фото или видео 1</div></div><div class="photo gcell" data-photo><div class="ph-label">фото или видео 2</div></div></div>',
+  blankNum:
+    '<div class="pad" style="padding:46px 40px 0;align-items:center;text-align:center">'+
+      '<div data-edit data-ph="Номер слайда" style="font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.34em;text-indent:.34em;opacity:.92">3 / 10</div>'+
+      '<div class="h" data-edit data-ph="Заголовок" style="font-family:var(--sans);font-weight:300;text-transform:uppercase;letter-spacing:.15em;font-size:38px;line-height:1.18;margin-top:30px">крупная деталь</div>'+
+      '<div data-edit data-ph="Подпись под заголовком" style="font-family:var(--sans);font-weight:400;font-size:16px;letter-spacing:.1em;opacity:.75;margin-top:10px">в центре внимания</div>'+
+    '</div>'+
+    '<div class="photo" data-photo style="position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:63%;aspect-ratio:1;border-radius:50%"><div class="ph-label">нажми — фото в круге</div></div>'+
+    '<div data-edit data-ph="Подпись внизу" style="position:absolute;left:0;right:0;bottom:32px;text-align:center;font-family:var(--sans);font-weight:400;font-size:15px;letter-spacing:.24em;text-indent:.24em;opacity:.92">далее →</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankNum:'Бланк серии'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
   var el=document.createElement('div');
   var wide=(f916!==undefined?f916:format==='916');
   el.className='slide'+(wide?' f916':'');
-  el.dataset.type=type;el.dataset.bg=bg||'milk';
+  el.dataset.type=type;el.dataset.bg=bg||(type==='blankNum'?'coffee':'milk');
   if(html!==undefined){
     el.innerHTML=html;
   }else{
