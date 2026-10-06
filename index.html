@@ -37,6 +37,7 @@
   font-family:var(--sans);
 }
 .slide.f916{height:960px}
+.slide.f22{width:1080px}
 .slide *{box-sizing:border-box}html,body{touch-action:pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%}
 .slide.dark{color:var(--milk)}
 .slide.dark .kicker,.slide.dark .sub{color:rgba(244,238,224,.82)}
@@ -380,6 +381,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
 .film{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;touch-action:pan-x;-webkit-overflow-scrolling:touch}
 .chip{flex:0 0 auto;position:relative;width:52px;height:66px;border-radius:8px;overflow:hidden;background:var(--ui-panel-2);border:2px solid transparent;cursor:pointer}
 .chip.f916{height:82px}
+.chip.f22{width:104px}
 .chip.on{border-color:var(--ui-acc)}
 .chip .mini{position:absolute;inset:0;transform-origin:top left}
 .chip .del{position:absolute;top:0;right:0;z-index:2;color:#fff;background:rgba(0,0,0,.45);border-radius:7px;width:24px;height:24px;font-size:14px;display:grid;place-items:center}
@@ -500,6 +502,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
         <button data-t="blank3">◍ Раскадровка · 3 кадра</button>
         <button data-t="blankMid">◍ Раскадровка · 3+2 кадра</button>
         <button data-t="blank4">◍ Раскадровка · 4 кадра</button>
+        <button data-t="seam">▥ Бесшовная карусель</button>
         <button data-t="cta">➜ С кнопкой</button>
         <button data-t="final">✦ Финал</button>
       </div>
@@ -681,7 +684,7 @@ header .logo b{color:var(--ui-acc);font-weight:700}
   </div>
 </div>
 <input type="file" id="filepick" accept="image/*,video/*" multiple style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0">
-<div id="measurer" style="position:fixed;left:-99999px;top:0;width:540px;pointer-events:none;opacity:0"></div>
+<div id="measurer" style="position:fixed;left:-99999px;top:0;width:1080px;pointer-events:none;opacity:0"></div>
 
 <script>
 /* ---- viewport + PWA metas ---- */
@@ -871,17 +874,24 @@ function tpl(type){
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">крупный план</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">дальний план</div></div>'+
       '<div class="photo gcell" data-photo><div class="ph-label">нажми — фото</div><div class="btag" data-edit data-ph="Метка кадра">пустой кадр</div></div>'+
+    '</div>',
+  seam:
+    '<div class="photo" data-photo style="position:absolute;top:0;bottom:0;left:0;width:700px;border-radius:0"><div class="ph-label">нажми — одна широкая фотография на два слайда</div></div>'+
+    '<div class="pad" style="left:auto;right:0;width:380px;justify-content:flex-start;padding:62px 40px 0">'+
+      '<div class="kicker" data-edit data-ph="надзаголовок">рубрика</div>'+
+      '<div class="h mid" data-edit data-ph="Заголовок" style="margin:8px 0 12px;font-size:34px">текст на втором слайде</div>'+
+      '<div class="body" data-edit data-ph="текст простынёй">эта зона остаётся на правом слайде, фотография продолжается сквозь разрез</div>'+
     '</div>'
   };
   return T[type]||T.quote;
 }
-var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankT:'Титул серии',blank2:'Раскадровка 2 кадра',blank3:'Раскадровка 3 кадра',blankMid:'Раскадровка 3+2 кадра',blank4:'Раскадровка 4 кадра'};
+var NAMES={cover:'Обложка',quote:'Цитата',collage:'Коллаж',cta:'Кнопка',final:'Финал',splitB:'Фото сверху',splitT:'Фото снизу',splitL:'Фото справа',splitR:'Фото слева',grid4:'Сетка 4',grid6:'Сетка 6',strips3:'3 полосы',duo:'2 полосы',series:'Серия 13',blankT:'Титул серии',blank2:'Раскадровка 2 кадра',blank3:'Раскадровка 3 кадра',blankMid:'Раскадровка 3+2 кадра',blank4:'Раскадровка 4 кадра',seam:'Бесшовная карусель'};
 
 /* ---- build ---- */
 function makeSlide(type,bg,html,f916){
   var el=document.createElement('div');
   var wide=(f916!==undefined?f916:format==='916');
-  el.className='slide'+(wide?' f916':'');
+  el.className='slide'+(wide?' f916':'')+(type==='seam'?' f22':'');
   el.dataset.type=type;el.dataset.bg=bg||'milk';
   if(html!==undefined){
     el.innerHTML=html;
@@ -2082,13 +2092,14 @@ document.addEventListener('click',function(){document.querySelectorAll('.dd.open
 /* ---- render ---- */
 function fit(){
   var s=slides[cur];if(!s)return;
+  var w2=s.el.classList.contains('f22')?1080:540;
   var h=s.el.classList.contains('f916')?960:675;
   var availW=stage.clientWidth-24,availH=stage.clientHeight-24;
-  var sc=Math.min(1,availW/540);
+  var sc=Math.min(1,availW/w2);
   if(availH>40)sc=Math.min(sc,availH/h);
   curFitScale=sc;
   s.el.style.transform='scale('+sc+')';
-  scaler.style.width=(540*sc)+'px';scaler.style.height=(h*sc)+'px';
+  scaler.style.width=(w2*sc)+'px';scaler.style.height=(h*sc)+'px';
 }
 function render(){
   host.innerHTML='';
@@ -2131,11 +2142,12 @@ function _updateFilmNow(){
   var film=document.getElementById('film');var _sl=film.scrollLeft;film.innerHTML='';
   slides.forEach(function(s,i){
     var chip=document.createElement('div');
-    chip.className='chip'+(s.el.classList.contains('f916')?' f916':'')+(i===cur?' on':'');
+    chip.className='chip'+(s.el.classList.contains('f916')?' f916':'')+(s.el.classList.contains('f22')?' f22':'')+(i===cur?' on':'');
     var mini=document.createElement('div');mini.className='mini';
     var clone=s.el.cloneNode(true);clone.style.transform='';clone.style.boxShadow='none';
     clone.querySelectorAll('[data-edit]').forEach(function(e){e.removeAttribute('contenteditable');});
-    var w=52,scMini=w/540;
+    var is22=s.el.classList.contains('f22');
+    var w=is22?104:52,scMini=w/(is22?1080:540);
     mini.style.transform='scale('+scMini+')';mini.style.pointerEvents='none';mini.appendChild(clone);
     chip.appendChild(mini);
     var idx=document.createElement('div');idx.className='idx';idx.textContent=(i+1);chip.appendChild(idx);
@@ -3050,7 +3062,7 @@ function veUpdateCursor(timelineSec){
 })();
 function renderSlideCanvas(el,animState,videoFrameMap){
   return new Promise(function(resolve,reject){
-    var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+    var w=el.classList.contains('f22')?1080:540,h=el.classList.contains('f916')?960:675,ES=3;
     /* measure photos at natural size (works for detached slides too) */
     var meas=document.getElementById('measurer');
     var parent=el.parentNode,next=el.nextSibling,pt=el.style.transform;
@@ -3210,7 +3222,7 @@ function serverAnimate(el,btn){
   var spinMode=hasSpinningSticker(items);
   var typeSchedule=buildTypeSchedule(items);
   var fullMs=computeFullMs(el);
-  var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+  var w=el.classList.contains('f22')?1080:540,h=el.classList.contains('f916')?960:675,ES=3;
   var fps=12;
   var frameCount=Math.max(1,Math.min(360,Math.ceil(fullMs/1000*fps)));
   var clipEls=Array.prototype.slice.call(el.querySelectorAll('.vidclip video, .photo[data-vid-id] video'));
@@ -3288,7 +3300,7 @@ function serverAnimateVid(el,btn){
   var spinMode=hasSpinningSticker(items);
   var typeSchedule=buildTypeSchedule(items);
   var fullMs=computeFullMs(el);
-  var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+  var w=el.classList.contains('f22')?1080:540,h=el.classList.contains('f916')?960:675,ES=3;
   var fps=12;
   var vc=el.querySelector('.vidclip')||el.querySelector('.photo[data-vid-id]');
   var v=vc?vc.querySelector('video'):null;
@@ -3354,7 +3366,16 @@ function serverAnimateVid(el,btn){
 function slideToPNG(el){
   if(typeof previewReset==='function')previewReset();
   return renderSlideCanvas(el,null).then(function(c){
-    return new Promise(function(resolve){c.toBlob(function(blob){resolve(blob);},'image/png');});
+    if(!el.classList.contains('f22')){
+      return new Promise(function(resolve){c.toBlob(function(blob){resolve([blob]);},'image/png');});
+    }
+    /* бесшовная карусель: двойной холст режется на левую и правую половины */
+    var HW=c.width/2;
+    var cl=document.createElement('canvas');cl.width=HW;cl.height=c.height;cl.getContext('2d').drawImage(c,0,0);
+    var cr=document.createElement('canvas');cr.width=HW;cr.height=c.height;cr.getContext('2d').drawImage(c,-HW,0);
+    return new Promise(function(resolve){
+      cl.toBlob(function(b1){cr.toBlob(function(b2){resolve([b1,b2]);},'image/png');},'image/png');
+    });
   });
 }
 function saveBlobs(blobs){
@@ -3387,7 +3408,7 @@ document.getElementById('exp-all').addEventListener('click',function(){
   if(!slides.length)return;
   document.fonts.ready.then(function(){
     var seq=Promise.resolve([]);
-    slides.forEach(function(s,i){seq=seq.then(function(acc){return slideToPNG(s.el).then(function(b){acc.push(b);return acc;});});});
+    slides.forEach(function(s,i){seq=seq.then(function(acc){return slideToPNG(s.el).then(function(bs){return acc.concat(bs);});});});
     return seq;
   }).then(function(blobs){openModal(blobs);})['catch'](function(e){});
 });
@@ -3857,7 +3878,7 @@ if(gifBtn)gifBtn.addEventListener('click',function(){
     var spinMode=hasSpinningSticker(items);
     var typeSchedule=buildTypeSchedule(items);
     var fullMs=computeFullMs(el);
-    var w=540,h=el.classList.contains('f916')?960:675,ES=3;
+    var w=el.classList.contains('f22')?1080:540,h=el.classList.contains('f916')?960:675,ES=3;
     var mime=pickVideoMime();
     var capFn=null;
     var probe=document.createElement('canvas');
